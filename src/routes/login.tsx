@@ -54,7 +54,7 @@ function LoginPage() {
     <div className="flex min-h-screen items-center justify-center bg-gradient-to-br from-primary/5 via-background to-accent/10 p-4">
       <div className="w-full max-w-md space-y-6">
         <div className="flex justify-center">
-          <Logo className="h-20" />
+          <Logo className="h-32 md:h-40" />
         </div>
         <Card className="border-border shadow-lg">
           <CardHeader>
