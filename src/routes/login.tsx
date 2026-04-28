@@ -160,7 +160,8 @@ function LoginPage() {
               </TabsContent>
             </Tabs>
           </CardContent>
-        </Card>
+          </Card>
+        </div>
       </div>
     </div>
   );
