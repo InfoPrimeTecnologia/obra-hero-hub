@@ -62,8 +62,7 @@ function LoginPage() {
           height={1280}
         />
         <div className="absolute inset-0 bg-gradient-to-br from-primary/70 via-primary/40 to-background/30" />
-        <div className="relative z-10 flex h-full flex-col justify-between p-10 text-primary-foreground">
-          <Logo className="h-20 brightness-0 invert" />
+        <div className="relative z-10 flex h-full flex-col justify-end p-10 text-primary-foreground">
           <div className="space-y-3">
             <h2 className="text-3xl font-bold leading-tight drop-shadow-md">
               Gestão 360° da sua obra
@@ -77,7 +76,7 @@ function LoginPage() {
 
       <div className="flex items-center justify-center bg-gradient-to-br from-primary/5 via-background to-accent/10 p-4">
         <div className="w-full max-w-md space-y-6">
-          <div className="flex justify-center lg:hidden">
+          <div className="flex justify-center">
             <Logo className="h-24" />
           </div>
           <Card className="border-border shadow-lg">
