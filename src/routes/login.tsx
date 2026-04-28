@@ -1,6 +1,7 @@
 import { createFileRoute, useNavigate } from "@tanstack/react-router";
 import { useState, type FormEvent } from "react";
 import { Logo } from "@/components/Logo";
+import loginHero from "@/assets/login-construction.jpg";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -51,12 +52,35 @@ function LoginPage() {
   };
 
   return (
-    <div className="flex min-h-screen items-center justify-center bg-gradient-to-br from-primary/5 via-background to-accent/10 p-4">
-      <div className="w-full max-w-md space-y-6">
-        <div className="flex justify-center">
-          <Logo className="h-32 md:h-40" />
+    <div className="grid min-h-screen lg:grid-cols-2">
+      <div className="relative hidden lg:block">
+        <img
+          src={loginHero}
+          alt="Engenheiro civil em obra com pranchas técnicas e guindastes ao fundo"
+          className="absolute inset-0 h-full w-full object-cover"
+          width={1024}
+          height={1280}
+        />
+        <div className="absolute inset-0 bg-gradient-to-br from-primary/70 via-primary/40 to-background/30" />
+        <div className="relative z-10 flex h-full flex-col justify-between p-10 text-primary-foreground">
+          <Logo className="h-20 brightness-0 invert" />
+          <div className="space-y-3">
+            <h2 className="text-3xl font-bold leading-tight drop-shadow-md">
+              Gestão 360° da sua obra
+            </h2>
+            <p className="max-w-sm text-base text-primary-foreground/90 drop-shadow">
+              Controle clientes, planos, faturas e tickets em um único painel feito para a construção civil.
+            </p>
+          </div>
         </div>
-        <Card className="border-border shadow-lg">
+      </div>
+
+      <div className="flex items-center justify-center bg-gradient-to-br from-primary/5 via-background to-accent/10 p-4">
+        <div className="w-full max-w-md space-y-6">
+          <div className="flex justify-center lg:hidden">
+            <Logo className="h-24" />
+          </div>
+          <Card className="border-border shadow-lg">
           <CardHeader>
             <CardTitle>Painel administrativo</CardTitle>
             <CardDescription>Acesse sua conta para gerenciar o Mestre 360</CardDescription>
@@ -136,7 +160,8 @@ function LoginPage() {
               </TabsContent>
             </Tabs>
           </CardContent>
-        </Card>
+          </Card>
+        </div>
       </div>
     </div>
   );
