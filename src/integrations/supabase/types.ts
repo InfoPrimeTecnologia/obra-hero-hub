@@ -14,16 +14,611 @@ export type Database = {
   }
   public: {
     Tables: {
-      [_ in never]: never
+      admin_allowlist: {
+        Row: {
+          created_at: string
+          email: string
+          id: string
+        }
+        Insert: {
+          created_at?: string
+          email: string
+          id?: string
+        }
+        Update: {
+          created_at?: string
+          email?: string
+          id?: string
+        }
+        Relationships: []
+      }
+      communications_log: {
+        Row: {
+          body: string | null
+          channel: Database["public"]["Enums"]["communication_channel"]
+          created_at: string
+          customer_id: string
+          error: string | null
+          id: string
+          invoice_id: string | null
+          provider_message_id: string | null
+          sent_at: string | null
+          status: Database["public"]["Enums"]["communication_status"]
+          subject: string | null
+          trigger: Database["public"]["Enums"]["communication_trigger"]
+        }
+        Insert: {
+          body?: string | null
+          channel: Database["public"]["Enums"]["communication_channel"]
+          created_at?: string
+          customer_id: string
+          error?: string | null
+          id?: string
+          invoice_id?: string | null
+          provider_message_id?: string | null
+          sent_at?: string | null
+          status?: Database["public"]["Enums"]["communication_status"]
+          subject?: string | null
+          trigger: Database["public"]["Enums"]["communication_trigger"]
+        }
+        Update: {
+          body?: string | null
+          channel?: Database["public"]["Enums"]["communication_channel"]
+          created_at?: string
+          customer_id?: string
+          error?: string | null
+          id?: string
+          invoice_id?: string | null
+          provider_message_id?: string | null
+          sent_at?: string | null
+          status?: Database["public"]["Enums"]["communication_status"]
+          subject?: string | null
+          trigger?: Database["public"]["Enums"]["communication_trigger"]
+        }
+        Relationships: [
+          {
+            foreignKeyName: "communications_log_customer_id_fkey"
+            columns: ["customer_id"]
+            isOneToOne: false
+            referencedRelation: "customers"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "communications_log_invoice_id_fkey"
+            columns: ["invoice_id"]
+            isOneToOne: false
+            referencedRelation: "invoices"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      customers: {
+        Row: {
+          address_city: string | null
+          address_complement: string | null
+          address_neighborhood: string | null
+          address_number: string | null
+          address_state: string | null
+          address_street: string | null
+          address_zip: string | null
+          asaas_customer_id: string | null
+          company_name: string | null
+          cpf_cnpj: string | null
+          created_at: string
+          created_by: string | null
+          email: string
+          id: string
+          name: string
+          notes: string | null
+          phone: string | null
+          status: Database["public"]["Enums"]["customer_status"]
+          updated_at: string
+          whatsapp: string | null
+        }
+        Insert: {
+          address_city?: string | null
+          address_complement?: string | null
+          address_neighborhood?: string | null
+          address_number?: string | null
+          address_state?: string | null
+          address_street?: string | null
+          address_zip?: string | null
+          asaas_customer_id?: string | null
+          company_name?: string | null
+          cpf_cnpj?: string | null
+          created_at?: string
+          created_by?: string | null
+          email: string
+          id?: string
+          name: string
+          notes?: string | null
+          phone?: string | null
+          status?: Database["public"]["Enums"]["customer_status"]
+          updated_at?: string
+          whatsapp?: string | null
+        }
+        Update: {
+          address_city?: string | null
+          address_complement?: string | null
+          address_neighborhood?: string | null
+          address_number?: string | null
+          address_state?: string | null
+          address_street?: string | null
+          address_zip?: string | null
+          asaas_customer_id?: string | null
+          company_name?: string | null
+          cpf_cnpj?: string | null
+          created_at?: string
+          created_by?: string | null
+          email?: string
+          id?: string
+          name?: string
+          notes?: string | null
+          phone?: string | null
+          status?: Database["public"]["Enums"]["customer_status"]
+          updated_at?: string
+          whatsapp?: string | null
+        }
+        Relationships: []
+      }
+      integration_settings: {
+        Row: {
+          config: Json
+          created_at: string
+          id: string
+          is_active: boolean
+          last_test_at: string | null
+          last_test_status: string | null
+          provider: string
+          updated_at: string
+        }
+        Insert: {
+          config?: Json
+          created_at?: string
+          id?: string
+          is_active?: boolean
+          last_test_at?: string | null
+          last_test_status?: string | null
+          provider: string
+          updated_at?: string
+        }
+        Update: {
+          config?: Json
+          created_at?: string
+          id?: string
+          is_active?: boolean
+          last_test_at?: string | null
+          last_test_status?: string | null
+          provider?: string
+          updated_at?: string
+        }
+        Relationships: []
+      }
+      invoices: {
+        Row: {
+          amount: number
+          asaas_payment_id: string | null
+          bank_slip_url: string | null
+          created_at: string
+          customer_id: string
+          description: string | null
+          due_date: string
+          id: string
+          invoice_url: string | null
+          paid_at: string | null
+          payment_link: string | null
+          payment_method: Database["public"]["Enums"]["payment_method"]
+          status: Database["public"]["Enums"]["invoice_status"]
+          subscription_id: string | null
+          updated_at: string
+        }
+        Insert: {
+          amount: number
+          asaas_payment_id?: string | null
+          bank_slip_url?: string | null
+          created_at?: string
+          customer_id: string
+          description?: string | null
+          due_date: string
+          id?: string
+          invoice_url?: string | null
+          paid_at?: string | null
+          payment_link?: string | null
+          payment_method?: Database["public"]["Enums"]["payment_method"]
+          status?: Database["public"]["Enums"]["invoice_status"]
+          subscription_id?: string | null
+          updated_at?: string
+        }
+        Update: {
+          amount?: number
+          asaas_payment_id?: string | null
+          bank_slip_url?: string | null
+          created_at?: string
+          customer_id?: string
+          description?: string | null
+          due_date?: string
+          id?: string
+          invoice_url?: string | null
+          paid_at?: string | null
+          payment_link?: string | null
+          payment_method?: Database["public"]["Enums"]["payment_method"]
+          status?: Database["public"]["Enums"]["invoice_status"]
+          subscription_id?: string | null
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "invoices_customer_id_fkey"
+            columns: ["customer_id"]
+            isOneToOne: false
+            referencedRelation: "customers"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "invoices_subscription_id_fkey"
+            columns: ["subscription_id"]
+            isOneToOne: false
+            referencedRelation: "subscriptions"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      message_templates: {
+        Row: {
+          body: string
+          channel: Database["public"]["Enums"]["communication_channel"]
+          created_at: string
+          id: string
+          is_active: boolean
+          subject: string | null
+          trigger: Database["public"]["Enums"]["communication_trigger"]
+          updated_at: string
+        }
+        Insert: {
+          body: string
+          channel: Database["public"]["Enums"]["communication_channel"]
+          created_at?: string
+          id?: string
+          is_active?: boolean
+          subject?: string | null
+          trigger: Database["public"]["Enums"]["communication_trigger"]
+          updated_at?: string
+        }
+        Update: {
+          body?: string
+          channel?: Database["public"]["Enums"]["communication_channel"]
+          created_at?: string
+          id?: string
+          is_active?: boolean
+          subject?: string | null
+          trigger?: Database["public"]["Enums"]["communication_trigger"]
+          updated_at?: string
+        }
+        Relationships: []
+      }
+      plans: {
+        Row: {
+          created_at: string
+          cycle: Database["public"]["Enums"]["plan_cycle"]
+          description: string | null
+          display_order: number
+          features: string[]
+          id: string
+          is_active: boolean
+          is_featured: boolean
+          name: string
+          price: number
+          updated_at: string
+        }
+        Insert: {
+          created_at?: string
+          cycle?: Database["public"]["Enums"]["plan_cycle"]
+          description?: string | null
+          display_order?: number
+          features?: string[]
+          id?: string
+          is_active?: boolean
+          is_featured?: boolean
+          name: string
+          price: number
+          updated_at?: string
+        }
+        Update: {
+          created_at?: string
+          cycle?: Database["public"]["Enums"]["plan_cycle"]
+          description?: string | null
+          display_order?: number
+          features?: string[]
+          id?: string
+          is_active?: boolean
+          is_featured?: boolean
+          name?: string
+          price?: number
+          updated_at?: string
+        }
+        Relationships: []
+      }
+      profiles: {
+        Row: {
+          avatar_url: string | null
+          created_at: string
+          email: string
+          full_name: string | null
+          id: string
+          is_active: boolean
+          phone: string | null
+          updated_at: string
+          user_id: string
+        }
+        Insert: {
+          avatar_url?: string | null
+          created_at?: string
+          email: string
+          full_name?: string | null
+          id?: string
+          is_active?: boolean
+          phone?: string | null
+          updated_at?: string
+          user_id: string
+        }
+        Update: {
+          avatar_url?: string | null
+          created_at?: string
+          email?: string
+          full_name?: string | null
+          id?: string
+          is_active?: boolean
+          phone?: string | null
+          updated_at?: string
+          user_id?: string
+        }
+        Relationships: []
+      }
+      subscriptions: {
+        Row: {
+          asaas_subscription_id: string | null
+          canceled_at: string | null
+          created_at: string
+          customer_id: string
+          cycle: Database["public"]["Enums"]["plan_cycle"]
+          due_day: number
+          id: string
+          next_due_date: string | null
+          plan_id: string
+          price: number
+          started_at: string
+          status: Database["public"]["Enums"]["subscription_status"]
+          updated_at: string
+        }
+        Insert: {
+          asaas_subscription_id?: string | null
+          canceled_at?: string | null
+          created_at?: string
+          customer_id: string
+          cycle: Database["public"]["Enums"]["plan_cycle"]
+          due_day: number
+          id?: string
+          next_due_date?: string | null
+          plan_id: string
+          price: number
+          started_at?: string
+          status?: Database["public"]["Enums"]["subscription_status"]
+          updated_at?: string
+        }
+        Update: {
+          asaas_subscription_id?: string | null
+          canceled_at?: string | null
+          created_at?: string
+          customer_id?: string
+          cycle?: Database["public"]["Enums"]["plan_cycle"]
+          due_day?: number
+          id?: string
+          next_due_date?: string | null
+          plan_id?: string
+          price?: number
+          started_at?: string
+          status?: Database["public"]["Enums"]["subscription_status"]
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "subscriptions_customer_id_fkey"
+            columns: ["customer_id"]
+            isOneToOne: false
+            referencedRelation: "customers"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "subscriptions_plan_id_fkey"
+            columns: ["plan_id"]
+            isOneToOne: false
+            referencedRelation: "plans"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      ticket_messages: {
+        Row: {
+          attachments: Json
+          author_id: string | null
+          body: string
+          created_at: string
+          id: string
+          is_from_admin: boolean
+          ticket_id: string
+        }
+        Insert: {
+          attachments?: Json
+          author_id?: string | null
+          body: string
+          created_at?: string
+          id?: string
+          is_from_admin?: boolean
+          ticket_id: string
+        }
+        Update: {
+          attachments?: Json
+          author_id?: string | null
+          body?: string
+          created_at?: string
+          id?: string
+          is_from_admin?: boolean
+          ticket_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "ticket_messages_ticket_id_fkey"
+            columns: ["ticket_id"]
+            isOneToOne: false
+            referencedRelation: "tickets"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      tickets: {
+        Row: {
+          assigned_to: string | null
+          created_at: string
+          created_by: string | null
+          customer_id: string
+          id: string
+          priority: Database["public"]["Enums"]["ticket_priority"]
+          resolved_at: string | null
+          status: Database["public"]["Enums"]["ticket_status"]
+          subject: string
+          updated_at: string
+        }
+        Insert: {
+          assigned_to?: string | null
+          created_at?: string
+          created_by?: string | null
+          customer_id: string
+          id?: string
+          priority?: Database["public"]["Enums"]["ticket_priority"]
+          resolved_at?: string | null
+          status?: Database["public"]["Enums"]["ticket_status"]
+          subject: string
+          updated_at?: string
+        }
+        Update: {
+          assigned_to?: string | null
+          created_at?: string
+          created_by?: string | null
+          customer_id?: string
+          id?: string
+          priority?: Database["public"]["Enums"]["ticket_priority"]
+          resolved_at?: string | null
+          status?: Database["public"]["Enums"]["ticket_status"]
+          subject?: string
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "tickets_customer_id_fkey"
+            columns: ["customer_id"]
+            isOneToOne: false
+            referencedRelation: "customers"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      user_roles: {
+        Row: {
+          created_at: string
+          id: string
+          role: Database["public"]["Enums"]["app_role"]
+          user_id: string
+        }
+        Insert: {
+          created_at?: string
+          id?: string
+          role: Database["public"]["Enums"]["app_role"]
+          user_id: string
+        }
+        Update: {
+          created_at?: string
+          id?: string
+          role?: Database["public"]["Enums"]["app_role"]
+          user_id?: string
+        }
+        Relationships: []
+      }
+      webhook_events: {
+        Row: {
+          created_at: string
+          error: string | null
+          event_type: string
+          external_id: string | null
+          id: string
+          payload: Json
+          processed: boolean
+          processed_at: string | null
+          provider: string
+        }
+        Insert: {
+          created_at?: string
+          error?: string | null
+          event_type: string
+          external_id?: string | null
+          id?: string
+          payload: Json
+          processed?: boolean
+          processed_at?: string | null
+          provider: string
+        }
+        Update: {
+          created_at?: string
+          error?: string | null
+          event_type?: string
+          external_id?: string | null
+          id?: string
+          payload?: Json
+          processed?: boolean
+          processed_at?: string | null
+          provider?: string
+        }
+        Relationships: []
+      }
     }
     Views: {
       [_ in never]: never
     }
     Functions: {
-      [_ in never]: never
+      has_role: {
+        Args: {
+          _role: Database["public"]["Enums"]["app_role"]
+          _user_id: string
+        }
+        Returns: boolean
+      }
     }
     Enums: {
-      [_ in never]: never
+      app_role: "admin"
+      communication_channel: "email" | "whatsapp"
+      communication_status: "queued" | "sent" | "delivered" | "failed"
+      communication_trigger:
+        | "welcome"
+        | "invoice_created"
+        | "invoice_reminder"
+        | "invoice_overdue"
+        | "manual"
+      customer_status: "active" | "inactive" | "overdue" | "canceled"
+      invoice_status: "pending" | "paid" | "overdue" | "canceled" | "refunded"
+      payment_method:
+        | "boleto"
+        | "credit_card"
+        | "pix"
+        | "transfer"
+        | "undefined"
+      plan_cycle: "monthly" | "quarterly" | "semiannual" | "annual"
+      subscription_status: "active" | "paused" | "canceled" | "expired"
+      ticket_priority: "low" | "medium" | "high" | "urgent"
+      ticket_status:
+        | "open"
+        | "in_progress"
+        | "waiting_customer"
+        | "resolved"
+        | "closed"
     }
     CompositeTypes: {
       [_ in never]: never
@@ -150,6 +745,30 @@ export type CompositeTypes<
 
 export const Constants = {
   public: {
-    Enums: {},
+    Enums: {
+      app_role: ["admin"],
+      communication_channel: ["email", "whatsapp"],
+      communication_status: ["queued", "sent", "delivered", "failed"],
+      communication_trigger: [
+        "welcome",
+        "invoice_created",
+        "invoice_reminder",
+        "invoice_overdue",
+        "manual",
+      ],
+      customer_status: ["active", "inactive", "overdue", "canceled"],
+      invoice_status: ["pending", "paid", "overdue", "canceled", "refunded"],
+      payment_method: ["boleto", "credit_card", "pix", "transfer", "undefined"],
+      plan_cycle: ["monthly", "quarterly", "semiannual", "annual"],
+      subscription_status: ["active", "paused", "canceled", "expired"],
+      ticket_priority: ["low", "medium", "high", "urgent"],
+      ticket_status: [
+        "open",
+        "in_progress",
+        "waiting_customer",
+        "resolved",
+        "closed",
+      ],
+    },
   },
 } as const
