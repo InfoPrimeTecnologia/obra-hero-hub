@@ -68,15 +68,38 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   };
 
   useEffect(() => {
+    let mounted = true;
+    const authTimeout = window.setTimeout(() => {
+      if (!mounted) return;
+      setSession(null);
+      setUser(null);
+      setIsAdmin(false);
+      setLoading(false);
+    }, 2500);
+
     const { data: sub } = supabase.auth.onAuthStateChange((_e, s) => {
+      window.clearTimeout(authTimeout);
       setTimeout(() => void applySession(s), 0);
     });
 
-    supabase.auth.getSession().then(({ data: { session: s } }) => {
-      void applySession(s);
-    });
+    supabase.auth
+      .getSession()
+      .then(({ data: { session: s } }) => {
+        if (!mounted) return;
+        window.clearTimeout(authTimeout);
+        void applySession(s);
+      })
+      .catch(() => {
+        if (!mounted) return;
+        window.clearTimeout(authTimeout);
+        void applySession(null);
+      });
 
-    return () => sub.subscription.unsubscribe();
+    return () => {
+      mounted = false;
+      window.clearTimeout(authTimeout);
+      sub.subscription.unsubscribe();
+    };
   }, []);
 
   const signIn = async (email: string, password: string) => {
