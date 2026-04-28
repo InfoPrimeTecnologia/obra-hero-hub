@@ -22,20 +22,31 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   const adminCheckId = useRef(0);
 
   const checkAdmin = async (userId: string) => {
-    for (let attempt = 0; attempt < 3; attempt += 1) {
+    const timeout = new Promise<false>((resolve) => {
+      window.setTimeout(() => resolve(false), 2200);
+    });
+
+    const lookup = (async () => {
+    for (let attempt = 0; attempt < 2; attempt += 1) {
       const { data, error } = await supabase
         .from("user_roles")
         .select("role")
         .eq("user_id", userId)
         .eq("role", "admin")
+        .limit(1)
         .maybeSingle();
 
       if (!error) return !!data;
 
-      await new Promise((resolve) => setTimeout(resolve, 600 * (attempt + 1)));
+      if (attempt === 0) {
+        await new Promise((resolve) => setTimeout(resolve, 350));
+      }
     }
 
     return false;
+    })();
+
+    return Promise.race([lookup, timeout]);
   };
 
   const applySession = async (s: Session | null) => {
@@ -52,23 +63,51 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       return;
     }
 
-    const admin = await checkAdmin(s.user.id);
-    if (adminCheckId.current === checkId) {
-      setIsAdmin(admin);
-      setLoading(false);
+    try {
+      const admin = await checkAdmin(s.user.id);
+      if (adminCheckId.current === checkId) {
+        setIsAdmin(admin);
+      }
+    } finally {
+      if (adminCheckId.current === checkId) {
+        setLoading(false);
+      }
     }
   };
 
   useEffect(() => {
+    let mounted = true;
+    const authTimeout = window.setTimeout(() => {
+      if (!mounted) return;
+      setSession(null);
+      setUser(null);
+      setIsAdmin(false);
+      setLoading(false);
+    }, 2500);
+
     const { data: sub } = supabase.auth.onAuthStateChange((_e, s) => {
+      window.clearTimeout(authTimeout);
       setTimeout(() => void applySession(s), 0);
     });
 
-    supabase.auth.getSession().then(({ data: { session: s } }) => {
-      void applySession(s);
-    });
+    supabase.auth
+      .getSession()
+      .then(({ data: { session: s } }) => {
+        if (!mounted) return;
+        window.clearTimeout(authTimeout);
+        void applySession(s);
+      })
+      .catch(() => {
+        if (!mounted) return;
+        window.clearTimeout(authTimeout);
+        void applySession(null);
+      });
 
-    return () => sub.subscription.unsubscribe();
+    return () => {
+      mounted = false;
+      window.clearTimeout(authTimeout);
+      sub.subscription.unsubscribe();
+    };
   }, []);
 
   const signIn = async (email: string, password: string) => {
