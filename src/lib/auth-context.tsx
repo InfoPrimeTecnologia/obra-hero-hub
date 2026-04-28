@@ -22,6 +22,11 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   const adminCheckId = useRef(0);
 
   const checkAdmin = async (userId: string) => {
+    const timeout = new Promise<false>((resolve) => {
+      window.setTimeout(() => resolve(false), 2200);
+    });
+
+    const lookup = (async () => {
     for (let attempt = 0; attempt < 2; attempt += 1) {
       const { data, error } = await supabase
         .from("user_roles")
@@ -39,6 +44,9 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     }
 
     return false;
+    })();
+
+    return Promise.race([lookup, timeout]);
   };
 
   const applySession = async (s: Session | null) => {
