@@ -22,17 +22,20 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   const adminCheckId = useRef(0);
 
   const checkAdmin = async (userId: string) => {
-    for (let attempt = 0; attempt < 3; attempt += 1) {
+    for (let attempt = 0; attempt < 2; attempt += 1) {
       const { data, error } = await supabase
         .from("user_roles")
         .select("role")
         .eq("user_id", userId)
         .eq("role", "admin")
+        .limit(1)
         .maybeSingle();
 
       if (!error) return !!data;
 
-      await new Promise((resolve) => setTimeout(resolve, 600 * (attempt + 1)));
+      if (attempt === 0) {
+        await new Promise((resolve) => setTimeout(resolve, 350));
+      }
     }
 
     return false;
@@ -52,10 +55,15 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       return;
     }
 
-    const admin = await checkAdmin(s.user.id);
-    if (adminCheckId.current === checkId) {
-      setIsAdmin(admin);
-      setLoading(false);
+    try {
+      const admin = await checkAdmin(s.user.id);
+      if (adminCheckId.current === checkId) {
+        setIsAdmin(admin);
+      }
+    } finally {
+      if (adminCheckId.current === checkId) {
+        setLoading(false);
+      }
     }
   };
 
