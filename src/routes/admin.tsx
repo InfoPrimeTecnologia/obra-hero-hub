@@ -14,26 +14,17 @@ function AdminGate() {
 
   useEffect(() => {
     if (loading) return;
-    if (!user) navigate({ to: "/login" });
-  }, [loading, user, navigate]);
+    if (!user) {
+      navigate({ to: "/login" });
+    } else if (!isAdmin) {
+      navigate({ to: "/app" });
+    }
+  }, [loading, user, isAdmin, navigate]);
 
-  if (loading || !user) {
+  if (loading || !user || !isAdmin) {
     return (
       <div className="flex min-h-screen items-center justify-center">
         <Logo className="h-16 animate-pulse" />
-      </div>
-    );
-  }
-
-  if (!isAdmin) {
-    return (
-      <div className="flex min-h-screen flex-col items-center justify-center gap-4 px-4 text-center">
-        <Logo className="h-16" />
-        <h1 className="text-2xl font-semibold">Acesso restrito</h1>
-        <p className="max-w-md text-muted-foreground">
-          Sua conta não possui permissão de administrador. Entre em contato com o responsável
-          pelo sistema para liberar o acesso.
-        </p>
       </div>
     );
   }
