@@ -78,8 +78,8 @@ function LoginPage() {
       toast.error("As senhas não conferem");
       return;
     }
-    if (signupPassword.length < 6) {
-      toast.error("A senha deve ter pelo menos 6 caracteres");
+    if (!passwordChecks.length || !passwordChecks.upper || !passwordChecks.lower || !passwordChecks.number) {
+      toast.error("A senha não atende aos requisitos mínimos");
       return;
     }
     setLoading(true);
