@@ -30,12 +30,40 @@ function LoginPage() {
   const [signupPassword, setSignupPassword] = useState("");
   const [signupConfirm, setSignupConfirm] = useState("");
 
+  const [needsConfirm, setNeedsConfirm] = useState(false);
+  const [resending, setResending] = useState(false);
+
+  const handleResendConfirmation = async () => {
+    if (!loginEmail) {
+      toast.error("Informe seu e-mail acima");
+      return;
+    }
+    setResending(true);
+    const { supabase } = await import("@/integrations/supabase/client");
+    const { error } = await supabase.auth.resend({
+      type: "signup",
+      email: loginEmail,
+      options: { emailRedirectTo: `${window.location.origin}/` },
+    });
+    setResending(false);
+    if (error) {
+      toast.error("Não foi possível reenviar", { description: error.message });
+    } else {
+      toast.success("E-mail de confirmação reenviado!");
+    }
+  };
+
   const handleLogin = async (e: FormEvent) => {
     e.preventDefault();
     setLoading(true);
+    setNeedsConfirm(false);
     const { error } = await signIn(loginEmail, loginPassword);
     setLoading(false);
     if (error) {
+      const msg = error.message?.toLowerCase() ?? "";
+      if (msg.includes("not confirmed") || msg.includes("confirm")) {
+        setNeedsConfirm(true);
+      }
       toast.error("Falha no login", { description: error.message });
     } else {
       toast.success("Bem-vindo de volta!");
