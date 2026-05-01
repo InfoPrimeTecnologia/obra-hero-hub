@@ -1,7 +1,7 @@
 import { Link, Outlet, useLocation, useNavigate } from "@tanstack/react-router";
 import {
   LayoutDashboard,
-  Users,
+  Building2,
   Package,
   Receipt,
   LifeBuoy,
@@ -15,7 +15,7 @@ import { cn } from "@/lib/utils";
 
 const nav = [
   { to: "/admin", label: "Dashboard", icon: LayoutDashboard, exact: true },
-  { to: "/admin/clientes", label: "Clientes", icon: Users },
+  { to: "/admin/empresas", label: "Empresas", icon: Building2 },
   { to: "/admin/planos", label: "Planos", icon: Package },
   { to: "/admin/faturas", label: "Faturas", icon: Receipt },
   { to: "/admin/tickets", label: "Tickets", icon: LifeBuoy },
