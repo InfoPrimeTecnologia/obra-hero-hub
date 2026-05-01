@@ -30,12 +30,49 @@ function LoginPage() {
   const [signupPassword, setSignupPassword] = useState("");
   const [signupConfirm, setSignupConfirm] = useState("");
 
+  const passwordChecks = {
+    length: signupPassword.length >= 8,
+    upper: /[A-Z]/.test(signupPassword),
+    lower: /[a-z]/.test(signupPassword),
+    number: /[0-9]/.test(signupPassword),
+    special: /[^A-Za-z0-9]/.test(signupPassword),
+    match: signupPassword.length > 0 && signupPassword === signupConfirm,
+  };
+
+  const [needsConfirm, setNeedsConfirm] = useState(false);
+  const [resending, setResending] = useState(false);
+
+  const handleResendConfirmation = async () => {
+    if (!loginEmail) {
+      toast.error("Informe seu e-mail acima");
+      return;
+    }
+    setResending(true);
+    const { supabase } = await import("@/integrations/supabase/client");
+    const { error } = await supabase.auth.resend({
+      type: "signup",
+      email: loginEmail,
+      options: { emailRedirectTo: `${window.location.origin}/` },
+    });
+    setResending(false);
+    if (error) {
+      toast.error("Não foi possível reenviar", { description: error.message });
+    } else {
+      toast.success("E-mail de confirmação reenviado!");
+    }
+  };
+
   const handleLogin = async (e: FormEvent) => {
     e.preventDefault();
     setLoading(true);
+    setNeedsConfirm(false);
     const { error } = await signIn(loginEmail, loginPassword);
     setLoading(false);
     if (error) {
+      const msg = error.message?.toLowerCase() ?? "";
+      if (msg.includes("not confirmed") || msg.includes("confirm")) {
+        setNeedsConfirm(true);
+      }
       toast.error("Falha no login", { description: error.message });
     } else {
       toast.success("Bem-vindo de volta!");
@@ -50,8 +87,8 @@ function LoginPage() {
       toast.error("As senhas não conferem");
       return;
     }
-    if (signupPassword.length < 6) {
-      toast.error("A senha deve ter pelo menos 6 caracteres");
+    if (!passwordChecks.length || !passwordChecks.upper || !passwordChecks.lower || !passwordChecks.number) {
+      toast.error("A senha não atende aos requisitos mínimos");
       return;
     }
     setLoading(true);
@@ -135,6 +172,23 @@ function LoginPage() {
                     <Button type="submit" className="w-full" disabled={loading}>
                       {loading ? "Entrando..." : "Entrar"}
                     </Button>
+                    {needsConfirm && (
+                      <div className="rounded-md border border-border bg-muted/40 p-3 text-sm">
+                        <p className="mb-2 text-muted-foreground">
+                          Seu e-mail ainda não foi confirmado. Verifique sua caixa de entrada ou reenvie o e-mail de confirmação.
+                        </p>
+                        <Button
+                          type="button"
+                          variant="outline"
+                          size="sm"
+                          className="w-full"
+                          onClick={handleResendConfirmation}
+                          disabled={resending}
+                        >
+                          {resending ? "Reenviando..." : "Reenviar e-mail de confirmação"}
+                        </Button>
+                      </div>
+                    )}
                   </form>
                 </TabsContent>
                 <TabsContent value="signup">
@@ -183,10 +237,26 @@ function LoginPage() {
                         id="signup-password"
                         type="password"
                         required
-                        minLength={6}
+                        minLength={8}
                         value={signupPassword}
                         onChange={(e) => setSignupPassword(e.target.value)}
                       />
+                      <ul className="space-y-1 pt-1 text-xs">
+                        {[
+                          { ok: passwordChecks.length, label: "Pelo menos 8 caracteres" },
+                          { ok: passwordChecks.upper, label: "Uma letra maiúscula (A-Z)" },
+                          { ok: passwordChecks.lower, label: "Uma letra minúscula (a-z)" },
+                          { ok: passwordChecks.number, label: "Um número (0-9)" },
+                          { ok: passwordChecks.special, label: "Um caractere especial (recomendado)" },
+                        ].map((req) => (
+                          <li
+                            key={req.label}
+                            className={req.ok ? "text-primary" : "text-muted-foreground"}
+                          >
+                            {req.ok ? "✓" : "○"} {req.label}
+                          </li>
+                        ))}
+                      </ul>
                     </div>
                     <div className="space-y-2">
                       <Label htmlFor="signup-confirm">Confirmar Senha *</Label>
