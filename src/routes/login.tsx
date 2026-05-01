@@ -1,4 +1,4 @@
-import { createFileRoute, useNavigate } from "@tanstack/react-router";
+import { createFileRoute, useNavigate, Link } from "@tanstack/react-router";
 import { useState, type FormEvent } from "react";
 import { Logo } from "@/components/Logo";
 import loginHero from "@/assets/login-construction.jpg";
@@ -18,13 +18,17 @@ function LoginPage() {
   const { signIn, signUp } = useAuth();
   const navigate = useNavigate();
   const [loading, setLoading] = useState(false);
+  const [tab, setTab] = useState<"login" | "signup">("login");
 
   const [loginEmail, setLoginEmail] = useState("");
   const [loginPassword, setLoginPassword] = useState("");
 
   const [signupName, setSignupName] = useState("");
+  const [signupCompany, setSignupCompany] = useState("");
   const [signupEmail, setSignupEmail] = useState("");
+  const [signupCpfCnpj, setSignupCpfCnpj] = useState("");
   const [signupPassword, setSignupPassword] = useState("");
+  const [signupConfirm, setSignupConfirm] = useState("");
 
   const handleLogin = async (e: FormEvent) => {
     e.preventDefault();
@@ -41,13 +45,28 @@ function LoginPage() {
 
   const handleSignup = async (e: FormEvent) => {
     e.preventDefault();
+    if (signupPassword !== signupConfirm) {
+      toast.error("As senhas não conferem");
+      return;
+    }
+    if (signupPassword.length < 6) {
+      toast.error("A senha deve ter pelo menos 6 caracteres");
+      return;
+    }
     setLoading(true);
-    const { error } = await signUp(signupEmail, signupPassword, signupName);
+    const { error } = await signUp({
+      email: signupEmail,
+      password: signupPassword,
+      fullName: signupName,
+      companyName: signupCompany || undefined,
+      cpfCnpj: signupCpfCnpj || undefined,
+    });
     setLoading(false);
     if (error) {
       toast.error("Falha no cadastro", { description: error.message });
     } else {
       toast.success("Conta criada! Verifique seu e-mail para confirmar.");
+      setTab("login");
     }
   };
 
@@ -74,91 +93,138 @@ function LoginPage() {
         </div>
       </div>
 
-      <div className="flex items-center justify-center bg-gradient-to-br from-primary/5 via-background to-accent/10 p-4">
+      <div className="flex items-center justify-center bg-gradient-to-br from-primary/5 via-background to-accent/10 p-4 py-8">
         <div className="w-full max-w-md space-y-6">
           <div className="flex justify-center">
             <Logo className="h-24" />
           </div>
           <Card className="border-border shadow-lg">
-          <CardHeader>
-            <CardTitle>Painel administrativo</CardTitle>
-            <CardDescription>Acesse sua conta para gerenciar o Mestre 360</CardDescription>
-          </CardHeader>
-          <CardContent>
-            <Tabs defaultValue="login">
-              <TabsList className="grid w-full grid-cols-2">
-                <TabsTrigger value="login">Entrar</TabsTrigger>
-                <TabsTrigger value="signup">Criar conta</TabsTrigger>
-              </TabsList>
-              <TabsContent value="login">
-                <form onSubmit={handleLogin} className="space-y-4 pt-4">
-                  <div className="space-y-2">
-                    <Label htmlFor="login-email">E-mail</Label>
-                    <Input
-                      id="login-email"
-                      type="email"
-                      required
-                      value={loginEmail}
-                      onChange={(e) => setLoginEmail(e.target.value)}
-                    />
-                  </div>
-                  <div className="space-y-2">
-                    <Label htmlFor="login-password">Senha</Label>
-                    <Input
-                      id="login-password"
-                      type="password"
-                      required
-                      value={loginPassword}
-                      onChange={(e) => setLoginPassword(e.target.value)}
-                    />
-                  </div>
-                  <Button type="submit" className="w-full" disabled={loading}>
-                    {loading ? "Entrando..." : "Entrar"}
-                  </Button>
-                </form>
-              </TabsContent>
-              <TabsContent value="signup">
-                <form onSubmit={handleSignup} className="space-y-4 pt-4">
-                  <div className="space-y-2">
-                    <Label htmlFor="signup-name">Nome completo</Label>
-                    <Input
-                      id="signup-name"
-                      required
-                      value={signupName}
-                      onChange={(e) => setSignupName(e.target.value)}
-                    />
-                  </div>
-                  <div className="space-y-2">
-                    <Label htmlFor="signup-email">E-mail</Label>
-                    <Input
-                      id="signup-email"
-                      type="email"
-                      required
-                      value={signupEmail}
-                      onChange={(e) => setSignupEmail(e.target.value)}
-                    />
-                  </div>
-                  <div className="space-y-2">
-                    <Label htmlFor="signup-password">Senha</Label>
-                    <Input
-                      id="signup-password"
-                      type="password"
-                      required
-                      minLength={6}
-                      value={signupPassword}
-                      onChange={(e) => setSignupPassword(e.target.value)}
-                    />
-                  </div>
-                  <Button type="submit" className="w-full" disabled={loading}>
-                    {loading ? "Criando..." : "Criar conta"}
-                  </Button>
-                  <p className="text-center text-xs text-muted-foreground">
-                    Apenas e-mails pré-aprovados podem acessar o painel.
-                  </p>
-                </form>
-              </TabsContent>
-            </Tabs>
-          </CardContent>
+            <CardHeader>
+              <CardTitle>Bem-vindo ao Mestre 360</CardTitle>
+              <CardDescription>Acesse sua conta ou cadastre sua empresa</CardDescription>
+            </CardHeader>
+            <CardContent>
+              <Tabs value={tab} onValueChange={(v) => setTab(v as "login" | "signup")}>
+                <TabsList className="grid w-full grid-cols-2">
+                  <TabsTrigger value="login">Entrar</TabsTrigger>
+                  <TabsTrigger value="signup">Criar conta</TabsTrigger>
+                </TabsList>
+                <TabsContent value="login">
+                  <form onSubmit={handleLogin} className="space-y-4 pt-4">
+                    <div className="space-y-2">
+                      <Label htmlFor="login-email">E-mail</Label>
+                      <Input
+                        id="login-email"
+                        type="email"
+                        required
+                        value={loginEmail}
+                        onChange={(e) => setLoginEmail(e.target.value)}
+                      />
+                    </div>
+                    <div className="space-y-2">
+                      <Label htmlFor="login-password">Senha</Label>
+                      <Input
+                        id="login-password"
+                        type="password"
+                        required
+                        value={loginPassword}
+                        onChange={(e) => setLoginPassword(e.target.value)}
+                      />
+                    </div>
+                    <Button type="submit" className="w-full" disabled={loading}>
+                      {loading ? "Entrando..." : "Entrar"}
+                    </Button>
+                    <p className="text-center text-xs text-muted-foreground">
+                      Não tem conta?{" "}
+                      <button
+                        type="button"
+                        onClick={() => setTab("signup")}
+                        className="font-medium text-primary hover:underline"
+                      >
+                        Cadastrar
+                      </button>
+                    </p>
+                  </form>
+                </TabsContent>
+                <TabsContent value="signup">
+                  <form onSubmit={handleSignup} className="space-y-4 pt-4">
+                    <div className="space-y-2">
+                      <Label htmlFor="signup-name">Nome *</Label>
+                      <Input
+                        id="signup-name"
+                        required
+                        value={signupName}
+                        onChange={(e) => setSignupName(e.target.value)}
+                      />
+                    </div>
+                    <div className="space-y-2">
+                      <Label htmlFor="signup-company">Nome da Empresa</Label>
+                      <Input
+                        id="signup-company"
+                        value={signupCompany}
+                        onChange={(e) => setSignupCompany(e.target.value)}
+                      />
+                    </div>
+                    <div className="space-y-2">
+                      <Label htmlFor="signup-email">E-mail *</Label>
+                      <Input
+                        id="signup-email"
+                        type="email"
+                        required
+                        value={signupEmail}
+                        onChange={(e) => setSignupEmail(e.target.value)}
+                      />
+                      <p className="text-xs text-muted-foreground">
+                        Este será o e-mail de acesso (login) do administrador principal da conta.
+                      </p>
+                    </div>
+                    <div className="space-y-2">
+                      <Label htmlFor="signup-cpf">CPF / CNPJ</Label>
+                      <Input
+                        id="signup-cpf"
+                        value={signupCpfCnpj}
+                        onChange={(e) => setSignupCpfCnpj(e.target.value)}
+                      />
+                    </div>
+                    <div className="space-y-2">
+                      <Label htmlFor="signup-password">Senha *</Label>
+                      <Input
+                        id="signup-password"
+                        type="password"
+                        required
+                        minLength={6}
+                        value={signupPassword}
+                        onChange={(e) => setSignupPassword(e.target.value)}
+                      />
+                    </div>
+                    <div className="space-y-2">
+                      <Label htmlFor="signup-confirm">Confirmar Senha *</Label>
+                      <Input
+                        id="signup-confirm"
+                        type="password"
+                        required
+                        minLength={6}
+                        value={signupConfirm}
+                        onChange={(e) => setSignupConfirm(e.target.value)}
+                      />
+                    </div>
+                    <Button type="submit" className="w-full" disabled={loading}>
+                      {loading ? "Cadastrando..." : "Cadastrar"}
+                    </Button>
+                    <p className="text-center text-xs text-muted-foreground">
+                      Já tem uma conta?{" "}
+                      <button
+                        type="button"
+                        onClick={() => setTab("login")}
+                        className="font-medium text-primary hover:underline"
+                      >
+                        Entrar
+                      </button>
+                    </p>
+                  </form>
+                </TabsContent>
+              </Tabs>
+            </CardContent>
           </Card>
         </div>
       </div>
