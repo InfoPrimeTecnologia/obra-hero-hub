@@ -237,10 +237,26 @@ function LoginPage() {
                         id="signup-password"
                         type="password"
                         required
-                        minLength={6}
+                        minLength={8}
                         value={signupPassword}
                         onChange={(e) => setSignupPassword(e.target.value)}
                       />
+                      <ul className="space-y-1 pt-1 text-xs">
+                        {[
+                          { ok: passwordChecks.length, label: "Pelo menos 8 caracteres" },
+                          { ok: passwordChecks.upper, label: "Uma letra maiúscula (A-Z)" },
+                          { ok: passwordChecks.lower, label: "Uma letra minúscula (a-z)" },
+                          { ok: passwordChecks.number, label: "Um número (0-9)" },
+                          { ok: passwordChecks.special, label: "Um caractere especial (recomendado)" },
+                        ].map((req) => (
+                          <li
+                            key={req.label}
+                            className={req.ok ? "text-primary" : "text-muted-foreground"}
+                          >
+                            {req.ok ? "✓" : "○"} {req.label}
+                          </li>
+                        ))}
+                      </ul>
                     </div>
                     <div className="space-y-2">
                       <Label htmlFor="signup-confirm">Confirmar Senha *</Label>
