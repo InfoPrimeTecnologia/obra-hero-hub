@@ -106,16 +106,6 @@ function DashboardPage() {
           })}
         </div>
 
-        <Card>
-          <CardHeader>
-            <CardTitle>Bem-vindo ao Mestre 360</CardTitle>
-          </CardHeader>
-          <CardContent className="text-sm text-muted-foreground">
-            Os módulos de Clientes, Planos, Faturas, Tickets e Configurações já estão acessíveis
-            pelo menu lateral. As métricas serão preenchidas conforme você cadastrar clientes e
-            ativar a integração com o ASAAS.
-          </CardContent>
-        </Card>
       </div>
     </div>
   );

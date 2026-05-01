@@ -39,6 +39,7 @@ function LoginPage() {
       toast.error("Falha no login", { description: error.message });
     } else {
       toast.success("Bem-vindo de volta!");
+      // O redirecionamento por papel é feito na rota /admin e /app
       navigate({ to: "/admin" });
     }
   };
@@ -134,16 +135,6 @@ function LoginPage() {
                     <Button type="submit" className="w-full" disabled={loading}>
                       {loading ? "Entrando..." : "Entrar"}
                     </Button>
-                    <p className="text-center text-xs text-muted-foreground">
-                      Não tem conta?{" "}
-                      <button
-                        type="button"
-                        onClick={() => setTab("signup")}
-                        className="font-medium text-primary hover:underline"
-                      >
-                        Cadastrar
-                      </button>
-                    </p>
                   </form>
                 </TabsContent>
                 <TabsContent value="signup">

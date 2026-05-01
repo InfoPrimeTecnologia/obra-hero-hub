@@ -1,27 +1,25 @@
 import { createFileRoute, useNavigate } from "@tanstack/react-router";
 import { useEffect } from "react";
-import { AdminLayout } from "@/components/admin/AdminLayout";
+import { AppLayout } from "@/components/app/AppLayout";
 import { useAuth } from "@/lib/auth-context";
 import { Logo } from "@/components/Logo";
+import { ObraProvider } from "@/lib/obra-context";
 
-export const Route = createFileRoute("/admin")({
-  component: AdminGate,
+export const Route = createFileRoute("/app")({
+  component: AppGate,
 });
 
-function AdminGate() {
+function AppGate() {
   const { loading, user, isAdmin } = useAuth();
   const navigate = useNavigate();
 
   useEffect(() => {
     if (loading) return;
-    if (!user) {
-      navigate({ to: "/login" });
-    } else if (!isAdmin) {
-      navigate({ to: "/app" });
-    }
+    if (!user) navigate({ to: "/login" });
+    else if (isAdmin) navigate({ to: "/admin" });
   }, [loading, user, isAdmin, navigate]);
 
-  if (loading || !user || !isAdmin) {
+  if (loading || !user || isAdmin) {
     return (
       <div className="flex min-h-screen items-center justify-center">
         <Logo className="h-16 animate-pulse" />
@@ -29,5 +27,9 @@ function AdminGate() {
     );
   }
 
-  return <AdminLayout />;
+  return (
+    <ObraProvider>
+      <AppLayout />
+    </ObraProvider>
+  );
 }
