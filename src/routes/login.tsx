@@ -179,23 +179,23 @@ function LoginPage() {
                     <Button type="submit" className="w-full" disabled={loading}>
                       {loading ? "Entrando..." : "Entrar"}
                     </Button>
-                    <div className="rounded-md border border-border bg-muted/40 p-3 text-sm">
-                      <p className="mb-2 text-muted-foreground">
-                        {needsConfirm
-                          ? "Seu e-mail ainda não foi confirmado. Verifique sua caixa de entrada ou reenvie o e-mail de confirmação."
-                          : "Já se cadastrou e ainda não confirmou o e-mail? Reenvie o e-mail de confirmação."}
-                      </p>
-                      <Button
-                        type="button"
-                        variant="outline"
-                        size="sm"
-                        className="w-full"
-                        onClick={handleResendConfirmation}
-                        disabled={resending || !loginEmail}
-                      >
-                        {resending ? "Reenviando..." : "Reenviar e-mail de confirmação"}
-                      </Button>
-                    </div>
+                    {needsConfirm && (
+                      <div className="rounded-md border border-border bg-muted/40 p-3 text-sm">
+                        <p className="mb-2 text-muted-foreground">
+                          Seu e-mail ainda não foi confirmado. Verifique sua caixa de entrada ou reenvie o e-mail de confirmação.
+                        </p>
+                        <Button
+                          type="button"
+                          variant="outline"
+                          size="sm"
+                          className="w-full"
+                          onClick={handleResendConfirmation}
+                          disabled={resending || !loginEmail}
+                        >
+                          {resending ? "Reenviando..." : "Reenviar e-mail de confirmação"}
+                        </Button>
+                      </div>
+                    )}
                   </form>
                 </TabsContent>
                 <TabsContent value="signup">
