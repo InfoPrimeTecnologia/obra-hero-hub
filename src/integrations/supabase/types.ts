@@ -299,6 +299,173 @@ export type Database = {
         }
         Relationships: []
       }
+      obra_diario_fotos: {
+        Row: {
+          caption: string | null
+          created_at: string
+          created_by: string | null
+          customer_id: string
+          diario_id: string
+          id: string
+          obra_id: string
+          storage_path: string
+        }
+        Insert: {
+          caption?: string | null
+          created_at?: string
+          created_by?: string | null
+          customer_id: string
+          diario_id: string
+          id?: string
+          obra_id: string
+          storage_path: string
+        }
+        Update: {
+          caption?: string | null
+          created_at?: string
+          created_by?: string | null
+          customer_id?: string
+          diario_id?: string
+          id?: string
+          obra_id?: string
+          storage_path?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "obra_diario_fotos_diario_id_fkey"
+            columns: ["diario_id"]
+            isOneToOne: false
+            referencedRelation: "obra_diarios"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "obra_diario_fotos_obra_id_fkey"
+            columns: ["obra_id"]
+            isOneToOne: false
+            referencedRelation: "obras"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      obra_diarios: {
+        Row: {
+          activities: string | null
+          created_at: string
+          created_by: string | null
+          customer_id: string
+          diary_date: string
+          id: string
+          notes: string | null
+          obra_id: string
+          updated_at: string
+          weather: string | null
+          workforce: string | null
+        }
+        Insert: {
+          activities?: string | null
+          created_at?: string
+          created_by?: string | null
+          customer_id: string
+          diary_date?: string
+          id?: string
+          notes?: string | null
+          obra_id: string
+          updated_at?: string
+          weather?: string | null
+          workforce?: string | null
+        }
+        Update: {
+          activities?: string | null
+          created_at?: string
+          created_by?: string | null
+          customer_id?: string
+          diary_date?: string
+          id?: string
+          notes?: string | null
+          obra_id?: string
+          updated_at?: string
+          weather?: string | null
+          workforce?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "obra_diarios_obra_id_fkey"
+            columns: ["obra_id"]
+            isOneToOne: false
+            referencedRelation: "obras"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      obras: {
+        Row: {
+          address_city: string | null
+          address_complement: string | null
+          address_neighborhood: string | null
+          address_number: string | null
+          address_state: string | null
+          address_street: string | null
+          address_zip: string | null
+          contact_email: string | null
+          contact_name: string | null
+          contact_whatsapp: string | null
+          created_at: string
+          created_by: string | null
+          customer_id: string
+          description: string | null
+          expected_end_date: string | null
+          id: string
+          name: string
+          start_date: string | null
+          status: string
+          updated_at: string
+        }
+        Insert: {
+          address_city?: string | null
+          address_complement?: string | null
+          address_neighborhood?: string | null
+          address_number?: string | null
+          address_state?: string | null
+          address_street?: string | null
+          address_zip?: string | null
+          contact_email?: string | null
+          contact_name?: string | null
+          contact_whatsapp?: string | null
+          created_at?: string
+          created_by?: string | null
+          customer_id: string
+          description?: string | null
+          expected_end_date?: string | null
+          id?: string
+          name: string
+          start_date?: string | null
+          status?: string
+          updated_at?: string
+        }
+        Update: {
+          address_city?: string | null
+          address_complement?: string | null
+          address_neighborhood?: string | null
+          address_number?: string | null
+          address_state?: string | null
+          address_street?: string | null
+          address_zip?: string | null
+          contact_email?: string | null
+          contact_name?: string | null
+          contact_whatsapp?: string | null
+          created_at?: string
+          created_by?: string | null
+          customer_id?: string
+          description?: string | null
+          expected_end_date?: string | null
+          id?: string
+          name?: string
+          start_date?: string | null
+          status?: string
+          updated_at?: string
+        }
+        Relationships: []
+      }
       plans: {
         Row: {
           created_at: string
@@ -587,6 +754,7 @@ export type Database = {
       [_ in never]: never
     }
     Functions: {
+      current_user_customer_id: { Args: never; Returns: string }
       has_role: {
         Args: {
           _role: Database["public"]["Enums"]["app_role"]
