@@ -593,7 +593,7 @@ export type Database = {
       }
     }
     Enums: {
-      app_role: "admin"
+      app_role: "admin" | "company_owner"
       communication_channel: "email" | "whatsapp"
       communication_status: "queued" | "sent" | "delivered" | "failed"
       communication_trigger:
@@ -746,7 +746,7 @@ export type CompositeTypes<
 export const Constants = {
   public: {
     Enums: {
-      app_role: ["admin"],
+      app_role: ["admin", "company_owner"],
       communication_channel: ["email", "whatsapp"],
       communication_status: ["queued", "sent", "delivered", "failed"],
       communication_trigger: [
