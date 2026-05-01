@@ -30,6 +30,15 @@ function LoginPage() {
   const [signupPassword, setSignupPassword] = useState("");
   const [signupConfirm, setSignupConfirm] = useState("");
 
+  const passwordChecks = {
+    length: signupPassword.length >= 8,
+    upper: /[A-Z]/.test(signupPassword),
+    lower: /[a-z]/.test(signupPassword),
+    number: /[0-9]/.test(signupPassword),
+    special: /[^A-Za-z0-9]/.test(signupPassword),
+    match: signupPassword.length > 0 && signupPassword === signupConfirm,
+  };
+
   const [needsConfirm, setNeedsConfirm] = useState(false);
   const [resending, setResending] = useState(false);
 
