@@ -69,8 +69,15 @@ function LoginPage() {
     const { error } = await signIn(loginEmail, loginPassword);
     setLoading(false);
     if (error) {
-      const msg = error.message?.toLowerCase() ?? "";
-      if (msg.includes("not confirmed") || msg.includes("confirm")) {
+      const msg = (error.message ?? "").toLowerCase();
+      const code = ((error as { code?: string }).code ?? "").toLowerCase();
+      if (
+        code.includes("email_not_confirmed") ||
+        msg.includes("not confirmed") ||
+        msg.includes("não confirmado") ||
+        msg.includes("nao confirmado") ||
+        msg.includes("confirm")
+      ) {
         setNeedsConfirm(true);
       }
       toast.error("Falha no login", { description: error.message });
