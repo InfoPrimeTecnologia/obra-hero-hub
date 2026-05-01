@@ -8,8 +8,16 @@ type AuthState = {
   isAdmin: boolean;
   loading: boolean;
   signIn: (email: string, password: string) => Promise<{ error: Error | null }>;
-  signUp: (email: string, password: string, fullName: string) => Promise<{ error: Error | null }>;
+  signUp: (input: SignUpInput) => Promise<{ error: Error | null }>;
   signOut: () => Promise<void>;
+};
+
+export type SignUpInput = {
+  email: string;
+  password: string;
+  fullName: string;
+  companyName?: string;
+  cpfCnpj?: string;
 };
 
 const AuthContext = createContext<AuthState | undefined>(undefined);
@@ -115,13 +123,17 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     return { error };
   };
 
-  const signUp = async (email: string, password: string, fullName: string) => {
+  const signUp = async (input: SignUpInput) => {
     const { error } = await supabase.auth.signUp({
-      email,
-      password,
+      email: input.email,
+      password: input.password,
       options: {
         emailRedirectTo: `${window.location.origin}/`,
-        data: { full_name: fullName },
+        data: {
+          full_name: input.fullName,
+          company_name: input.companyName ?? null,
+          cpf_cnpj: input.cpfCnpj ?? null,
+        },
       },
     });
     return { error };

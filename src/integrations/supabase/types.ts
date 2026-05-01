@@ -110,6 +110,7 @@ export type Database = {
           id: string
           name: string
           notes: string | null
+          owner_user_id: string | null
           phone: string | null
           status: Database["public"]["Enums"]["customer_status"]
           updated_at: string
@@ -132,6 +133,7 @@ export type Database = {
           id?: string
           name: string
           notes?: string | null
+          owner_user_id?: string | null
           phone?: string | null
           status?: Database["public"]["Enums"]["customer_status"]
           updated_at?: string
@@ -154,6 +156,7 @@ export type Database = {
           id?: string
           name?: string
           notes?: string | null
+          owner_user_id?: string | null
           phone?: string | null
           status?: Database["public"]["Enums"]["customer_status"]
           updated_at?: string
@@ -593,7 +596,7 @@ export type Database = {
       }
     }
     Enums: {
-      app_role: "admin"
+      app_role: "admin" | "company_owner"
       communication_channel: "email" | "whatsapp"
       communication_status: "queued" | "sent" | "delivered" | "failed"
       communication_trigger:
@@ -746,7 +749,7 @@ export type CompositeTypes<
 export const Constants = {
   public: {
     Enums: {
-      app_role: ["admin"],
+      app_role: ["admin", "company_owner"],
       communication_channel: ["email", "whatsapp"],
       communication_status: ["queued", "sent", "delivered", "failed"],
       communication_trigger: [

@@ -16,8 +16,8 @@ import { Route as AdminIndexRouteImport } from './routes/admin.index'
 import { Route as AdminTicketsRouteImport } from './routes/admin.tickets'
 import { Route as AdminPlanosRouteImport } from './routes/admin.planos'
 import { Route as AdminFaturasRouteImport } from './routes/admin.faturas'
+import { Route as AdminEmpresasRouteImport } from './routes/admin.empresas'
 import { Route as AdminConfiguracoesRouteImport } from './routes/admin.configuracoes'
-import { Route as AdminClientesRouteImport } from './routes/admin.clientes'
 
 const LoginRoute = LoginRouteImport.update({
   id: '/login',
@@ -54,14 +54,14 @@ const AdminFaturasRoute = AdminFaturasRouteImport.update({
   path: '/faturas',
   getParentRoute: () => AdminRoute,
 } as any)
+const AdminEmpresasRoute = AdminEmpresasRouteImport.update({
+  id: '/empresas',
+  path: '/empresas',
+  getParentRoute: () => AdminRoute,
+} as any)
 const AdminConfiguracoesRoute = AdminConfiguracoesRouteImport.update({
   id: '/configuracoes',
   path: '/configuracoes',
-  getParentRoute: () => AdminRoute,
-} as any)
-const AdminClientesRoute = AdminClientesRouteImport.update({
-  id: '/clientes',
-  path: '/clientes',
   getParentRoute: () => AdminRoute,
 } as any)
 
@@ -69,8 +69,8 @@ export interface FileRoutesByFullPath {
   '/': typeof IndexRoute
   '/admin': typeof AdminRouteWithChildren
   '/login': typeof LoginRoute
-  '/admin/clientes': typeof AdminClientesRoute
   '/admin/configuracoes': typeof AdminConfiguracoesRoute
+  '/admin/empresas': typeof AdminEmpresasRoute
   '/admin/faturas': typeof AdminFaturasRoute
   '/admin/planos': typeof AdminPlanosRoute
   '/admin/tickets': typeof AdminTicketsRoute
@@ -79,8 +79,8 @@ export interface FileRoutesByFullPath {
 export interface FileRoutesByTo {
   '/': typeof IndexRoute
   '/login': typeof LoginRoute
-  '/admin/clientes': typeof AdminClientesRoute
   '/admin/configuracoes': typeof AdminConfiguracoesRoute
+  '/admin/empresas': typeof AdminEmpresasRoute
   '/admin/faturas': typeof AdminFaturasRoute
   '/admin/planos': typeof AdminPlanosRoute
   '/admin/tickets': typeof AdminTicketsRoute
@@ -91,8 +91,8 @@ export interface FileRoutesById {
   '/': typeof IndexRoute
   '/admin': typeof AdminRouteWithChildren
   '/login': typeof LoginRoute
-  '/admin/clientes': typeof AdminClientesRoute
   '/admin/configuracoes': typeof AdminConfiguracoesRoute
+  '/admin/empresas': typeof AdminEmpresasRoute
   '/admin/faturas': typeof AdminFaturasRoute
   '/admin/planos': typeof AdminPlanosRoute
   '/admin/tickets': typeof AdminTicketsRoute
@@ -104,8 +104,8 @@ export interface FileRouteTypes {
     | '/'
     | '/admin'
     | '/login'
-    | '/admin/clientes'
     | '/admin/configuracoes'
+    | '/admin/empresas'
     | '/admin/faturas'
     | '/admin/planos'
     | '/admin/tickets'
@@ -114,8 +114,8 @@ export interface FileRouteTypes {
   to:
     | '/'
     | '/login'
-    | '/admin/clientes'
     | '/admin/configuracoes'
+    | '/admin/empresas'
     | '/admin/faturas'
     | '/admin/planos'
     | '/admin/tickets'
@@ -125,8 +125,8 @@ export interface FileRouteTypes {
     | '/'
     | '/admin'
     | '/login'
-    | '/admin/clientes'
     | '/admin/configuracoes'
+    | '/admin/empresas'
     | '/admin/faturas'
     | '/admin/planos'
     | '/admin/tickets'
@@ -190,6 +190,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AdminFaturasRouteImport
       parentRoute: typeof AdminRoute
     }
+    '/admin/empresas': {
+      id: '/admin/empresas'
+      path: '/empresas'
+      fullPath: '/admin/empresas'
+      preLoaderRoute: typeof AdminEmpresasRouteImport
+      parentRoute: typeof AdminRoute
+    }
     '/admin/configuracoes': {
       id: '/admin/configuracoes'
       path: '/configuracoes'
@@ -197,19 +204,12 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AdminConfiguracoesRouteImport
       parentRoute: typeof AdminRoute
     }
-    '/admin/clientes': {
-      id: '/admin/clientes'
-      path: '/clientes'
-      fullPath: '/admin/clientes'
-      preLoaderRoute: typeof AdminClientesRouteImport
-      parentRoute: typeof AdminRoute
-    }
   }
 }
 
 interface AdminRouteChildren {
-  AdminClientesRoute: typeof AdminClientesRoute
   AdminConfiguracoesRoute: typeof AdminConfiguracoesRoute
+  AdminEmpresasRoute: typeof AdminEmpresasRoute
   AdminFaturasRoute: typeof AdminFaturasRoute
   AdminPlanosRoute: typeof AdminPlanosRoute
   AdminTicketsRoute: typeof AdminTicketsRoute
@@ -217,8 +217,8 @@ interface AdminRouteChildren {
 }
 
 const AdminRouteChildren: AdminRouteChildren = {
-  AdminClientesRoute: AdminClientesRoute,
   AdminConfiguracoesRoute: AdminConfiguracoesRoute,
+  AdminEmpresasRoute: AdminEmpresasRoute,
   AdminFaturasRoute: AdminFaturasRoute,
   AdminPlanosRoute: AdminPlanosRoute,
   AdminTicketsRoute: AdminTicketsRoute,
