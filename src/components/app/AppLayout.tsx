@@ -52,6 +52,13 @@ export function AppLayout() {
               >
                 <ClipboardList className="h-3 w-3" /> RDO
               </Link>
+              <Link
+                to="/app/obras/$obraId/compras"
+                params={{ obraId: obra.id }}
+                className="inline-flex items-center gap-1 text-xs text-sidebar-foreground/70 hover:text-sidebar-foreground"
+              >
+                <ShoppingCart className="h-3 w-3" /> Compras
+              </Link>
             </div>
           </div>
         ) : null}
