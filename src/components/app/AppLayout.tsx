@@ -10,6 +10,8 @@ const nav = [
   { to: "/app", label: "Dashboard", icon: LayoutDashboard, exact: true },
   { to: "/app/empresas", label: "Empresas", icon: Building2 },
   { to: "/app/obras", label: "Obras", icon: HardHat },
+  { to: "/app/fornecedores", label: "Fornecedores", icon: Truck },
+  { to: "/app/cartoes", label: "Cartões", icon: CreditCard },
 ];
 
 export function AppLayout() {
