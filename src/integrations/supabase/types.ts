@@ -32,6 +32,54 @@ export type Database = {
         }
         Relationships: []
       }
+      cartoes: {
+        Row: {
+          ativo: boolean
+          bandeira: string | null
+          created_at: string
+          created_by: string | null
+          customer_id: string
+          dia_fechamento: number
+          dia_vencimento: number
+          empresa_id: string | null
+          id: string
+          limite: number
+          nome: string
+          ultimos_4: string | null
+          updated_at: string
+        }
+        Insert: {
+          ativo?: boolean
+          bandeira?: string | null
+          created_at?: string
+          created_by?: string | null
+          customer_id: string
+          dia_fechamento?: number
+          dia_vencimento?: number
+          empresa_id?: string | null
+          id?: string
+          limite?: number
+          nome: string
+          ultimos_4?: string | null
+          updated_at?: string
+        }
+        Update: {
+          ativo?: boolean
+          bandeira?: string | null
+          created_at?: string
+          created_by?: string | null
+          customer_id?: string
+          dia_fechamento?: number
+          dia_vencimento?: number
+          empresa_id?: string | null
+          id?: string
+          limite?: number
+          nome?: string
+          ultimos_4?: string | null
+          updated_at?: string
+        }
+        Relationships: []
+      }
       communications_log: {
         Row: {
           body: string | null
@@ -91,6 +139,156 @@ export type Database = {
             referencedColumns: ["id"]
           },
         ]
+      }
+      compra_itens: {
+        Row: {
+          compra_id: string
+          created_at: string
+          customer_id: string
+          descricao: string
+          etapa_id: string | null
+          id: string
+          qtd_medida: number
+          qtd_recebida: number
+          quantidade: number
+          subetapa_id: string | null
+          unidade: string | null
+          valor_total: number
+          valor_unitario: number
+        }
+        Insert: {
+          compra_id: string
+          created_at?: string
+          customer_id: string
+          descricao: string
+          etapa_id?: string | null
+          id?: string
+          qtd_medida?: number
+          qtd_recebida?: number
+          quantidade?: number
+          subetapa_id?: string | null
+          unidade?: string | null
+          valor_total?: number
+          valor_unitario?: number
+        }
+        Update: {
+          compra_id?: string
+          created_at?: string
+          customer_id?: string
+          descricao?: string
+          etapa_id?: string | null
+          id?: string
+          qtd_medida?: number
+          qtd_recebida?: number
+          quantidade?: number
+          subetapa_id?: string | null
+          unidade?: string | null
+          valor_total?: number
+          valor_unitario?: number
+        }
+        Relationships: []
+      }
+      compra_parcelas: {
+        Row: {
+          compra_id: string
+          created_at: string
+          customer_id: string
+          fatura_cartao_id: string | null
+          id: string
+          numero: number
+          pago_em: string | null
+          status: string
+          updated_at: string
+          valor: number
+          vencimento: string
+        }
+        Insert: {
+          compra_id: string
+          created_at?: string
+          customer_id: string
+          fatura_cartao_id?: string | null
+          id?: string
+          numero: number
+          pago_em?: string | null
+          status?: string
+          updated_at?: string
+          valor?: number
+          vencimento: string
+        }
+        Update: {
+          compra_id?: string
+          created_at?: string
+          customer_id?: string
+          fatura_cartao_id?: string | null
+          id?: string
+          numero?: number
+          pago_em?: string | null
+          status?: string
+          updated_at?: string
+          valor?: number
+          vencimento?: string
+        }
+        Relationships: []
+      }
+      compras: {
+        Row: {
+          cartao_id: string | null
+          created_at: string
+          created_by: string | null
+          customer_id: string
+          data_compra: string
+          data_primeira_parcela: string | null
+          descricao: string | null
+          forma_pagamento: string
+          fornecedor_id: string | null
+          id: string
+          numero: string | null
+          obra_id: string
+          observacoes: string | null
+          qtd_parcelas: number
+          status: string
+          updated_at: string
+          valor_total: number
+        }
+        Insert: {
+          cartao_id?: string | null
+          created_at?: string
+          created_by?: string | null
+          customer_id: string
+          data_compra?: string
+          data_primeira_parcela?: string | null
+          descricao?: string | null
+          forma_pagamento?: string
+          fornecedor_id?: string | null
+          id?: string
+          numero?: string | null
+          obra_id: string
+          observacoes?: string | null
+          qtd_parcelas?: number
+          status?: string
+          updated_at?: string
+          valor_total?: number
+        }
+        Update: {
+          cartao_id?: string | null
+          created_at?: string
+          created_by?: string | null
+          customer_id?: string
+          data_compra?: string
+          data_primeira_parcela?: string | null
+          descricao?: string | null
+          forma_pagamento?: string
+          fornecedor_id?: string | null
+          id?: string
+          numero?: string | null
+          obra_id?: string
+          observacoes?: string | null
+          qtd_parcelas?: number
+          status?: string
+          updated_at?: string
+          valor_total?: number
+        }
+        Relationships: []
       }
       customers: {
         Row: {
@@ -190,6 +388,99 @@ export type Database = {
           customer_id?: string
           id?: string
           nome?: string
+          updated_at?: string
+        }
+        Relationships: []
+      }
+      faturas_cartao: {
+        Row: {
+          cartao_id: string
+          competencia: string
+          created_at: string
+          customer_id: string
+          dt_fechamento: string
+          dt_vencimento: string
+          id: string
+          pago_em: string | null
+          status: string
+          updated_at: string
+          valor_pago: number
+          valor_total: number
+        }
+        Insert: {
+          cartao_id: string
+          competencia: string
+          created_at?: string
+          customer_id: string
+          dt_fechamento: string
+          dt_vencimento: string
+          id?: string
+          pago_em?: string | null
+          status?: string
+          updated_at?: string
+          valor_pago?: number
+          valor_total?: number
+        }
+        Update: {
+          cartao_id?: string
+          competencia?: string
+          created_at?: string
+          customer_id?: string
+          dt_fechamento?: string
+          dt_vencimento?: string
+          id?: string
+          pago_em?: string | null
+          status?: string
+          updated_at?: string
+          valor_pago?: number
+          valor_total?: number
+        }
+        Relationships: []
+      }
+      fornecedores: {
+        Row: {
+          ativo: boolean
+          contato: string | null
+          cpf_cnpj: string | null
+          created_at: string
+          created_by: string | null
+          customer_id: string
+          email: string | null
+          endereco: string | null
+          id: string
+          nome: string
+          observacoes: string | null
+          telefone: string | null
+          updated_at: string
+        }
+        Insert: {
+          ativo?: boolean
+          contato?: string | null
+          cpf_cnpj?: string | null
+          created_at?: string
+          created_by?: string | null
+          customer_id: string
+          email?: string | null
+          endereco?: string | null
+          id?: string
+          nome: string
+          observacoes?: string | null
+          telefone?: string | null
+          updated_at?: string
+        }
+        Update: {
+          ativo?: boolean
+          contato?: string | null
+          cpf_cnpj?: string | null
+          created_at?: string
+          created_by?: string | null
+          customer_id?: string
+          email?: string | null
+          endereco?: string | null
+          id?: string
+          nome?: string
+          observacoes?: string | null
+          telefone?: string | null
           updated_at?: string
         }
         Relationships: []
@@ -325,6 +616,75 @@ export type Database = {
             referencedColumns: ["id"]
           },
         ]
+      }
+      medicao_itens: {
+        Row: {
+          compra_item_id: string
+          created_at: string
+          customer_id: string
+          id: string
+          medicao_id: string
+          quantidade: number
+          valor: number
+        }
+        Insert: {
+          compra_item_id: string
+          created_at?: string
+          customer_id: string
+          id?: string
+          medicao_id: string
+          quantidade?: number
+          valor?: number
+        }
+        Update: {
+          compra_item_id?: string
+          created_at?: string
+          customer_id?: string
+          id?: string
+          medicao_id?: string
+          quantidade?: number
+          valor?: number
+        }
+        Relationships: []
+      }
+      medicoes: {
+        Row: {
+          compra_id: string
+          created_at: string
+          created_by: string | null
+          customer_id: string
+          data: string
+          id: string
+          numero: number
+          observacoes: string | null
+          updated_at: string
+          valor_total: number
+        }
+        Insert: {
+          compra_id: string
+          created_at?: string
+          created_by?: string | null
+          customer_id: string
+          data?: string
+          id?: string
+          numero?: number
+          observacoes?: string | null
+          updated_at?: string
+          valor_total?: number
+        }
+        Update: {
+          compra_id?: string
+          created_at?: string
+          created_by?: string | null
+          customer_id?: string
+          data?: string
+          id?: string
+          numero?: number
+          observacoes?: string | null
+          updated_at?: string
+          valor_total?: number
+        }
+        Relationships: []
       }
       message_templates: {
         Row: {
@@ -840,6 +1200,66 @@ export type Database = {
           observacoes?: string | null
           responsavel?: string | null
           updated_at?: string
+        }
+        Relationships: []
+      }
+      recebimento_itens: {
+        Row: {
+          compra_item_id: string
+          created_at: string
+          customer_id: string
+          id: string
+          quantidade: number
+          recebimento_id: string
+        }
+        Insert: {
+          compra_item_id: string
+          created_at?: string
+          customer_id: string
+          id?: string
+          quantidade?: number
+          recebimento_id: string
+        }
+        Update: {
+          compra_item_id?: string
+          created_at?: string
+          customer_id?: string
+          id?: string
+          quantidade?: number
+          recebimento_id?: string
+        }
+        Relationships: []
+      }
+      recebimentos: {
+        Row: {
+          compra_id: string
+          created_at: string
+          created_by: string | null
+          customer_id: string
+          data: string
+          id: string
+          observacoes: string | null
+          recebido_por: string | null
+        }
+        Insert: {
+          compra_id: string
+          created_at?: string
+          created_by?: string | null
+          customer_id: string
+          data?: string
+          id?: string
+          observacoes?: string | null
+          recebido_por?: string | null
+        }
+        Update: {
+          compra_id?: string
+          created_at?: string
+          created_by?: string | null
+          customer_id?: string
+          data?: string
+          id?: string
+          observacoes?: string | null
+          recebido_por?: string | null
         }
         Relationships: []
       }
