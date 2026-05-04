@@ -1,5 +1,5 @@
 import { Link, Outlet, useLocation, useNavigate } from "@tanstack/react-router";
-import { LayoutDashboard, HardHat, LogOut, Building2, ListTree, ClipboardList } from "lucide-react";
+import { LayoutDashboard, HardHat, LogOut, Building2, ListTree, ClipboardList, Truck, CreditCard, ShoppingCart } from "lucide-react";
 import { Logo } from "@/components/Logo";
 import { useAuth } from "@/lib/auth-context";
 import { Button } from "@/components/ui/button";
@@ -10,6 +10,8 @@ const nav = [
   { to: "/app", label: "Dashboard", icon: LayoutDashboard, exact: true },
   { to: "/app/empresas", label: "Empresas", icon: Building2 },
   { to: "/app/obras", label: "Obras", icon: HardHat },
+  { to: "/app/fornecedores", label: "Fornecedores", icon: Truck },
+  { to: "/app/cartoes", label: "Cartões", icon: CreditCard },
 ];
 
 export function AppLayout() {
@@ -49,6 +51,13 @@ export function AppLayout() {
                 className="inline-flex items-center gap-1 text-xs text-sidebar-foreground/70 hover:text-sidebar-foreground"
               >
                 <ClipboardList className="h-3 w-3" /> RDO
+              </Link>
+              <Link
+                to="/app/obras/$obraId/compras"
+                params={{ obraId: obra.id }}
+                className="inline-flex items-center gap-1 text-xs text-sidebar-foreground/70 hover:text-sidebar-foreground"
+              >
+                <ShoppingCart className="h-3 w-3" /> Compras
               </Link>
             </div>
           </div>
