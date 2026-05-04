@@ -316,8 +316,8 @@ function ObrasPage() {
                       </Link>
                     </Button>
                     <Button variant="ghost" size="sm" asChild>
-                      <Link to="/app/obras/$obraId/diario" params={{ obraId: o.id }}>
-                        Diário
+                      <Link to="/app/obras/$obraId/rdo" params={{ obraId: o.id }}>
+                        RDO
                       </Link>
                     </Button>
                   </div>
