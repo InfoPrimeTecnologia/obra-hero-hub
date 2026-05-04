@@ -1,5 +1,5 @@
 import { Link, Outlet, useLocation, useNavigate } from "@tanstack/react-router";
-import { LayoutDashboard, HardHat, LogOut, Building2, ListTree, ClipboardList } from "lucide-react";
+import { LayoutDashboard, HardHat, LogOut, Building2, ListTree, ClipboardList, Truck, CreditCard, ShoppingCart } from "lucide-react";
 import { Logo } from "@/components/Logo";
 import { useAuth } from "@/lib/auth-context";
 import { Button } from "@/components/ui/button";
