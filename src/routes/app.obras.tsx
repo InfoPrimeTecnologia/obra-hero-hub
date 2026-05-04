@@ -130,7 +130,7 @@ function ObrasPage() {
   const abrirObra = (o: Obra) => {
     setObra(o);
     toast.success(`Obra ativa: ${o.name}`);
-    navigate({ to: "/app/obras/$obraId/diario", params: { obraId: o.id } });
+    navigate({ to: "/app/obras/$obraId/rdo", params: { obraId: o.id } });
   };
 
   const obrasFiltradas =

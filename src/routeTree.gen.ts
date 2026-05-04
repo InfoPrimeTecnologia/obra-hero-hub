@@ -24,6 +24,7 @@ import { Route as AdminEmpresasRouteImport } from './routes/admin.empresas'
 import { Route as AdminConfiguracoesRouteImport } from './routes/admin.configuracoes'
 import { Route as AppObrasObraIdRdoRouteImport } from './routes/app.obras.$obraId.rdo'
 import { Route as AppObrasObraIdOrcamentoRouteImport } from './routes/app.obras.$obraId.orcamento'
+import { Route as AppObrasObraIdRdoRdoIdRouteImport } from './routes/app.obras.$obraId.rdo.$rdoId'
 
 const LoginRoute = LoginRouteImport.update({
   id: '/login',
@@ -100,6 +101,11 @@ const AppObrasObraIdOrcamentoRoute = AppObrasObraIdOrcamentoRouteImport.update({
   path: '/$obraId/orcamento',
   getParentRoute: () => AppObrasRoute,
 } as any)
+const AppObrasObraIdRdoRdoIdRoute = AppObrasObraIdRdoRdoIdRouteImport.update({
+  id: '/$rdoId',
+  path: '/$rdoId',
+  getParentRoute: () => AppObrasObraIdRdoRoute,
+} as any)
 
 export interface FileRoutesByFullPath {
   '/': typeof IndexRoute
@@ -116,7 +122,8 @@ export interface FileRoutesByFullPath {
   '/admin/': typeof AdminIndexRoute
   '/app/': typeof AppIndexRoute
   '/app/obras/$obraId/orcamento': typeof AppObrasObraIdOrcamentoRoute
-  '/app/obras/$obraId/rdo': typeof AppObrasObraIdRdoRoute
+  '/app/obras/$obraId/rdo': typeof AppObrasObraIdRdoRouteWithChildren
+  '/app/obras/$obraId/rdo/$rdoId': typeof AppObrasObraIdRdoRdoIdRoute
 }
 export interface FileRoutesByTo {
   '/': typeof IndexRoute
@@ -131,7 +138,8 @@ export interface FileRoutesByTo {
   '/admin': typeof AdminIndexRoute
   '/app': typeof AppIndexRoute
   '/app/obras/$obraId/orcamento': typeof AppObrasObraIdOrcamentoRoute
-  '/app/obras/$obraId/rdo': typeof AppObrasObraIdRdoRoute
+  '/app/obras/$obraId/rdo': typeof AppObrasObraIdRdoRouteWithChildren
+  '/app/obras/$obraId/rdo/$rdoId': typeof AppObrasObraIdRdoRdoIdRoute
 }
 export interface FileRoutesById {
   __root__: typeof rootRouteImport
@@ -149,7 +157,8 @@ export interface FileRoutesById {
   '/admin/': typeof AdminIndexRoute
   '/app/': typeof AppIndexRoute
   '/app/obras/$obraId/orcamento': typeof AppObrasObraIdOrcamentoRoute
-  '/app/obras/$obraId/rdo': typeof AppObrasObraIdRdoRoute
+  '/app/obras/$obraId/rdo': typeof AppObrasObraIdRdoRouteWithChildren
+  '/app/obras/$obraId/rdo/$rdoId': typeof AppObrasObraIdRdoRdoIdRoute
 }
 export interface FileRouteTypes {
   fileRoutesByFullPath: FileRoutesByFullPath
@@ -169,6 +178,7 @@ export interface FileRouteTypes {
     | '/app/'
     | '/app/obras/$obraId/orcamento'
     | '/app/obras/$obraId/rdo'
+    | '/app/obras/$obraId/rdo/$rdoId'
   fileRoutesByTo: FileRoutesByTo
   to:
     | '/'
@@ -184,6 +194,7 @@ export interface FileRouteTypes {
     | '/app'
     | '/app/obras/$obraId/orcamento'
     | '/app/obras/$obraId/rdo'
+    | '/app/obras/$obraId/rdo/$rdoId'
   id:
     | '__root__'
     | '/'
@@ -201,6 +212,7 @@ export interface FileRouteTypes {
     | '/app/'
     | '/app/obras/$obraId/orcamento'
     | '/app/obras/$obraId/rdo'
+    | '/app/obras/$obraId/rdo/$rdoId'
   fileRoutesById: FileRoutesById
 }
 export interface RootRouteChildren {
@@ -317,6 +329,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AppObrasObraIdOrcamentoRouteImport
       parentRoute: typeof AppObrasRoute
     }
+    '/app/obras/$obraId/rdo/$rdoId': {
+      id: '/app/obras/$obraId/rdo/$rdoId'
+      path: '/$rdoId'
+      fullPath: '/app/obras/$obraId/rdo/$rdoId'
+      preLoaderRoute: typeof AppObrasObraIdRdoRdoIdRouteImport
+      parentRoute: typeof AppObrasObraIdRdoRoute
+    }
   }
 }
 
@@ -340,14 +359,25 @@ const AdminRouteChildren: AdminRouteChildren = {
 
 const AdminRouteWithChildren = AdminRoute._addFileChildren(AdminRouteChildren)
 
+interface AppObrasObraIdRdoRouteChildren {
+  AppObrasObraIdRdoRdoIdRoute: typeof AppObrasObraIdRdoRdoIdRoute
+}
+
+const AppObrasObraIdRdoRouteChildren: AppObrasObraIdRdoRouteChildren = {
+  AppObrasObraIdRdoRdoIdRoute: AppObrasObraIdRdoRdoIdRoute,
+}
+
+const AppObrasObraIdRdoRouteWithChildren =
+  AppObrasObraIdRdoRoute._addFileChildren(AppObrasObraIdRdoRouteChildren)
+
 interface AppObrasRouteChildren {
   AppObrasObraIdOrcamentoRoute: typeof AppObrasObraIdOrcamentoRoute
-  AppObrasObraIdRdoRoute: typeof AppObrasObraIdRdoRoute
+  AppObrasObraIdRdoRoute: typeof AppObrasObraIdRdoRouteWithChildren
 }
 
 const AppObrasRouteChildren: AppObrasRouteChildren = {
   AppObrasObraIdOrcamentoRoute: AppObrasObraIdOrcamentoRoute,
-  AppObrasObraIdRdoRoute: AppObrasObraIdRdoRoute,
+  AppObrasObraIdRdoRoute: AppObrasObraIdRdoRouteWithChildren,
 }
 
 const AppObrasRouteWithChildren = AppObrasRoute._addFileChildren(
