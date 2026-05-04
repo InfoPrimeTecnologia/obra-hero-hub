@@ -58,7 +58,7 @@ function ClienteDashboard() {
   const cards = [
     { label: "Empresas", value: m.totalEmpresas.toString(), icon: Building2 },
     { label: "Obras ativas", value: `${m.obrasAtivas} / ${m.totalObras}`, icon: HardHat },
-    { label: "Diários no mês", value: m.diariosMes.toString(), icon: ClipboardList },
+    { label: "RDOs no mês", value: m.rdosMes.toString(), icon: ClipboardList },
     { label: "Obra selecionada", value: obra?.name ?? "Nenhuma", icon: ListTree },
   ];
 
