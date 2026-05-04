@@ -15,7 +15,7 @@ type Metrics = {
   totalEmpresas: number;
   totalObras: number;
   obrasAtivas: number;
-  diariosMes: number;
+  rdosMes: number;
 };
 
 function ClienteDashboard() {
@@ -24,7 +24,7 @@ function ClienteDashboard() {
     totalEmpresas: 0,
     totalObras: 0,
     obrasAtivas: 0,
-    diariosMes: 0,
+    rdosMes: 0,
   });
 
   useEffect(() => {
@@ -36,21 +36,21 @@ function ClienteDashboard() {
         { count: empresas },
         { count: total },
         { count: ativas },
-        { count: diarios },
+        { count: rdos },
       ] = await Promise.all([
         supabase.from("empresas").select("*", { count: "exact", head: true }),
         supabase.from("obras").select("*", { count: "exact", head: true }),
         supabase.from("obras").select("*", { count: "exact", head: true }).eq("status", "active"),
         supabase
-          .from("obra_diarios")
+          .from("rdos")
           .select("*", { count: "exact", head: true })
-          .gte("diary_date", inicioMes),
+          .gte("data", inicioMes),
       ]);
       setM({
         totalEmpresas: empresas ?? 0,
         totalObras: total ?? 0,
         obrasAtivas: ativas ?? 0,
-        diariosMes: diarios ?? 0,
+        rdosMes: rdos ?? 0,
       });
     })();
   }, []);
