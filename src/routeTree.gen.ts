@@ -18,6 +18,7 @@ import { Route as AdminIndexRouteImport } from './routes/admin.index'
 import { Route as AppObrasRouteImport } from './routes/app.obras'
 import { Route as AppFornecedoresRouteImport } from './routes/app.fornecedores'
 import { Route as AppEmpresasRouteImport } from './routes/app.empresas'
+import { Route as AppContasPagarRouteImport } from './routes/app.contas-pagar'
 import { Route as AppContasBancariasRouteImport } from './routes/app.contas-bancarias'
 import { Route as AppCategoriasRouteImport } from './routes/app.categorias'
 import { Route as AppCartoesRouteImport } from './routes/app.cartoes'
@@ -75,6 +76,11 @@ const AppFornecedoresRoute = AppFornecedoresRouteImport.update({
 const AppEmpresasRoute = AppEmpresasRouteImport.update({
   id: '/empresas',
   path: '/empresas',
+  getParentRoute: () => AppRoute,
+} as any)
+const AppContasPagarRoute = AppContasPagarRouteImport.update({
+  id: '/contas-pagar',
+  path: '/contas-pagar',
   getParentRoute: () => AppRoute,
 } as any)
 const AppContasBancariasRoute = AppContasBancariasRouteImport.update({
@@ -157,6 +163,7 @@ export interface FileRoutesByFullPath {
   '/app/cartoes': typeof AppCartoesRoute
   '/app/categorias': typeof AppCategoriasRoute
   '/app/contas-bancarias': typeof AppContasBancariasRoute
+  '/app/contas-pagar': typeof AppContasPagarRoute
   '/app/empresas': typeof AppEmpresasRoute
   '/app/fornecedores': typeof AppFornecedoresRoute
   '/app/obras': typeof AppObrasRouteWithChildren
@@ -179,6 +186,7 @@ export interface FileRoutesByTo {
   '/app/cartoes': typeof AppCartoesRoute
   '/app/categorias': typeof AppCategoriasRoute
   '/app/contas-bancarias': typeof AppContasBancariasRoute
+  '/app/contas-pagar': typeof AppContasPagarRoute
   '/app/empresas': typeof AppEmpresasRoute
   '/app/fornecedores': typeof AppFornecedoresRoute
   '/app/obras': typeof AppObrasRouteWithChildren
@@ -204,6 +212,7 @@ export interface FileRoutesById {
   '/app/cartoes': typeof AppCartoesRoute
   '/app/categorias': typeof AppCategoriasRoute
   '/app/contas-bancarias': typeof AppContasBancariasRoute
+  '/app/contas-pagar': typeof AppContasPagarRoute
   '/app/empresas': typeof AppEmpresasRoute
   '/app/fornecedores': typeof AppFornecedoresRoute
   '/app/obras': typeof AppObrasRouteWithChildren
@@ -230,6 +239,7 @@ export interface FileRouteTypes {
     | '/app/cartoes'
     | '/app/categorias'
     | '/app/contas-bancarias'
+    | '/app/contas-pagar'
     | '/app/empresas'
     | '/app/fornecedores'
     | '/app/obras'
@@ -252,6 +262,7 @@ export interface FileRouteTypes {
     | '/app/cartoes'
     | '/app/categorias'
     | '/app/contas-bancarias'
+    | '/app/contas-pagar'
     | '/app/empresas'
     | '/app/fornecedores'
     | '/app/obras'
@@ -276,6 +287,7 @@ export interface FileRouteTypes {
     | '/app/cartoes'
     | '/app/categorias'
     | '/app/contas-bancarias'
+    | '/app/contas-pagar'
     | '/app/empresas'
     | '/app/fornecedores'
     | '/app/obras'
@@ -358,6 +370,13 @@ declare module '@tanstack/react-router' {
       path: '/empresas'
       fullPath: '/app/empresas'
       preLoaderRoute: typeof AppEmpresasRouteImport
+      parentRoute: typeof AppRoute
+    }
+    '/app/contas-pagar': {
+      id: '/app/contas-pagar'
+      path: '/contas-pagar'
+      fullPath: '/app/contas-pagar'
+      preLoaderRoute: typeof AppContasPagarRouteImport
       parentRoute: typeof AppRoute
     }
     '/app/contas-bancarias': {
@@ -518,6 +537,7 @@ interface AppRouteChildren {
   AppCartoesRoute: typeof AppCartoesRoute
   AppCategoriasRoute: typeof AppCategoriasRoute
   AppContasBancariasRoute: typeof AppContasBancariasRoute
+  AppContasPagarRoute: typeof AppContasPagarRoute
   AppEmpresasRoute: typeof AppEmpresasRoute
   AppFornecedoresRoute: typeof AppFornecedoresRoute
   AppObrasRoute: typeof AppObrasRouteWithChildren
@@ -528,6 +548,7 @@ const AppRouteChildren: AppRouteChildren = {
   AppCartoesRoute: AppCartoesRoute,
   AppCategoriasRoute: AppCategoriasRoute,
   AppContasBancariasRoute: AppContasBancariasRoute,
+  AppContasPagarRoute: AppContasPagarRoute,
   AppEmpresasRoute: AppEmpresasRoute,
   AppFornecedoresRoute: AppFornecedoresRoute,
   AppObrasRoute: AppObrasRouteWithChildren,
