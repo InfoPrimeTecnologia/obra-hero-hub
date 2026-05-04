@@ -18,6 +18,8 @@ import { Route as AdminIndexRouteImport } from './routes/admin.index'
 import { Route as AppObrasRouteImport } from './routes/app.obras'
 import { Route as AppFornecedoresRouteImport } from './routes/app.fornecedores'
 import { Route as AppEmpresasRouteImport } from './routes/app.empresas'
+import { Route as AppContasBancariasRouteImport } from './routes/app.contas-bancarias'
+import { Route as AppCategoriasRouteImport } from './routes/app.categorias'
 import { Route as AppCartoesRouteImport } from './routes/app.cartoes'
 import { Route as AdminTicketsRouteImport } from './routes/admin.tickets'
 import { Route as AdminPlanosRouteImport } from './routes/admin.planos'
@@ -73,6 +75,16 @@ const AppFornecedoresRoute = AppFornecedoresRouteImport.update({
 const AppEmpresasRoute = AppEmpresasRouteImport.update({
   id: '/empresas',
   path: '/empresas',
+  getParentRoute: () => AppRoute,
+} as any)
+const AppContasBancariasRoute = AppContasBancariasRouteImport.update({
+  id: '/contas-bancarias',
+  path: '/contas-bancarias',
+  getParentRoute: () => AppRoute,
+} as any)
+const AppCategoriasRoute = AppCategoriasRouteImport.update({
+  id: '/categorias',
+  path: '/categorias',
   getParentRoute: () => AppRoute,
 } as any)
 const AppCartoesRoute = AppCartoesRouteImport.update({
@@ -143,6 +155,8 @@ export interface FileRoutesByFullPath {
   '/admin/planos': typeof AdminPlanosRoute
   '/admin/tickets': typeof AdminTicketsRoute
   '/app/cartoes': typeof AppCartoesRoute
+  '/app/categorias': typeof AppCategoriasRoute
+  '/app/contas-bancarias': typeof AppContasBancariasRoute
   '/app/empresas': typeof AppEmpresasRoute
   '/app/fornecedores': typeof AppFornecedoresRoute
   '/app/obras': typeof AppObrasRouteWithChildren
@@ -163,6 +177,8 @@ export interface FileRoutesByTo {
   '/admin/planos': typeof AdminPlanosRoute
   '/admin/tickets': typeof AdminTicketsRoute
   '/app/cartoes': typeof AppCartoesRoute
+  '/app/categorias': typeof AppCategoriasRoute
+  '/app/contas-bancarias': typeof AppContasBancariasRoute
   '/app/empresas': typeof AppEmpresasRoute
   '/app/fornecedores': typeof AppFornecedoresRoute
   '/app/obras': typeof AppObrasRouteWithChildren
@@ -186,6 +202,8 @@ export interface FileRoutesById {
   '/admin/planos': typeof AdminPlanosRoute
   '/admin/tickets': typeof AdminTicketsRoute
   '/app/cartoes': typeof AppCartoesRoute
+  '/app/categorias': typeof AppCategoriasRoute
+  '/app/contas-bancarias': typeof AppContasBancariasRoute
   '/app/empresas': typeof AppEmpresasRoute
   '/app/fornecedores': typeof AppFornecedoresRoute
   '/app/obras': typeof AppObrasRouteWithChildren
@@ -210,6 +228,8 @@ export interface FileRouteTypes {
     | '/admin/planos'
     | '/admin/tickets'
     | '/app/cartoes'
+    | '/app/categorias'
+    | '/app/contas-bancarias'
     | '/app/empresas'
     | '/app/fornecedores'
     | '/app/obras'
@@ -230,6 +250,8 @@ export interface FileRouteTypes {
     | '/admin/planos'
     | '/admin/tickets'
     | '/app/cartoes'
+    | '/app/categorias'
+    | '/app/contas-bancarias'
     | '/app/empresas'
     | '/app/fornecedores'
     | '/app/obras'
@@ -252,6 +274,8 @@ export interface FileRouteTypes {
     | '/admin/planos'
     | '/admin/tickets'
     | '/app/cartoes'
+    | '/app/categorias'
+    | '/app/contas-bancarias'
     | '/app/empresas'
     | '/app/fornecedores'
     | '/app/obras'
@@ -334,6 +358,20 @@ declare module '@tanstack/react-router' {
       path: '/empresas'
       fullPath: '/app/empresas'
       preLoaderRoute: typeof AppEmpresasRouteImport
+      parentRoute: typeof AppRoute
+    }
+    '/app/contas-bancarias': {
+      id: '/app/contas-bancarias'
+      path: '/contas-bancarias'
+      fullPath: '/app/contas-bancarias'
+      preLoaderRoute: typeof AppContasBancariasRouteImport
+      parentRoute: typeof AppRoute
+    }
+    '/app/categorias': {
+      id: '/app/categorias'
+      path: '/categorias'
+      fullPath: '/app/categorias'
+      preLoaderRoute: typeof AppCategoriasRouteImport
       parentRoute: typeof AppRoute
     }
     '/app/cartoes': {
@@ -478,6 +516,8 @@ const AppObrasRouteWithChildren = AppObrasRoute._addFileChildren(
 
 interface AppRouteChildren {
   AppCartoesRoute: typeof AppCartoesRoute
+  AppCategoriasRoute: typeof AppCategoriasRoute
+  AppContasBancariasRoute: typeof AppContasBancariasRoute
   AppEmpresasRoute: typeof AppEmpresasRoute
   AppFornecedoresRoute: typeof AppFornecedoresRoute
   AppObrasRoute: typeof AppObrasRouteWithChildren
@@ -486,6 +526,8 @@ interface AppRouteChildren {
 
 const AppRouteChildren: AppRouteChildren = {
   AppCartoesRoute: AppCartoesRoute,
+  AppCategoriasRoute: AppCategoriasRoute,
+  AppContasBancariasRoute: AppContasBancariasRoute,
   AppEmpresasRoute: AppEmpresasRoute,
   AppFornecedoresRoute: AppFornecedoresRoute,
   AppObrasRoute: AppObrasRouteWithChildren,
