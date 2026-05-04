@@ -16,6 +16,7 @@ import { Route as IndexRouteImport } from './routes/index'
 import { Route as AppIndexRouteImport } from './routes/app.index'
 import { Route as AdminIndexRouteImport } from './routes/admin.index'
 import { Route as AppObrasRouteImport } from './routes/app.obras'
+import { Route as AppEmpresasRouteImport } from './routes/app.empresas'
 import { Route as AdminTicketsRouteImport } from './routes/admin.tickets'
 import { Route as AdminPlanosRouteImport } from './routes/admin.planos'
 import { Route as AdminFaturasRouteImport } from './routes/admin.faturas'
@@ -56,6 +57,11 @@ const AdminIndexRoute = AdminIndexRouteImport.update({
 const AppObrasRoute = AppObrasRouteImport.update({
   id: '/obras',
   path: '/obras',
+  getParentRoute: () => AppRoute,
+} as any)
+const AppEmpresasRoute = AppEmpresasRouteImport.update({
+  id: '/empresas',
+  path: '/empresas',
   getParentRoute: () => AppRoute,
 } as any)
 const AdminTicketsRoute = AdminTicketsRouteImport.update({
@@ -99,6 +105,7 @@ export interface FileRoutesByFullPath {
   '/admin/faturas': typeof AdminFaturasRoute
   '/admin/planos': typeof AdminPlanosRoute
   '/admin/tickets': typeof AdminTicketsRoute
+  '/app/empresas': typeof AppEmpresasRoute
   '/app/obras': typeof AppObrasRouteWithChildren
   '/admin/': typeof AdminIndexRoute
   '/app/': typeof AppIndexRoute
@@ -112,6 +119,7 @@ export interface FileRoutesByTo {
   '/admin/faturas': typeof AdminFaturasRoute
   '/admin/planos': typeof AdminPlanosRoute
   '/admin/tickets': typeof AdminTicketsRoute
+  '/app/empresas': typeof AppEmpresasRoute
   '/app/obras': typeof AppObrasRouteWithChildren
   '/admin': typeof AdminIndexRoute
   '/app': typeof AppIndexRoute
@@ -128,6 +136,7 @@ export interface FileRoutesById {
   '/admin/faturas': typeof AdminFaturasRoute
   '/admin/planos': typeof AdminPlanosRoute
   '/admin/tickets': typeof AdminTicketsRoute
+  '/app/empresas': typeof AppEmpresasRoute
   '/app/obras': typeof AppObrasRouteWithChildren
   '/admin/': typeof AdminIndexRoute
   '/app/': typeof AppIndexRoute
@@ -145,6 +154,7 @@ export interface FileRouteTypes {
     | '/admin/faturas'
     | '/admin/planos'
     | '/admin/tickets'
+    | '/app/empresas'
     | '/app/obras'
     | '/admin/'
     | '/app/'
@@ -158,6 +168,7 @@ export interface FileRouteTypes {
     | '/admin/faturas'
     | '/admin/planos'
     | '/admin/tickets'
+    | '/app/empresas'
     | '/app/obras'
     | '/admin'
     | '/app'
@@ -173,6 +184,7 @@ export interface FileRouteTypes {
     | '/admin/faturas'
     | '/admin/planos'
     | '/admin/tickets'
+    | '/app/empresas'
     | '/app/obras'
     | '/admin/'
     | '/app/'
@@ -235,6 +247,13 @@ declare module '@tanstack/react-router' {
       path: '/obras'
       fullPath: '/app/obras'
       preLoaderRoute: typeof AppObrasRouteImport
+      parentRoute: typeof AppRoute
+    }
+    '/app/empresas': {
+      id: '/app/empresas'
+      path: '/empresas'
+      fullPath: '/app/empresas'
+      preLoaderRoute: typeof AppEmpresasRouteImport
       parentRoute: typeof AppRoute
     }
     '/admin/tickets': {
@@ -315,11 +334,13 @@ const AppObrasRouteWithChildren = AppObrasRoute._addFileChildren(
 )
 
 interface AppRouteChildren {
+  AppEmpresasRoute: typeof AppEmpresasRoute
   AppObrasRoute: typeof AppObrasRouteWithChildren
   AppIndexRoute: typeof AppIndexRoute
 }
 
 const AppRouteChildren: AppRouteChildren = {
+  AppEmpresasRoute: AppEmpresasRoute,
   AppObrasRoute: AppObrasRouteWithChildren,
   AppIndexRoute: AppIndexRoute,
 }
