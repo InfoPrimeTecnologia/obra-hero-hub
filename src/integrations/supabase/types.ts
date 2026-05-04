@@ -164,6 +164,36 @@ export type Database = {
         }
         Relationships: []
       }
+      empresas: {
+        Row: {
+          cnpj: string | null
+          created_at: string
+          created_by: string | null
+          customer_id: string
+          id: string
+          nome: string
+          updated_at: string
+        }
+        Insert: {
+          cnpj?: string | null
+          created_at?: string
+          created_by?: string | null
+          customer_id: string
+          id?: string
+          nome: string
+          updated_at?: string
+        }
+        Update: {
+          cnpj?: string | null
+          created_at?: string
+          created_by?: string | null
+          customer_id?: string
+          id?: string
+          nome?: string
+          updated_at?: string
+        }
+        Relationships: []
+      }
       integration_settings: {
         Row: {
           config: Json
@@ -413,6 +443,7 @@ export type Database = {
           created_by: string | null
           customer_id: string
           description: string | null
+          empresa_id: string | null
           expected_end_date: string | null
           id: string
           name: string
@@ -435,6 +466,7 @@ export type Database = {
           created_by?: string | null
           customer_id: string
           description?: string | null
+          empresa_id?: string | null
           expected_end_date?: string | null
           id?: string
           name: string
@@ -457,6 +489,7 @@ export type Database = {
           created_by?: string | null
           customer_id?: string
           description?: string | null
+          empresa_id?: string | null
           expected_end_date?: string | null
           id?: string
           name?: string
@@ -464,7 +497,118 @@ export type Database = {
           status?: string
           updated_at?: string
         }
-        Relationships: []
+        Relationships: [
+          {
+            foreignKeyName: "obras_empresa_id_fkey"
+            columns: ["empresa_id"]
+            isOneToOne: false
+            referencedRelation: "empresas"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      orcamento_etapas: {
+        Row: {
+          created_at: string
+          created_by: string | null
+          customer_id: string
+          dt_fim_prevista: string | null
+          dt_fim_real: string | null
+          dt_inicio_prevista: string | null
+          dt_inicio_real: string | null
+          id: string
+          nome: string
+          obra_id: string
+          ordem: number
+          percentual: number
+          updated_at: string
+        }
+        Insert: {
+          created_at?: string
+          created_by?: string | null
+          customer_id: string
+          dt_fim_prevista?: string | null
+          dt_fim_real?: string | null
+          dt_inicio_prevista?: string | null
+          dt_inicio_real?: string | null
+          id?: string
+          nome: string
+          obra_id: string
+          ordem?: number
+          percentual?: number
+          updated_at?: string
+        }
+        Update: {
+          created_at?: string
+          created_by?: string | null
+          customer_id?: string
+          dt_fim_prevista?: string | null
+          dt_fim_real?: string | null
+          dt_inicio_prevista?: string | null
+          dt_inicio_real?: string | null
+          id?: string
+          nome?: string
+          obra_id?: string
+          ordem?: number
+          percentual?: number
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "orcamento_etapas_obra_id_fkey"
+            columns: ["obra_id"]
+            isOneToOne: false
+            referencedRelation: "obras"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      orcamento_subetapas: {
+        Row: {
+          created_at: string
+          created_by: string | null
+          customer_id: string
+          etapa_id: string
+          id: string
+          nome: string
+          ordem: number
+          tipo: string | null
+          updated_at: string
+          valor_orcado: number
+        }
+        Insert: {
+          created_at?: string
+          created_by?: string | null
+          customer_id: string
+          etapa_id: string
+          id?: string
+          nome: string
+          ordem?: number
+          tipo?: string | null
+          updated_at?: string
+          valor_orcado?: number
+        }
+        Update: {
+          created_at?: string
+          created_by?: string | null
+          customer_id?: string
+          etapa_id?: string
+          id?: string
+          nome?: string
+          ordem?: number
+          tipo?: string | null
+          updated_at?: string
+          valor_orcado?: number
+        }
+        Relationships: [
+          {
+            foreignKeyName: "orcamento_subetapas_etapa_id_fkey"
+            columns: ["etapa_id"]
+            isOneToOne: false
+            referencedRelation: "orcamento_etapas"
+            referencedColumns: ["id"]
+          },
+        ]
       }
       plans: {
         Row: {

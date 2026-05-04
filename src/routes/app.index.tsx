@@ -1,6 +1,6 @@
 import { createFileRoute, Link } from "@tanstack/react-router";
 import { useEffect, useState } from "react";
-import { HardHat, ClipboardList, Camera } from "lucide-react";
+import { HardHat, Building2, ListTree, ClipboardList } from "lucide-react";
 import { PageHeader } from "@/components/admin/PageHeader";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
@@ -12,6 +12,7 @@ export const Route = createFileRoute("/app/")({
 });
 
 type Metrics = {
+  totalEmpresas: number;
   totalObras: number;
   obrasAtivas: number;
   diariosMes: number;
@@ -19,14 +20,25 @@ type Metrics = {
 
 function ClienteDashboard() {
   const { obra } = useObraSelecionada();
-  const [m, setM] = useState<Metrics>({ totalObras: 0, obrasAtivas: 0, diariosMes: 0 });
+  const [m, setM] = useState<Metrics>({
+    totalEmpresas: 0,
+    totalObras: 0,
+    obrasAtivas: 0,
+    diariosMes: 0,
+  });
 
   useEffect(() => {
     (async () => {
       const inicioMes = new Date(new Date().getFullYear(), new Date().getMonth(), 1)
         .toISOString()
         .slice(0, 10);
-      const [{ count: total }, { count: ativas }, { count: diarios }] = await Promise.all([
+      const [
+        { count: empresas },
+        { count: total },
+        { count: ativas },
+        { count: diarios },
+      ] = await Promise.all([
+        supabase.from("empresas").select("*", { count: "exact", head: true }),
         supabase.from("obras").select("*", { count: "exact", head: true }),
         supabase.from("obras").select("*", { count: "exact", head: true }).eq("status", "active"),
         supabase
@@ -35,6 +47,7 @@ function ClienteDashboard() {
           .gte("diary_date", inicioMes),
       ]);
       setM({
+        totalEmpresas: empresas ?? 0,
         totalObras: total ?? 0,
         obrasAtivas: ativas ?? 0,
         diariosMes: diarios ?? 0,
@@ -43,16 +56,17 @@ function ClienteDashboard() {
   }, []);
 
   const cards = [
+    { label: "Empresas", value: m.totalEmpresas.toString(), icon: Building2 },
     { label: "Obras ativas", value: `${m.obrasAtivas} / ${m.totalObras}`, icon: HardHat },
     { label: "Diários no mês", value: m.diariosMes.toString(), icon: ClipboardList },
-    { label: "Obra selecionada", value: obra?.name ?? "Nenhuma", icon: Camera },
+    { label: "Obra selecionada", value: obra?.name ?? "Nenhuma", icon: ListTree },
   ];
 
   return (
     <div>
       <PageHeader title="Dashboard" description="Visão geral das suas obras" />
       <div className="space-y-6 p-8">
-        <div className="grid grid-cols-1 gap-4 md:grid-cols-3">
+        <div className="grid grid-cols-1 gap-4 md:grid-cols-2 lg:grid-cols-4">
           {cards.map((c) => {
             const Icon = c.icon;
             return (
@@ -76,10 +90,18 @@ function ClienteDashboard() {
             <CardTitle>Próximos passos</CardTitle>
           </CardHeader>
           <CardContent className="space-y-3 text-sm text-muted-foreground">
-            <p>Cadastre suas obras e abra a obra ativa para registrar o diário com fotos.</p>
-            <Button asChild>
-              <Link to="/app/obras">Ir para Obras</Link>
-            </Button>
+            <p>
+              1. Cadastre suas <strong>empresas</strong>. 2. Crie as <strong>obras</strong>{" "}
+              vinculadas. 3. Estruture o <strong>orçamento</strong> por etapas e subetapas.
+            </p>
+            <div className="flex flex-wrap gap-2">
+              <Button asChild>
+                <Link to="/app/empresas">Empresas</Link>
+              </Button>
+              <Button asChild variant="outline">
+                <Link to="/app/obras">Obras</Link>
+              </Button>
+            </div>
           </CardContent>
         </Card>
       </div>

@@ -4,6 +4,7 @@ export type Obra = {
   id: string;
   name: string;
   customer_id: string;
+  empresa_id: string | null;
   contact_name: string | null;
   contact_email: string | null;
   contact_whatsapp: string | null;
