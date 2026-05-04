@@ -194,6 +194,36 @@ export type Database = {
         }
         Relationships: []
       }
+      funcoes_equipe_obra: {
+        Row: {
+          ativo: boolean
+          created_at: string
+          created_by: string | null
+          customer_id: string
+          id: string
+          nome: string
+          obra_id: string
+        }
+        Insert: {
+          ativo?: boolean
+          created_at?: string
+          created_by?: string | null
+          customer_id: string
+          id?: string
+          nome: string
+          obra_id: string
+        }
+        Update: {
+          ativo?: boolean
+          created_at?: string
+          created_by?: string | null
+          customer_id?: string
+          id?: string
+          nome?: string
+          obra_id?: string
+        }
+        Relationships: []
+      }
       integration_settings: {
         Row: {
           config: Json
@@ -328,104 +358,6 @@ export type Database = {
           updated_at?: string
         }
         Relationships: []
-      }
-      obra_diario_fotos: {
-        Row: {
-          caption: string | null
-          created_at: string
-          created_by: string | null
-          customer_id: string
-          diario_id: string
-          id: string
-          obra_id: string
-          storage_path: string
-        }
-        Insert: {
-          caption?: string | null
-          created_at?: string
-          created_by?: string | null
-          customer_id: string
-          diario_id: string
-          id?: string
-          obra_id: string
-          storage_path: string
-        }
-        Update: {
-          caption?: string | null
-          created_at?: string
-          created_by?: string | null
-          customer_id?: string
-          diario_id?: string
-          id?: string
-          obra_id?: string
-          storage_path?: string
-        }
-        Relationships: [
-          {
-            foreignKeyName: "obra_diario_fotos_diario_id_fkey"
-            columns: ["diario_id"]
-            isOneToOne: false
-            referencedRelation: "obra_diarios"
-            referencedColumns: ["id"]
-          },
-          {
-            foreignKeyName: "obra_diario_fotos_obra_id_fkey"
-            columns: ["obra_id"]
-            isOneToOne: false
-            referencedRelation: "obras"
-            referencedColumns: ["id"]
-          },
-        ]
-      }
-      obra_diarios: {
-        Row: {
-          activities: string | null
-          created_at: string
-          created_by: string | null
-          customer_id: string
-          diary_date: string
-          id: string
-          notes: string | null
-          obra_id: string
-          updated_at: string
-          weather: string | null
-          workforce: string | null
-        }
-        Insert: {
-          activities?: string | null
-          created_at?: string
-          created_by?: string | null
-          customer_id: string
-          diary_date?: string
-          id?: string
-          notes?: string | null
-          obra_id: string
-          updated_at?: string
-          weather?: string | null
-          workforce?: string | null
-        }
-        Update: {
-          activities?: string | null
-          created_at?: string
-          created_by?: string | null
-          customer_id?: string
-          diary_date?: string
-          id?: string
-          notes?: string | null
-          obra_id?: string
-          updated_at?: string
-          weather?: string | null
-          workforce?: string | null
-        }
-        Relationships: [
-          {
-            foreignKeyName: "obra_diarios_obra_id_fkey"
-            columns: ["obra_id"]
-            isOneToOne: false
-            referencedRelation: "obras"
-            referencedColumns: ["id"]
-          },
-        ]
       }
       obras: {
         Row: {
@@ -685,6 +617,229 @@ export type Database = {
           phone?: string | null
           updated_at?: string
           user_id?: string
+        }
+        Relationships: []
+      }
+      rdo_anexos: {
+        Row: {
+          created_at: string
+          created_by: string | null
+          customer_id: string
+          id: string
+          legenda: string | null
+          obra_id: string
+          rdo_id: string
+          storage_path: string
+          tipo: string
+        }
+        Insert: {
+          created_at?: string
+          created_by?: string | null
+          customer_id: string
+          id?: string
+          legenda?: string | null
+          obra_id: string
+          rdo_id: string
+          storage_path: string
+          tipo?: string
+        }
+        Update: {
+          created_at?: string
+          created_by?: string | null
+          customer_id?: string
+          id?: string
+          legenda?: string | null
+          obra_id?: string
+          rdo_id?: string
+          storage_path?: string
+          tipo?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "rdo_anexos_rdo_id_fkey"
+            columns: ["rdo_id"]
+            isOneToOne: false
+            referencedRelation: "rdos"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      rdo_atividades: {
+        Row: {
+          created_at: string
+          customer_id: string
+          descricao: string
+          etapa_id: string | null
+          id: string
+          percentual: number
+          rdo_id: string
+          subetapa_id: string | null
+        }
+        Insert: {
+          created_at?: string
+          customer_id: string
+          descricao: string
+          etapa_id?: string | null
+          id?: string
+          percentual?: number
+          rdo_id: string
+          subetapa_id?: string | null
+        }
+        Update: {
+          created_at?: string
+          customer_id?: string
+          descricao?: string
+          etapa_id?: string | null
+          id?: string
+          percentual?: number
+          rdo_id?: string
+          subetapa_id?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "rdo_atividades_etapa_id_fkey"
+            columns: ["etapa_id"]
+            isOneToOne: false
+            referencedRelation: "orcamento_etapas"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "rdo_atividades_rdo_id_fkey"
+            columns: ["rdo_id"]
+            isOneToOne: false
+            referencedRelation: "rdos"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "rdo_atividades_subetapa_id_fkey"
+            columns: ["subetapa_id"]
+            isOneToOne: false
+            referencedRelation: "orcamento_subetapas"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      rdo_equipes: {
+        Row: {
+          created_at: string
+          customer_id: string
+          empreiteiro: string | null
+          funcao: string
+          horas: number
+          id: string
+          quantidade: number
+          rdo_id: string
+        }
+        Insert: {
+          created_at?: string
+          customer_id: string
+          empreiteiro?: string | null
+          funcao: string
+          horas?: number
+          id?: string
+          quantidade?: number
+          rdo_id: string
+        }
+        Update: {
+          created_at?: string
+          customer_id?: string
+          empreiteiro?: string | null
+          funcao?: string
+          horas?: number
+          id?: string
+          quantidade?: number
+          rdo_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "rdo_equipes_rdo_id_fkey"
+            columns: ["rdo_id"]
+            isOneToOne: false
+            referencedRelation: "rdos"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      rdo_ocorrencias: {
+        Row: {
+          created_at: string
+          customer_id: string
+          descricao: string
+          id: string
+          rdo_id: string
+          tipo: string
+        }
+        Insert: {
+          created_at?: string
+          customer_id: string
+          descricao: string
+          id?: string
+          rdo_id: string
+          tipo?: string
+        }
+        Update: {
+          created_at?: string
+          customer_id?: string
+          descricao?: string
+          id?: string
+          rdo_id?: string
+          tipo?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "rdo_ocorrencias_rdo_id_fkey"
+            columns: ["rdo_id"]
+            isOneToOne: false
+            referencedRelation: "rdos"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      rdos: {
+        Row: {
+          clima_manha: string | null
+          clima_noite: string | null
+          clima_tarde: string | null
+          condicao: string
+          created_at: string
+          created_by: string | null
+          customer_id: string
+          data: string
+          id: string
+          obra_id: string
+          observacoes: string | null
+          responsavel: string | null
+          updated_at: string
+        }
+        Insert: {
+          clima_manha?: string | null
+          clima_noite?: string | null
+          clima_tarde?: string | null
+          condicao?: string
+          created_at?: string
+          created_by?: string | null
+          customer_id: string
+          data?: string
+          id?: string
+          obra_id: string
+          observacoes?: string | null
+          responsavel?: string | null
+          updated_at?: string
+        }
+        Update: {
+          clima_manha?: string | null
+          clima_noite?: string | null
+          clima_tarde?: string | null
+          condicao?: string
+          created_at?: string
+          created_by?: string | null
+          customer_id?: string
+          data?: string
+          id?: string
+          obra_id?: string
+          observacoes?: string | null
+          responsavel?: string | null
+          updated_at?: string
         }
         Relationships: []
       }
