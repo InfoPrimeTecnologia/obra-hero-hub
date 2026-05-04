@@ -1,12 +1,19 @@
 import { createFileRoute, Link, useNavigate } from "@tanstack/react-router";
 import { useEffect, useState, type FormEvent } from "react";
-import { Plus, FolderOpen, CheckCircle2 } from "lucide-react";
+import { Plus, FolderOpen, CheckCircle2, ListTree, Building2 } from "lucide-react";
 import { PageHeader } from "@/components/admin/PageHeader";
 import { Card, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
 import {
   Dialog,
   DialogContent,
@@ -25,16 +32,21 @@ export const Route = createFileRoute("/app/obras")({
   component: ObrasPage,
 });
 
+type Empresa = { id: string; nome: string };
+
 function ObrasPage() {
   const { user } = useAuth();
   const { obra: obraAtiva, setObra } = useObraSelecionada();
   const navigate = useNavigate();
   const [obras, setObras] = useState<Obra[]>([]);
+  const [empresas, setEmpresas] = useState<Empresa[]>([]);
+  const [filtroEmpresa, setFiltroEmpresa] = useState<string>("todas");
   const [open, setOpen] = useState(false);
   const [saving, setSaving] = useState(false);
 
   // form
   const [name, setName] = useState("");
+  const [empresaId, setEmpresaId] = useState<string>("");
   const [description, setDescription] = useState("");
   const [contactName, setContactName] = useState("");
   const [contactEmail, setContactEmail] = useState("");
@@ -43,17 +55,21 @@ function ObrasPage() {
   const [state, setState] = useState("");
 
   const carregar = async () => {
-    const { data, error } = await supabase
-      .from("obras")
-      .select(
-        "id,name,customer_id,contact_name,contact_email,contact_whatsapp,address_city,address_state,status",
-      )
-      .order("created_at", { ascending: false });
-    if (error) {
-      toast.error("Erro ao carregar obras", { description: error.message });
+    const [{ data: obrasData, error: obrasErr }, { data: empresasData }] = await Promise.all([
+      supabase
+        .from("obras")
+        .select(
+          "id,name,customer_id,empresa_id,contact_name,contact_email,contact_whatsapp,address_city,address_state,status",
+        )
+        .order("created_at", { ascending: false }),
+      supabase.from("empresas").select("id,nome").order("nome"),
+    ]);
+    if (obrasErr) {
+      toast.error("Erro ao carregar obras", { description: obrasErr.message });
       return;
     }
-    setObras((data ?? []) as Obra[]);
+    setObras((obrasData ?? []) as Obra[]);
+    setEmpresas((empresasData ?? []) as Empresa[]);
   };
 
   useEffect(() => {
@@ -62,6 +78,7 @@ function ObrasPage() {
 
   const resetForm = () => {
     setName("");
+    setEmpresaId("");
     setDescription("");
     setContactName("");
     setContactEmail("");
@@ -72,8 +89,11 @@ function ObrasPage() {
 
   const cadastrar = async (e: FormEvent) => {
     e.preventDefault();
+    if (!empresaId) {
+      toast.error("Selecione uma empresa.");
+      return;
+    }
     setSaving(true);
-    // pega customer_id do usuário
     const { data: customer, error: cErr } = await supabase
       .from("customers")
       .select("id")
@@ -81,11 +101,12 @@ function ObrasPage() {
       .maybeSingle();
     if (cErr || !customer) {
       setSaving(false);
-      toast.error("Não foi possível identificar sua empresa.");
+      toast.error("Não foi possível identificar sua conta.");
       return;
     }
     const { error } = await supabase.from("obras").insert({
       customer_id: customer.id,
+      empresa_id: empresaId,
       name,
       description: description || null,
       contact_name: contactName || null,
@@ -112,6 +133,14 @@ function ObrasPage() {
     navigate({ to: "/app/obras/$obraId/diario", params: { obraId: o.id } });
   };
 
+  const obrasFiltradas =
+    filtroEmpresa === "todas"
+      ? obras
+      : obras.filter((o) => o.empresa_id === filtroEmpresa);
+
+  const empresaNome = (id: string | null) =>
+    empresas.find((e) => e.id === id)?.nome ?? "—";
+
   return (
     <div>
       <PageHeader
@@ -120,7 +149,7 @@ function ObrasPage() {
         actions={
           <Dialog open={open} onOpenChange={setOpen}>
             <DialogTrigger asChild>
-              <Button>
+              <Button disabled={empresas.length === 0}>
                 <Plus className="mr-2 h-4 w-4" /> Nova obra
               </Button>
             </DialogTrigger>
@@ -129,6 +158,21 @@ function ObrasPage() {
                 <DialogTitle>Cadastrar obra</DialogTitle>
               </DialogHeader>
               <form onSubmit={cadastrar} className="space-y-3">
+                <div className="space-y-2">
+                  <Label>Empresa *</Label>
+                  <Select value={empresaId} onValueChange={setEmpresaId}>
+                    <SelectTrigger>
+                      <SelectValue placeholder="Selecione a empresa" />
+                    </SelectTrigger>
+                    <SelectContent>
+                      {empresas.map((e) => (
+                        <SelectItem key={e.id} value={e.id}>
+                          {e.nome}
+                        </SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
+                </div>
                 <div className="space-y-2">
                   <Label>Nome da obra *</Label>
                   <Input required value={name} onChange={(e) => setName(e.target.value)} />
@@ -192,14 +236,49 @@ function ObrasPage() {
         }
       />
       <div className="space-y-3 p-8">
-        {obras.length === 0 ? (
+        {empresas.length === 0 && (
+          <Card>
+            <CardContent className="flex items-center justify-between gap-3 p-4">
+              <div className="flex items-center gap-2 text-sm">
+                <Building2 className="h-4 w-4 text-primary" />
+                Cadastre uma empresa antes de criar sua primeira obra.
+              </div>
+              <Button asChild size="sm">
+                <Link to="/app/empresas">Ir para Empresas</Link>
+              </Button>
+            </CardContent>
+          </Card>
+        )}
+
+        {empresas.length > 0 && (
+          <div className="flex items-center gap-2">
+            <Label className="text-xs text-muted-foreground">Filtrar por empresa:</Label>
+            <Select value={filtroEmpresa} onValueChange={setFiltroEmpresa}>
+              <SelectTrigger className="w-[260px]">
+                <SelectValue />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value="todas">Todas as empresas</SelectItem>
+                {empresas.map((e) => (
+                  <SelectItem key={e.id} value={e.id}>
+                    {e.nome}
+                  </SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
+          </div>
+        )}
+
+        {obrasFiltradas.length === 0 ? (
           <Card>
             <CardContent className="p-8 text-center text-sm text-muted-foreground">
-              Nenhuma obra cadastrada ainda. Clique em "Nova obra" para começar.
+              {empresas.length === 0
+                ? 'Nenhuma obra ainda.'
+                : 'Nenhuma obra para este filtro. Clique em "Nova obra" para começar.'}
             </CardContent>
           </Card>
         ) : (
-          obras.map((o) => {
+          obrasFiltradas.map((o) => {
             const ativa = obraAtiva?.id === o.id;
             return (
               <Card key={o.id}>
@@ -214,19 +293,27 @@ function ObrasPage() {
                       )}
                     </div>
                     <p className="text-xs text-muted-foreground">
+                      <Building2 className="mr-1 inline h-3 w-3" />
+                      {empresaNome(o.empresa_id)}
+                      {" • "}
                       {[o.address_city, o.address_state].filter(Boolean).join(" / ") ||
                         "Sem endereço"}
                       {o.contact_name ? ` • Resp.: ${o.contact_name}` : ""}
                     </p>
                   </div>
-                  <div className="flex gap-2">
+                  <div className="flex flex-wrap gap-2">
                     <Button
                       variant={ativa ? "default" : "outline"}
                       size="sm"
                       onClick={() => abrirObra(o)}
                     >
                       <FolderOpen className="mr-2 h-4 w-4" />
-                      {ativa ? "Abrir diário" : "Abrir"}
+                      {ativa ? "Aberta" : "Abrir"}
+                    </Button>
+                    <Button variant="ghost" size="sm" asChild>
+                      <Link to="/app/obras/$obraId/orcamento" params={{ obraId: o.id }}>
+                        <ListTree className="mr-2 h-4 w-4" /> Orçamento
+                      </Link>
                     </Button>
                     <Button variant="ghost" size="sm" asChild>
                       <Link to="/app/obras/$obraId/diario" params={{ obraId: o.id }}>

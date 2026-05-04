@@ -22,6 +22,7 @@ import { Route as AdminPlanosRouteImport } from './routes/admin.planos'
 import { Route as AdminFaturasRouteImport } from './routes/admin.faturas'
 import { Route as AdminEmpresasRouteImport } from './routes/admin.empresas'
 import { Route as AdminConfiguracoesRouteImport } from './routes/admin.configuracoes'
+import { Route as AppObrasObraIdOrcamentoRouteImport } from './routes/app.obras.$obraId.orcamento'
 import { Route as AppObrasObraIdDiarioRouteImport } from './routes/app.obras.$obraId.diario'
 
 const LoginRoute = LoginRouteImport.update({
@@ -89,6 +90,11 @@ const AdminConfiguracoesRoute = AdminConfiguracoesRouteImport.update({
   path: '/configuracoes',
   getParentRoute: () => AdminRoute,
 } as any)
+const AppObrasObraIdOrcamentoRoute = AppObrasObraIdOrcamentoRouteImport.update({
+  id: '/$obraId/orcamento',
+  path: '/$obraId/orcamento',
+  getParentRoute: () => AppObrasRoute,
+} as any)
 const AppObrasObraIdDiarioRoute = AppObrasObraIdDiarioRouteImport.update({
   id: '/$obraId/diario',
   path: '/$obraId/diario',
@@ -110,6 +116,7 @@ export interface FileRoutesByFullPath {
   '/admin/': typeof AdminIndexRoute
   '/app/': typeof AppIndexRoute
   '/app/obras/$obraId/diario': typeof AppObrasObraIdDiarioRoute
+  '/app/obras/$obraId/orcamento': typeof AppObrasObraIdOrcamentoRoute
 }
 export interface FileRoutesByTo {
   '/': typeof IndexRoute
@@ -124,6 +131,7 @@ export interface FileRoutesByTo {
   '/admin': typeof AdminIndexRoute
   '/app': typeof AppIndexRoute
   '/app/obras/$obraId/diario': typeof AppObrasObraIdDiarioRoute
+  '/app/obras/$obraId/orcamento': typeof AppObrasObraIdOrcamentoRoute
 }
 export interface FileRoutesById {
   __root__: typeof rootRouteImport
@@ -141,6 +149,7 @@ export interface FileRoutesById {
   '/admin/': typeof AdminIndexRoute
   '/app/': typeof AppIndexRoute
   '/app/obras/$obraId/diario': typeof AppObrasObraIdDiarioRoute
+  '/app/obras/$obraId/orcamento': typeof AppObrasObraIdOrcamentoRoute
 }
 export interface FileRouteTypes {
   fileRoutesByFullPath: FileRoutesByFullPath
@@ -159,6 +168,7 @@ export interface FileRouteTypes {
     | '/admin/'
     | '/app/'
     | '/app/obras/$obraId/diario'
+    | '/app/obras/$obraId/orcamento'
   fileRoutesByTo: FileRoutesByTo
   to:
     | '/'
@@ -173,6 +183,7 @@ export interface FileRouteTypes {
     | '/admin'
     | '/app'
     | '/app/obras/$obraId/diario'
+    | '/app/obras/$obraId/orcamento'
   id:
     | '__root__'
     | '/'
@@ -189,6 +200,7 @@ export interface FileRouteTypes {
     | '/admin/'
     | '/app/'
     | '/app/obras/$obraId/diario'
+    | '/app/obras/$obraId/orcamento'
   fileRoutesById: FileRoutesById
 }
 export interface RootRouteChildren {
@@ -291,6 +303,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AdminConfiguracoesRouteImport
       parentRoute: typeof AdminRoute
     }
+    '/app/obras/$obraId/orcamento': {
+      id: '/app/obras/$obraId/orcamento'
+      path: '/$obraId/orcamento'
+      fullPath: '/app/obras/$obraId/orcamento'
+      preLoaderRoute: typeof AppObrasObraIdOrcamentoRouteImport
+      parentRoute: typeof AppObrasRoute
+    }
     '/app/obras/$obraId/diario': {
       id: '/app/obras/$obraId/diario'
       path: '/$obraId/diario'
@@ -323,10 +342,12 @@ const AdminRouteWithChildren = AdminRoute._addFileChildren(AdminRouteChildren)
 
 interface AppObrasRouteChildren {
   AppObrasObraIdDiarioRoute: typeof AppObrasObraIdDiarioRoute
+  AppObrasObraIdOrcamentoRoute: typeof AppObrasObraIdOrcamentoRoute
 }
 
 const AppObrasRouteChildren: AppObrasRouteChildren = {
   AppObrasObraIdDiarioRoute: AppObrasObraIdDiarioRoute,
+  AppObrasObraIdOrcamentoRoute: AppObrasObraIdOrcamentoRoute,
 }
 
 const AppObrasRouteWithChildren = AppObrasRoute._addFileChildren(
