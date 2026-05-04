@@ -1,5 +1,5 @@
 import { Link, Outlet, useLocation, useNavigate } from "@tanstack/react-router";
-import { LayoutDashboard, HardHat, LogOut, Building2, ListTree, ClipboardList, Truck, CreditCard, ShoppingCart } from "lucide-react";
+import { LayoutDashboard, HardHat, LogOut, Building2, ListTree, ClipboardList, Truck, CreditCard, ShoppingCart, Wallet, Tags, Receipt, ArrowDownToLine, ArrowLeftRight, BarChart3, FileSpreadsheet } from "lucide-react";
 import { Logo } from "@/components/Logo";
 import { useAuth } from "@/lib/auth-context";
 import { Button } from "@/components/ui/button";
@@ -12,6 +12,13 @@ const nav = [
   { to: "/app/obras", label: "Obras", icon: HardHat },
   { to: "/app/fornecedores", label: "Fornecedores", icon: Truck },
   { to: "/app/cartoes", label: "Cartões", icon: CreditCard },
+  { to: "/app/contas-bancarias", label: "Contas bancárias", icon: Wallet },
+  { to: "/app/categorias", label: "Categorias", icon: Tags },
+  { to: "/app/contas-pagar", label: "Contas a pagar", icon: Receipt },
+  { to: "/app/contas-receber", label: "Contas a receber", icon: ArrowDownToLine },
+  { to: "/app/transferencias", label: "Transferências", icon: ArrowLeftRight },
+  { to: "/app/fluxo-caixa", label: "Fluxo de caixa", icon: BarChart3 },
+  { to: "/app/conciliacao", label: "Conciliação", icon: FileSpreadsheet },
 ];
 
 export function AppLayout() {
