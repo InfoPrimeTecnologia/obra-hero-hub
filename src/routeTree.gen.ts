@@ -15,9 +15,11 @@ import { Route as AdminRouteImport } from './routes/admin'
 import { Route as IndexRouteImport } from './routes/index'
 import { Route as AppIndexRouteImport } from './routes/app.index'
 import { Route as AdminIndexRouteImport } from './routes/admin.index'
+import { Route as AppTransferenciasRouteImport } from './routes/app.transferencias'
 import { Route as AppObrasRouteImport } from './routes/app.obras'
 import { Route as AppFornecedoresRouteImport } from './routes/app.fornecedores'
 import { Route as AppEmpresasRouteImport } from './routes/app.empresas'
+import { Route as AppContasReceberRouteImport } from './routes/app.contas-receber'
 import { Route as AppContasPagarRouteImport } from './routes/app.contas-pagar'
 import { Route as AppContasBancariasRouteImport } from './routes/app.contas-bancarias'
 import { Route as AppCategoriasRouteImport } from './routes/app.categorias'
@@ -63,6 +65,11 @@ const AdminIndexRoute = AdminIndexRouteImport.update({
   path: '/',
   getParentRoute: () => AdminRoute,
 } as any)
+const AppTransferenciasRoute = AppTransferenciasRouteImport.update({
+  id: '/transferencias',
+  path: '/transferencias',
+  getParentRoute: () => AppRoute,
+} as any)
 const AppObrasRoute = AppObrasRouteImport.update({
   id: '/obras',
   path: '/obras',
@@ -76,6 +83,11 @@ const AppFornecedoresRoute = AppFornecedoresRouteImport.update({
 const AppEmpresasRoute = AppEmpresasRouteImport.update({
   id: '/empresas',
   path: '/empresas',
+  getParentRoute: () => AppRoute,
+} as any)
+const AppContasReceberRoute = AppContasReceberRouteImport.update({
+  id: '/contas-receber',
+  path: '/contas-receber',
   getParentRoute: () => AppRoute,
 } as any)
 const AppContasPagarRoute = AppContasPagarRouteImport.update({
@@ -164,9 +176,11 @@ export interface FileRoutesByFullPath {
   '/app/categorias': typeof AppCategoriasRoute
   '/app/contas-bancarias': typeof AppContasBancariasRoute
   '/app/contas-pagar': typeof AppContasPagarRoute
+  '/app/contas-receber': typeof AppContasReceberRoute
   '/app/empresas': typeof AppEmpresasRoute
   '/app/fornecedores': typeof AppFornecedoresRoute
   '/app/obras': typeof AppObrasRouteWithChildren
+  '/app/transferencias': typeof AppTransferenciasRoute
   '/admin/': typeof AdminIndexRoute
   '/app/': typeof AppIndexRoute
   '/app/obras/$obraId/compras': typeof AppObrasObraIdComprasRouteWithChildren
@@ -187,9 +201,11 @@ export interface FileRoutesByTo {
   '/app/categorias': typeof AppCategoriasRoute
   '/app/contas-bancarias': typeof AppContasBancariasRoute
   '/app/contas-pagar': typeof AppContasPagarRoute
+  '/app/contas-receber': typeof AppContasReceberRoute
   '/app/empresas': typeof AppEmpresasRoute
   '/app/fornecedores': typeof AppFornecedoresRoute
   '/app/obras': typeof AppObrasRouteWithChildren
+  '/app/transferencias': typeof AppTransferenciasRoute
   '/admin': typeof AdminIndexRoute
   '/app': typeof AppIndexRoute
   '/app/obras/$obraId/compras': typeof AppObrasObraIdComprasRouteWithChildren
@@ -213,9 +229,11 @@ export interface FileRoutesById {
   '/app/categorias': typeof AppCategoriasRoute
   '/app/contas-bancarias': typeof AppContasBancariasRoute
   '/app/contas-pagar': typeof AppContasPagarRoute
+  '/app/contas-receber': typeof AppContasReceberRoute
   '/app/empresas': typeof AppEmpresasRoute
   '/app/fornecedores': typeof AppFornecedoresRoute
   '/app/obras': typeof AppObrasRouteWithChildren
+  '/app/transferencias': typeof AppTransferenciasRoute
   '/admin/': typeof AdminIndexRoute
   '/app/': typeof AppIndexRoute
   '/app/obras/$obraId/compras': typeof AppObrasObraIdComprasRouteWithChildren
@@ -240,9 +258,11 @@ export interface FileRouteTypes {
     | '/app/categorias'
     | '/app/contas-bancarias'
     | '/app/contas-pagar'
+    | '/app/contas-receber'
     | '/app/empresas'
     | '/app/fornecedores'
     | '/app/obras'
+    | '/app/transferencias'
     | '/admin/'
     | '/app/'
     | '/app/obras/$obraId/compras'
@@ -263,9 +283,11 @@ export interface FileRouteTypes {
     | '/app/categorias'
     | '/app/contas-bancarias'
     | '/app/contas-pagar'
+    | '/app/contas-receber'
     | '/app/empresas'
     | '/app/fornecedores'
     | '/app/obras'
+    | '/app/transferencias'
     | '/admin'
     | '/app'
     | '/app/obras/$obraId/compras'
@@ -288,9 +310,11 @@ export interface FileRouteTypes {
     | '/app/categorias'
     | '/app/contas-bancarias'
     | '/app/contas-pagar'
+    | '/app/contas-receber'
     | '/app/empresas'
     | '/app/fornecedores'
     | '/app/obras'
+    | '/app/transferencias'
     | '/admin/'
     | '/app/'
     | '/app/obras/$obraId/compras'
@@ -351,6 +375,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AdminIndexRouteImport
       parentRoute: typeof AdminRoute
     }
+    '/app/transferencias': {
+      id: '/app/transferencias'
+      path: '/transferencias'
+      fullPath: '/app/transferencias'
+      preLoaderRoute: typeof AppTransferenciasRouteImport
+      parentRoute: typeof AppRoute
+    }
     '/app/obras': {
       id: '/app/obras'
       path: '/obras'
@@ -370,6 +401,13 @@ declare module '@tanstack/react-router' {
       path: '/empresas'
       fullPath: '/app/empresas'
       preLoaderRoute: typeof AppEmpresasRouteImport
+      parentRoute: typeof AppRoute
+    }
+    '/app/contas-receber': {
+      id: '/app/contas-receber'
+      path: '/contas-receber'
+      fullPath: '/app/contas-receber'
+      preLoaderRoute: typeof AppContasReceberRouteImport
       parentRoute: typeof AppRoute
     }
     '/app/contas-pagar': {
@@ -538,9 +576,11 @@ interface AppRouteChildren {
   AppCategoriasRoute: typeof AppCategoriasRoute
   AppContasBancariasRoute: typeof AppContasBancariasRoute
   AppContasPagarRoute: typeof AppContasPagarRoute
+  AppContasReceberRoute: typeof AppContasReceberRoute
   AppEmpresasRoute: typeof AppEmpresasRoute
   AppFornecedoresRoute: typeof AppFornecedoresRoute
   AppObrasRoute: typeof AppObrasRouteWithChildren
+  AppTransferenciasRoute: typeof AppTransferenciasRoute
   AppIndexRoute: typeof AppIndexRoute
 }
 
@@ -549,9 +589,11 @@ const AppRouteChildren: AppRouteChildren = {
   AppCategoriasRoute: AppCategoriasRoute,
   AppContasBancariasRoute: AppContasBancariasRoute,
   AppContasPagarRoute: AppContasPagarRoute,
+  AppContasReceberRoute: AppContasReceberRoute,
   AppEmpresasRoute: AppEmpresasRoute,
   AppFornecedoresRoute: AppFornecedoresRoute,
   AppObrasRoute: AppObrasRouteWithChildren,
+  AppTransferenciasRoute: AppTransferenciasRoute,
   AppIndexRoute: AppIndexRoute,
 }
 
