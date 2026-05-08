@@ -31,6 +31,7 @@ import { Route as AdminPlanosRouteImport } from './routes/admin.planos'
 import { Route as AdminFaturasRouteImport } from './routes/admin.faturas'
 import { Route as AdminEmpresasRouteImport } from './routes/admin.empresas'
 import { Route as AdminConfiguracoesRouteImport } from './routes/admin.configuracoes'
+import { Route as AppRhColaboradoresRouteImport } from './routes/app.rh.colaboradores'
 import { Route as AppEstoqueSaldosRouteImport } from './routes/app.estoque.saldos'
 import { Route as AppEstoqueRequisicoesRouteImport } from './routes/app.estoque.requisicoes'
 import { Route as AppEstoqueProdutosRouteImport } from './routes/app.estoque.produtos'
@@ -152,6 +153,11 @@ const AdminConfiguracoesRoute = AdminConfiguracoesRouteImport.update({
   path: '/configuracoes',
   getParentRoute: () => AdminRoute,
 } as any)
+const AppRhColaboradoresRoute = AppRhColaboradoresRouteImport.update({
+  id: '/rh/colaboradores',
+  path: '/rh/colaboradores',
+  getParentRoute: () => AppRoute,
+} as any)
 const AppEstoqueSaldosRoute = AppEstoqueSaldosRouteImport.update({
   id: '/estoque/saldos',
   path: '/estoque/saldos',
@@ -232,6 +238,7 @@ export interface FileRoutesByFullPath {
   '/app/estoque/produtos': typeof AppEstoqueProdutosRoute
   '/app/estoque/requisicoes': typeof AppEstoqueRequisicoesRoute
   '/app/estoque/saldos': typeof AppEstoqueSaldosRoute
+  '/app/rh/colaboradores': typeof AppRhColaboradoresRoute
   '/app/obras/$obraId/compras': typeof AppObrasObraIdComprasRouteWithChildren
   '/app/obras/$obraId/orcamento': typeof AppObrasObraIdOrcamentoRoute
   '/app/obras/$obraId/rdo': typeof AppObrasObraIdRdoRouteWithChildren
@@ -264,6 +271,7 @@ export interface FileRoutesByTo {
   '/app/estoque/produtos': typeof AppEstoqueProdutosRoute
   '/app/estoque/requisicoes': typeof AppEstoqueRequisicoesRoute
   '/app/estoque/saldos': typeof AppEstoqueSaldosRoute
+  '/app/rh/colaboradores': typeof AppRhColaboradoresRoute
   '/app/obras/$obraId/compras': typeof AppObrasObraIdComprasRouteWithChildren
   '/app/obras/$obraId/orcamento': typeof AppObrasObraIdOrcamentoRoute
   '/app/obras/$obraId/rdo': typeof AppObrasObraIdRdoRouteWithChildren
@@ -299,6 +307,7 @@ export interface FileRoutesById {
   '/app/estoque/produtos': typeof AppEstoqueProdutosRoute
   '/app/estoque/requisicoes': typeof AppEstoqueRequisicoesRoute
   '/app/estoque/saldos': typeof AppEstoqueSaldosRoute
+  '/app/rh/colaboradores': typeof AppRhColaboradoresRoute
   '/app/obras/$obraId/compras': typeof AppObrasObraIdComprasRouteWithChildren
   '/app/obras/$obraId/orcamento': typeof AppObrasObraIdOrcamentoRoute
   '/app/obras/$obraId/rdo': typeof AppObrasObraIdRdoRouteWithChildren
@@ -335,6 +344,7 @@ export interface FileRouteTypes {
     | '/app/estoque/produtos'
     | '/app/estoque/requisicoes'
     | '/app/estoque/saldos'
+    | '/app/rh/colaboradores'
     | '/app/obras/$obraId/compras'
     | '/app/obras/$obraId/orcamento'
     | '/app/obras/$obraId/rdo'
@@ -367,6 +377,7 @@ export interface FileRouteTypes {
     | '/app/estoque/produtos'
     | '/app/estoque/requisicoes'
     | '/app/estoque/saldos'
+    | '/app/rh/colaboradores'
     | '/app/obras/$obraId/compras'
     | '/app/obras/$obraId/orcamento'
     | '/app/obras/$obraId/rdo'
@@ -401,6 +412,7 @@ export interface FileRouteTypes {
     | '/app/estoque/produtos'
     | '/app/estoque/requisicoes'
     | '/app/estoque/saldos'
+    | '/app/rh/colaboradores'
     | '/app/obras/$obraId/compras'
     | '/app/obras/$obraId/orcamento'
     | '/app/obras/$obraId/rdo'
@@ -571,6 +583,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AdminConfiguracoesRouteImport
       parentRoute: typeof AdminRoute
     }
+    '/app/rh/colaboradores': {
+      id: '/app/rh/colaboradores'
+      path: '/rh/colaboradores'
+      fullPath: '/app/rh/colaboradores'
+      preLoaderRoute: typeof AppRhColaboradoresRouteImport
+      parentRoute: typeof AppRoute
+    }
     '/app/estoque/saldos': {
       id: '/app/estoque/saldos'
       path: '/estoque/saldos'
@@ -722,6 +741,7 @@ interface AppRouteChildren {
   AppEstoqueProdutosRoute: typeof AppEstoqueProdutosRoute
   AppEstoqueRequisicoesRoute: typeof AppEstoqueRequisicoesRoute
   AppEstoqueSaldosRoute: typeof AppEstoqueSaldosRoute
+  AppRhColaboradoresRoute: typeof AppRhColaboradoresRoute
 }
 
 const AppRouteChildren: AppRouteChildren = {
@@ -742,6 +762,7 @@ const AppRouteChildren: AppRouteChildren = {
   AppEstoqueProdutosRoute: AppEstoqueProdutosRoute,
   AppEstoqueRequisicoesRoute: AppEstoqueRequisicoesRoute,
   AppEstoqueSaldosRoute: AppEstoqueSaldosRoute,
+  AppRhColaboradoresRoute: AppRhColaboradoresRoute,
 }
 
 const AppRouteWithChildren = AppRoute._addFileChildren(AppRouteChildren)
