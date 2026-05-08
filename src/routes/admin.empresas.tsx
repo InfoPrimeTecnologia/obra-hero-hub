@@ -91,7 +91,7 @@ type Metrics = {
   totalAberto: number;
 };
 
-const STATUSES = ["active", "inactive", "trial", "suspended", "canceled"];
+const STATUSES = ["active", "inactive", "overdue", "canceled"];
 
 function EmpresasPage() {
   const [customers, setCustomers] = useState<Customer[]>([]);
