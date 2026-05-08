@@ -75,6 +75,9 @@ export function AppLayout() {
   const location = useLocation();
   const navigate = useNavigate();
   const [openGroups, setOpenGroups] = useState<Record<string, boolean>>({});
+  const { has: hasModule } = usePlanModules();
+
+  const visibleNav = nav.filter((item) => !item.module || hasModule(item.module));
 
   const handleSignOut = async () => {
     await signOut();
