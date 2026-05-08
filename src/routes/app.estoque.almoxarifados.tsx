@@ -118,7 +118,7 @@ function Page() {
               <Warehouse className="h-5 w-5 text-primary" />
               <div>
                 <p className="font-medium">{a.nome} {a.principal && <span className="ml-2 rounded bg-primary/10 px-2 py-0.5 text-xs text-primary">principal</span>}</p>
-                <p className="text-xs text-muted-foreground">{a.obras?.name ?? "Geral"}</p>
+                <p className="text-xs text-muted-foreground">{obraName(a.obra_id)}</p>
               </div>
             </div>
             <div className="flex gap-2">
