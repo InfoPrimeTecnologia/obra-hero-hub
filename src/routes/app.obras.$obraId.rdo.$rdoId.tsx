@@ -27,6 +27,7 @@ import {
 } from "@/components/ui/select";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/lib/auth-context";
+import { usePlanModules } from "@/lib/use-plan-modules";
 import { toast } from "sonner";
 
 export const Route = createFileRoute("/app/obras/$obraId/rdo/$rdoId")({
