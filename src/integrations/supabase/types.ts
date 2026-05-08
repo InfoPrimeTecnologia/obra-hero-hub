@@ -32,6 +32,45 @@ export type Database = {
         }
         Relationships: []
       }
+      almoxarifados: {
+        Row: {
+          ativo: boolean
+          created_at: string
+          created_by: string | null
+          customer_id: string
+          descricao: string | null
+          id: string
+          nome: string
+          obra_id: string | null
+          principal: boolean
+          updated_at: string
+        }
+        Insert: {
+          ativo?: boolean
+          created_at?: string
+          created_by?: string | null
+          customer_id: string
+          descricao?: string | null
+          id?: string
+          nome: string
+          obra_id?: string | null
+          principal?: boolean
+          updated_at?: string
+        }
+        Update: {
+          ativo?: boolean
+          created_at?: string
+          created_by?: string | null
+          customer_id?: string
+          descricao?: string | null
+          id?: string
+          nome?: string
+          obra_id?: string | null
+          principal?: boolean
+          updated_at?: string
+        }
+        Relationships: []
+      }
       cartoes: {
         Row: {
           ativo: boolean
@@ -121,6 +160,111 @@ export type Database = {
           },
         ]
       }
+      colaborador_obras: {
+        Row: {
+          colaborador_id: string
+          created_at: string
+          customer_id: string
+          data_fim: string | null
+          data_inicio: string | null
+          id: string
+          obra_id: string
+        }
+        Insert: {
+          colaborador_id: string
+          created_at?: string
+          customer_id: string
+          data_fim?: string | null
+          data_inicio?: string | null
+          id?: string
+          obra_id: string
+        }
+        Update: {
+          colaborador_id?: string
+          created_at?: string
+          customer_id?: string
+          data_fim?: string | null
+          data_inicio?: string | null
+          id?: string
+          obra_id?: string
+        }
+        Relationships: []
+      }
+      colaboradores: {
+        Row: {
+          ativo: boolean
+          cargo: string | null
+          cpf: string | null
+          created_at: string
+          created_by: string | null
+          ctps: string | null
+          customer_id: string
+          data_entrada: string | null
+          data_saida: string | null
+          deleted_at: string | null
+          email: string | null
+          empresa_id: string | null
+          endereco: string | null
+          foto_url: string | null
+          id: string
+          nome: string
+          observacoes: string | null
+          pix: string | null
+          remuneracao: number
+          telefone: string | null
+          updated_at: string
+          vinculo: string
+        }
+        Insert: {
+          ativo?: boolean
+          cargo?: string | null
+          cpf?: string | null
+          created_at?: string
+          created_by?: string | null
+          ctps?: string | null
+          customer_id: string
+          data_entrada?: string | null
+          data_saida?: string | null
+          deleted_at?: string | null
+          email?: string | null
+          empresa_id?: string | null
+          endereco?: string | null
+          foto_url?: string | null
+          id?: string
+          nome: string
+          observacoes?: string | null
+          pix?: string | null
+          remuneracao?: number
+          telefone?: string | null
+          updated_at?: string
+          vinculo?: string
+        }
+        Update: {
+          ativo?: boolean
+          cargo?: string | null
+          cpf?: string | null
+          created_at?: string
+          created_by?: string | null
+          ctps?: string | null
+          customer_id?: string
+          data_entrada?: string | null
+          data_saida?: string | null
+          deleted_at?: string | null
+          email?: string | null
+          empresa_id?: string | null
+          endereco?: string | null
+          foto_url?: string | null
+          id?: string
+          nome?: string
+          observacoes?: string | null
+          pix?: string | null
+          remuneracao?: number
+          telefone?: string | null
+          updated_at?: string
+          vinculo?: string
+        }
+        Relationships: []
+      }
       communications_log: {
         Row: {
           body: string | null
@@ -189,6 +333,7 @@ export type Database = {
           descricao: string
           etapa_id: string | null
           id: string
+          produto_id: string | null
           qtd_medida: number
           qtd_recebida: number
           quantidade: number
@@ -204,6 +349,7 @@ export type Database = {
           descricao: string
           etapa_id?: string | null
           id?: string
+          produto_id?: string | null
           qtd_medida?: number
           qtd_recebida?: number
           quantidade?: number
@@ -219,6 +365,7 @@ export type Database = {
           descricao?: string
           etapa_id?: string | null
           id?: string
+          produto_id?: string | null
           qtd_medida?: number
           qtd_recebida?: number
           quantidade?: number
@@ -731,6 +878,96 @@ export type Database = {
           customer_id?: string
           id?: string
           nome?: string
+          updated_at?: string
+        }
+        Relationships: []
+      }
+      estoque_movimentacoes: {
+        Row: {
+          almoxarifado_destino_id: string | null
+          almoxarifado_id: string
+          created_at: string
+          created_by: string | null
+          custo_unitario: number
+          customer_id: string
+          data: string
+          estorno_token: string | null
+          id: string
+          obra_id: string | null
+          observacoes: string | null
+          origem: string
+          produto_id: string
+          quantidade: number
+          recebimento_id: string | null
+          requisicao_id: string | null
+          tipo: string
+        }
+        Insert: {
+          almoxarifado_destino_id?: string | null
+          almoxarifado_id: string
+          created_at?: string
+          created_by?: string | null
+          custo_unitario?: number
+          customer_id: string
+          data?: string
+          estorno_token?: string | null
+          id?: string
+          obra_id?: string | null
+          observacoes?: string | null
+          origem?: string
+          produto_id: string
+          quantidade: number
+          recebimento_id?: string | null
+          requisicao_id?: string | null
+          tipo: string
+        }
+        Update: {
+          almoxarifado_destino_id?: string | null
+          almoxarifado_id?: string
+          created_at?: string
+          created_by?: string | null
+          custo_unitario?: number
+          customer_id?: string
+          data?: string
+          estorno_token?: string | null
+          id?: string
+          obra_id?: string | null
+          observacoes?: string | null
+          origem?: string
+          produto_id?: string
+          quantidade?: number
+          recebimento_id?: string | null
+          requisicao_id?: string | null
+          tipo?: string
+        }
+        Relationships: []
+      }
+      estoque_saldos: {
+        Row: {
+          almoxarifado_id: string
+          custo_medio: number
+          customer_id: string
+          id: string
+          produto_id: string
+          quantidade: number
+          updated_at: string
+        }
+        Insert: {
+          almoxarifado_id: string
+          custo_medio?: number
+          customer_id: string
+          id?: string
+          produto_id: string
+          quantidade?: number
+          updated_at?: string
+        }
+        Update: {
+          almoxarifado_id?: string
+          custo_medio?: number
+          customer_id?: string
+          id?: string
+          produto_id?: string
+          quantidade?: number
           updated_at?: string
         }
         Relationships: []
@@ -1423,6 +1660,8 @@ export type Database = {
           id: string
           is_active: boolean
           is_featured: boolean
+          limits: Json
+          modules: Json
           name: string
           price: number
           updated_at: string
@@ -1436,6 +1675,8 @@ export type Database = {
           id?: string
           is_active?: boolean
           is_featured?: boolean
+          limits?: Json
+          modules?: Json
           name: string
           price: number
           updated_at?: string
@@ -1449,8 +1690,58 @@ export type Database = {
           id?: string
           is_active?: boolean
           is_featured?: boolean
+          limits?: Json
+          modules?: Json
           name?: string
           price?: number
+          updated_at?: string
+        }
+        Relationships: []
+      }
+      produtos: {
+        Row: {
+          ativo: boolean
+          categoria: string | null
+          codigo: string | null
+          created_at: string
+          created_by: string | null
+          custo_medio: number
+          customer_id: string
+          descricao: string | null
+          estoque_minimo: number
+          id: string
+          nome: string
+          unidade: string
+          updated_at: string
+        }
+        Insert: {
+          ativo?: boolean
+          categoria?: string | null
+          codigo?: string | null
+          created_at?: string
+          created_by?: string | null
+          custo_medio?: number
+          customer_id: string
+          descricao?: string | null
+          estoque_minimo?: number
+          id?: string
+          nome: string
+          unidade?: string
+          updated_at?: string
+        }
+        Update: {
+          ativo?: boolean
+          categoria?: string | null
+          codigo?: string | null
+          created_at?: string
+          created_by?: string | null
+          custo_medio?: number
+          customer_id?: string
+          descricao?: string | null
+          estoque_minimo?: number
+          id?: string
+          nome?: string
+          unidade?: string
           updated_at?: string
         }
         Relationships: []
@@ -1771,6 +2062,84 @@ export type Database = {
           id?: string
           observacoes?: string | null
           recebido_por?: string | null
+        }
+        Relationships: []
+      }
+      requisicao_itens: {
+        Row: {
+          created_at: string
+          customer_id: string
+          id: string
+          observacoes: string | null
+          produto_id: string
+          qtd_atendida: number
+          quantidade: number
+          requisicao_id: string
+        }
+        Insert: {
+          created_at?: string
+          customer_id: string
+          id?: string
+          observacoes?: string | null
+          produto_id: string
+          qtd_atendida?: number
+          quantidade?: number
+          requisicao_id: string
+        }
+        Update: {
+          created_at?: string
+          customer_id?: string
+          id?: string
+          observacoes?: string | null
+          produto_id?: string
+          qtd_atendida?: number
+          quantidade?: number
+          requisicao_id?: string
+        }
+        Relationships: []
+      }
+      requisicoes: {
+        Row: {
+          almoxarifado_id: string | null
+          created_at: string
+          created_by: string | null
+          customer_id: string
+          data: string
+          id: string
+          numero: number
+          obra_id: string
+          observacoes: string | null
+          solicitante: string | null
+          status: string
+          updated_at: string
+        }
+        Insert: {
+          almoxarifado_id?: string | null
+          created_at?: string
+          created_by?: string | null
+          customer_id: string
+          data?: string
+          id?: string
+          numero?: number
+          obra_id: string
+          observacoes?: string | null
+          solicitante?: string | null
+          status?: string
+          updated_at?: string
+        }
+        Update: {
+          almoxarifado_id?: string | null
+          created_at?: string
+          created_by?: string | null
+          customer_id?: string
+          data?: string
+          id?: string
+          numero?: number
+          obra_id?: string
+          observacoes?: string | null
+          solicitante?: string | null
+          status?: string
+          updated_at?: string
         }
         Relationships: []
       }
