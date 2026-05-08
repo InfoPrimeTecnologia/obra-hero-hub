@@ -325,9 +325,11 @@ function RdoDetailPage() {
                 <ArrowLeft className="mr-2 h-4 w-4" /> Voltar
               </Link>
             </Button>
-            <Button variant="outline" onClick={enviarWhats}>
-              <MessageCircle className="mr-2 h-4 w-4" /> WhatsApp
-            </Button>
+            {hasFeature("rdo_whatsapp") && (
+              <Button variant="outline" onClick={enviarWhats}>
+                <MessageCircle className="mr-2 h-4 w-4" /> WhatsApp
+              </Button>
+            )}
             <Button variant="outline" onClick={enviarEmail}>
               <Mail className="mr-2 h-4 w-4" /> E-mail
             </Button>
