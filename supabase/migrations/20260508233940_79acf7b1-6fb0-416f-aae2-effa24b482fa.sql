@@ -1,0 +1,1 @@
+CREATE POLICY "Owners view own subscription" ON public.subscriptions FOR SELECT TO authenticated USING (customer_id = current_user_customer_id());
