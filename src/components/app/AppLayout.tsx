@@ -122,7 +122,7 @@ export function AppLayout() {
           </div>
         ) : null}
         <nav className="flex-1 space-y-1 overflow-y-auto p-3">
-          {nav.map((item) => {
+          {visibleNav.map((item) => {
             if (isGroup(item)) {
               const groupActive = item.children.some((c) =>
                 location.pathname.startsWith(c.to)
