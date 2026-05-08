@@ -50,6 +50,7 @@ export function AppLayout() {
   const { obra } = useObraSelecionada();
   const location = useLocation();
   const navigate = useNavigate();
+  const [openGroups, setOpenGroups] = useState<Record<string, boolean>>({});
 
   const handleSignOut = async () => {
     await signOut();
