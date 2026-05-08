@@ -31,6 +31,8 @@ import { Route as AdminPlanosRouteImport } from './routes/admin.planos'
 import { Route as AdminFaturasRouteImport } from './routes/admin.faturas'
 import { Route as AdminEmpresasRouteImport } from './routes/admin.empresas'
 import { Route as AdminConfiguracoesRouteImport } from './routes/admin.configuracoes'
+import { Route as AppEstoqueProdutosRouteImport } from './routes/app.estoque.produtos'
+import { Route as AppEstoqueAlmoxarifadosRouteImport } from './routes/app.estoque.almoxarifados'
 import { Route as AppObrasObraIdRdoRouteImport } from './routes/app.obras.$obraId.rdo'
 import { Route as AppObrasObraIdOrcamentoRouteImport } from './routes/app.obras.$obraId.orcamento'
 import { Route as AppObrasObraIdComprasRouteImport } from './routes/app.obras.$obraId.compras'
@@ -147,6 +149,16 @@ const AdminConfiguracoesRoute = AdminConfiguracoesRouteImport.update({
   path: '/configuracoes',
   getParentRoute: () => AdminRoute,
 } as any)
+const AppEstoqueProdutosRoute = AppEstoqueProdutosRouteImport.update({
+  id: '/estoque/produtos',
+  path: '/estoque/produtos',
+  getParentRoute: () => AppRoute,
+} as any)
+const AppEstoqueAlmoxarifadosRoute = AppEstoqueAlmoxarifadosRouteImport.update({
+  id: '/estoque/almoxarifados',
+  path: '/estoque/almoxarifados',
+  getParentRoute: () => AppRoute,
+} as any)
 const AppObrasObraIdRdoRoute = AppObrasObraIdRdoRouteImport.update({
   id: '/$obraId/rdo',
   path: '/$obraId/rdo',
@@ -197,6 +209,8 @@ export interface FileRoutesByFullPath {
   '/app/transferencias': typeof AppTransferenciasRoute
   '/admin/': typeof AdminIndexRoute
   '/app/': typeof AppIndexRoute
+  '/app/estoque/almoxarifados': typeof AppEstoqueAlmoxarifadosRoute
+  '/app/estoque/produtos': typeof AppEstoqueProdutosRoute
   '/app/obras/$obraId/compras': typeof AppObrasObraIdComprasRouteWithChildren
   '/app/obras/$obraId/orcamento': typeof AppObrasObraIdOrcamentoRoute
   '/app/obras/$obraId/rdo': typeof AppObrasObraIdRdoRouteWithChildren
@@ -224,6 +238,8 @@ export interface FileRoutesByTo {
   '/app/transferencias': typeof AppTransferenciasRoute
   '/admin': typeof AdminIndexRoute
   '/app': typeof AppIndexRoute
+  '/app/estoque/almoxarifados': typeof AppEstoqueAlmoxarifadosRoute
+  '/app/estoque/produtos': typeof AppEstoqueProdutosRoute
   '/app/obras/$obraId/compras': typeof AppObrasObraIdComprasRouteWithChildren
   '/app/obras/$obraId/orcamento': typeof AppObrasObraIdOrcamentoRoute
   '/app/obras/$obraId/rdo': typeof AppObrasObraIdRdoRouteWithChildren
@@ -254,6 +270,8 @@ export interface FileRoutesById {
   '/app/transferencias': typeof AppTransferenciasRoute
   '/admin/': typeof AdminIndexRoute
   '/app/': typeof AppIndexRoute
+  '/app/estoque/almoxarifados': typeof AppEstoqueAlmoxarifadosRoute
+  '/app/estoque/produtos': typeof AppEstoqueProdutosRoute
   '/app/obras/$obraId/compras': typeof AppObrasObraIdComprasRouteWithChildren
   '/app/obras/$obraId/orcamento': typeof AppObrasObraIdOrcamentoRoute
   '/app/obras/$obraId/rdo': typeof AppObrasObraIdRdoRouteWithChildren
@@ -285,6 +303,8 @@ export interface FileRouteTypes {
     | '/app/transferencias'
     | '/admin/'
     | '/app/'
+    | '/app/estoque/almoxarifados'
+    | '/app/estoque/produtos'
     | '/app/obras/$obraId/compras'
     | '/app/obras/$obraId/orcamento'
     | '/app/obras/$obraId/rdo'
@@ -312,6 +332,8 @@ export interface FileRouteTypes {
     | '/app/transferencias'
     | '/admin'
     | '/app'
+    | '/app/estoque/almoxarifados'
+    | '/app/estoque/produtos'
     | '/app/obras/$obraId/compras'
     | '/app/obras/$obraId/orcamento'
     | '/app/obras/$obraId/rdo'
@@ -341,6 +363,8 @@ export interface FileRouteTypes {
     | '/app/transferencias'
     | '/admin/'
     | '/app/'
+    | '/app/estoque/almoxarifados'
+    | '/app/estoque/produtos'
     | '/app/obras/$obraId/compras'
     | '/app/obras/$obraId/orcamento'
     | '/app/obras/$obraId/rdo'
@@ -511,6 +535,20 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AdminConfiguracoesRouteImport
       parentRoute: typeof AdminRoute
     }
+    '/app/estoque/produtos': {
+      id: '/app/estoque/produtos'
+      path: '/estoque/produtos'
+      fullPath: '/app/estoque/produtos'
+      preLoaderRoute: typeof AppEstoqueProdutosRouteImport
+      parentRoute: typeof AppRoute
+    }
+    '/app/estoque/almoxarifados': {
+      id: '/app/estoque/almoxarifados'
+      path: '/estoque/almoxarifados'
+      fullPath: '/app/estoque/almoxarifados'
+      preLoaderRoute: typeof AppEstoqueAlmoxarifadosRouteImport
+      parentRoute: typeof AppRoute
+    }
     '/app/obras/$obraId/rdo': {
       id: '/app/obras/$obraId/rdo'
       path: '/$obraId/rdo'
@@ -622,6 +660,8 @@ interface AppRouteChildren {
   AppObrasRoute: typeof AppObrasRouteWithChildren
   AppTransferenciasRoute: typeof AppTransferenciasRoute
   AppIndexRoute: typeof AppIndexRoute
+  AppEstoqueAlmoxarifadosRoute: typeof AppEstoqueAlmoxarifadosRoute
+  AppEstoqueProdutosRoute: typeof AppEstoqueProdutosRoute
 }
 
 const AppRouteChildren: AppRouteChildren = {
@@ -637,6 +677,8 @@ const AppRouteChildren: AppRouteChildren = {
   AppObrasRoute: AppObrasRouteWithChildren,
   AppTransferenciasRoute: AppTransferenciasRoute,
   AppIndexRoute: AppIndexRoute,
+  AppEstoqueAlmoxarifadosRoute: AppEstoqueAlmoxarifadosRoute,
+  AppEstoqueProdutosRoute: AppEstoqueProdutosRoute,
 }
 
 const AppRouteWithChildren = AppRoute._addFileChildren(AppRouteChildren)
@@ -650,3 +692,12 @@ const rootRouteChildren: RootRouteChildren = {
 export const routeTree = rootRouteImport
   ._addFileChildren(rootRouteChildren)
   ._addFileTypes<FileRouteTypes>()
+
+import type { getRouter } from './router.tsx'
+import type { createStart } from '@tanstack/react-start'
+declare module '@tanstack/react-start' {
+  interface Register {
+    ssr: true
+    router: Awaited<ReturnType<typeof getRouter>>
+  }
+}
