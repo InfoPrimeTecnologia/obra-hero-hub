@@ -36,7 +36,7 @@ export function usePlanModules() {
         .from("subscriptions")
         .select("plan_id, status, plans(modules)")
         .eq("customer_id", cust.id)
-        .in("status", ["active", "trialing"])
+        .eq("status", "active")
         .order("started_at", { ascending: false })
         .limit(1)
         .maybeSingle();
