@@ -1,25 +1,49 @@
 import { Link, Outlet, useLocation, useNavigate } from "@tanstack/react-router";
-import { LayoutDashboard, HardHat, LogOut, Building2, ListTree, ClipboardList, Truck, CreditCard, ShoppingCart, Wallet, Tags, Receipt, ArrowDownToLine, ArrowLeftRight, BarChart3, FileSpreadsheet } from "lucide-react";
+import { useState } from "react";
+import { LayoutDashboard, HardHat, LogOut, Building2, ListTree, ClipboardList, Truck, CreditCard, ShoppingCart, Wallet, Tags, Receipt, ArrowDownToLine, ArrowLeftRight, BarChart3, FileSpreadsheet, DollarSign, ChevronDown } from "lucide-react";
 import { Logo } from "@/components/Logo";
 import { useAuth } from "@/lib/auth-context";
 import { Button } from "@/components/ui/button";
 import { cn } from "@/lib/utils";
 import { useObraSelecionada } from "@/lib/obra-context";
 
-const nav = [
+type NavItem = {
+  to: string;
+  label: string;
+  icon: typeof LayoutDashboard;
+  exact?: boolean;
+};
+
+type NavGroup = {
+  label: string;
+  icon: typeof LayoutDashboard;
+  children: NavItem[];
+};
+
+const nav: Array<NavItem | NavGroup> = [
   { to: "/app", label: "Dashboard", icon: LayoutDashboard, exact: true },
   { to: "/app/empresas", label: "Empresas", icon: Building2 },
   { to: "/app/obras", label: "Obras", icon: HardHat },
   { to: "/app/fornecedores", label: "Fornecedores", icon: Truck },
-  { to: "/app/cartoes", label: "Cartões", icon: CreditCard },
-  { to: "/app/contas-bancarias", label: "Contas bancárias", icon: Wallet },
-  { to: "/app/categorias", label: "Categorias", icon: Tags },
-  { to: "/app/contas-pagar", label: "Contas a pagar", icon: Receipt },
-  { to: "/app/contas-receber", label: "Contas a receber", icon: ArrowDownToLine },
-  { to: "/app/transferencias", label: "Transferências", icon: ArrowLeftRight },
-  { to: "/app/fluxo-caixa", label: "Fluxo de caixa", icon: BarChart3 },
-  { to: "/app/conciliacao", label: "Conciliação", icon: FileSpreadsheet },
+  {
+    label: "Financeiro",
+    icon: DollarSign,
+    children: [
+      { to: "/app/cartoes", label: "Cartões", icon: CreditCard },
+      { to: "/app/contas-bancarias", label: "Contas bancárias", icon: Wallet },
+      { to: "/app/categorias", label: "Categorias", icon: Tags },
+      { to: "/app/contas-pagar", label: "Contas a pagar", icon: Receipt },
+      { to: "/app/contas-receber", label: "Contas a receber", icon: ArrowDownToLine },
+      { to: "/app/transferencias", label: "Transferências", icon: ArrowLeftRight },
+      { to: "/app/fluxo-caixa", label: "Fluxo de caixa", icon: BarChart3 },
+      { to: "/app/conciliacao", label: "Conciliação", icon: FileSpreadsheet },
+    ],
+  },
 ];
+
+function isGroup(item: NavItem | NavGroup): item is NavGroup {
+  return (item as NavGroup).children !== undefined;
+}
 
 export function AppLayout() {
   const { signOut, user } = useAuth();
