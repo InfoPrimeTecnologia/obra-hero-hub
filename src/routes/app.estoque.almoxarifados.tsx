@@ -18,7 +18,7 @@ import { toast } from "sonner";
 
 export const Route = createFileRoute("/app/estoque/almoxarifados")({ component: Page });
 
-type Almox = { id: string; nome: string; descricao: string | null; obra_id: string | null; principal: boolean; ativo: boolean; obras?: { name: string } | null };
+type Almox = { id: string; nome: string; descricao: string | null; obra_id: string | null; principal: boolean; ativo: boolean };
 type Obra = { id: string; name: string };
 
 const initial = { nome: "", descricao: "", obra_id: "", principal: false };
@@ -32,8 +32,10 @@ function Page() {
   const [editing, setEditing] = useState<Almox | null>(null);
   const [form, setForm] = useState(initial);
 
+  const obraName = (id: string | null) => obras.find((o) => o.id === id)?.name ?? "Geral";
+
   const load = async () => {
-    const { data } = await supabase.from("almoxarifados").select("*, obras(name)").eq("ativo", true).order("nome");
+    const { data } = await supabase.from("almoxarifados").select("*").eq("ativo", true).order("nome");
     setItems((data ?? []) as Almox[]);
     const { data: o } = await supabase.from("obras").select("id,name").order("name");
     setObras((o ?? []) as Obra[]);
