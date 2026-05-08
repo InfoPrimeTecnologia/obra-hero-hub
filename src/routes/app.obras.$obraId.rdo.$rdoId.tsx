@@ -27,6 +27,7 @@ import {
 } from "@/components/ui/select";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/lib/auth-context";
+import { usePlanModules } from "@/lib/use-plan-modules";
 import { toast } from "sonner";
 
 export const Route = createFileRoute("/app/obras/$obraId/rdo/$rdoId")({
@@ -80,6 +81,7 @@ type Anexo = {
 function RdoDetailPage() {
   const { obraId, rdoId } = Route.useParams();
   const { user } = useAuth();
+  const { hasFeature } = usePlanModules();
 
   const [obra, setObra] = useState<Obra | null>(null);
   const [rdo, setRdo] = useState<Rdo | null>(null);
@@ -323,9 +325,11 @@ function RdoDetailPage() {
                 <ArrowLeft className="mr-2 h-4 w-4" /> Voltar
               </Link>
             </Button>
-            <Button variant="outline" onClick={enviarWhats}>
-              <MessageCircle className="mr-2 h-4 w-4" /> WhatsApp
-            </Button>
+            {hasFeature("rdo_whatsapp") && (
+              <Button variant="outline" onClick={enviarWhats}>
+                <MessageCircle className="mr-2 h-4 w-4" /> WhatsApp
+              </Button>
+            )}
             <Button variant="outline" onClick={enviarEmail}>
               <Mail className="mr-2 h-4 w-4" /> E-mail
             </Button>
