@@ -207,7 +207,7 @@ function EmpresasPage() {
       cpf_cnpj: form.cpf_cnpj || null,
       phone: form.phone || null,
       whatsapp: form.whatsapp || null,
-      status: form.status as Customer["status"],
+      status: form.status as "active" | "inactive" | "canceled" | "overdue",
     };
     const { error } = editingId
       ? await supabase.from("customers").update(payload).eq("id", editingId)
