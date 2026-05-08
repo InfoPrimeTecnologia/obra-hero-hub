@@ -6,27 +6,31 @@ import { useAuth } from "@/lib/auth-context";
 import { Button } from "@/components/ui/button";
 import { cn } from "@/lib/utils";
 import { useObraSelecionada } from "@/lib/obra-context";
+import { usePlanModules } from "@/lib/use-plan-modules";
 
 type NavItem = {
   to: string;
   label: string;
   icon: typeof LayoutDashboard;
   exact?: boolean;
+  module?: string;
 };
 
 type NavGroup = {
   label: string;
   icon: typeof LayoutDashboard;
+  module?: string;
   children: NavItem[];
 };
 
 const nav: Array<NavItem | NavGroup> = [
   { to: "/app", label: "Dashboard", icon: LayoutDashboard, exact: true },
   { to: "/app/empresas", label: "Empresas", icon: Building2 },
-  { to: "/app/obras", label: "Obras", icon: HardHat },
+  { to: "/app/obras", label: "Obras", icon: HardHat, module: "obras" },
   {
     label: "Estoque",
     icon: Package,
+    module: "estoque",
     children: [
       { to: "/app/estoque/produtos", label: "Produtos", icon: Package },
       { to: "/app/estoque/almoxarifados", label: "Almoxarifados", icon: Warehouse },
@@ -39,6 +43,7 @@ const nav: Array<NavItem | NavGroup> = [
   {
     label: "RH",
     icon: Users,
+    module: "rh",
     children: [
       { to: "/app/rh/colaboradores", label: "Colaboradores", icon: UserPlus },
     ],
@@ -46,6 +51,7 @@ const nav: Array<NavItem | NavGroup> = [
   {
     label: "Financeiro",
     icon: DollarSign,
+    module: "financeiro",
     children: [
       { to: "/app/cartoes", label: "Cartões", icon: CreditCard },
       { to: "/app/contas-bancarias", label: "Contas bancárias", icon: Wallet },
@@ -69,6 +75,9 @@ export function AppLayout() {
   const location = useLocation();
   const navigate = useNavigate();
   const [openGroups, setOpenGroups] = useState<Record<string, boolean>>({});
+  const { has: hasModule } = usePlanModules();
+
+  const visibleNav = nav.filter((item) => !item.module || hasModule(item.module));
 
   const handleSignOut = async () => {
     await signOut();
@@ -113,7 +122,7 @@ export function AppLayout() {
           </div>
         ) : null}
         <nav className="flex-1 space-y-1 overflow-y-auto p-3">
-          {nav.map((item) => {
+          {visibleNav.map((item) => {
             if (isGroup(item)) {
               const groupActive = item.children.some((c) =>
                 location.pathname.startsWith(c.to)
