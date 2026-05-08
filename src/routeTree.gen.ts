@@ -31,6 +31,12 @@ import { Route as AdminPlanosRouteImport } from './routes/admin.planos'
 import { Route as AdminFaturasRouteImport } from './routes/admin.faturas'
 import { Route as AdminEmpresasRouteImport } from './routes/admin.empresas'
 import { Route as AdminConfiguracoesRouteImport } from './routes/admin.configuracoes'
+import { Route as AppRhColaboradoresRouteImport } from './routes/app.rh.colaboradores'
+import { Route as AppEstoqueSaldosRouteImport } from './routes/app.estoque.saldos'
+import { Route as AppEstoqueRequisicoesRouteImport } from './routes/app.estoque.requisicoes'
+import { Route as AppEstoqueProdutosRouteImport } from './routes/app.estoque.produtos'
+import { Route as AppEstoqueMovimentacoesRouteImport } from './routes/app.estoque.movimentacoes'
+import { Route as AppEstoqueAlmoxarifadosRouteImport } from './routes/app.estoque.almoxarifados'
 import { Route as AppObrasObraIdRdoRouteImport } from './routes/app.obras.$obraId.rdo'
 import { Route as AppObrasObraIdOrcamentoRouteImport } from './routes/app.obras.$obraId.orcamento'
 import { Route as AppObrasObraIdComprasRouteImport } from './routes/app.obras.$obraId.compras'
@@ -147,6 +153,36 @@ const AdminConfiguracoesRoute = AdminConfiguracoesRouteImport.update({
   path: '/configuracoes',
   getParentRoute: () => AdminRoute,
 } as any)
+const AppRhColaboradoresRoute = AppRhColaboradoresRouteImport.update({
+  id: '/rh/colaboradores',
+  path: '/rh/colaboradores',
+  getParentRoute: () => AppRoute,
+} as any)
+const AppEstoqueSaldosRoute = AppEstoqueSaldosRouteImport.update({
+  id: '/estoque/saldos',
+  path: '/estoque/saldos',
+  getParentRoute: () => AppRoute,
+} as any)
+const AppEstoqueRequisicoesRoute = AppEstoqueRequisicoesRouteImport.update({
+  id: '/estoque/requisicoes',
+  path: '/estoque/requisicoes',
+  getParentRoute: () => AppRoute,
+} as any)
+const AppEstoqueProdutosRoute = AppEstoqueProdutosRouteImport.update({
+  id: '/estoque/produtos',
+  path: '/estoque/produtos',
+  getParentRoute: () => AppRoute,
+} as any)
+const AppEstoqueMovimentacoesRoute = AppEstoqueMovimentacoesRouteImport.update({
+  id: '/estoque/movimentacoes',
+  path: '/estoque/movimentacoes',
+  getParentRoute: () => AppRoute,
+} as any)
+const AppEstoqueAlmoxarifadosRoute = AppEstoqueAlmoxarifadosRouteImport.update({
+  id: '/estoque/almoxarifados',
+  path: '/estoque/almoxarifados',
+  getParentRoute: () => AppRoute,
+} as any)
 const AppObrasObraIdRdoRoute = AppObrasObraIdRdoRouteImport.update({
   id: '/$obraId/rdo',
   path: '/$obraId/rdo',
@@ -197,6 +233,12 @@ export interface FileRoutesByFullPath {
   '/app/transferencias': typeof AppTransferenciasRoute
   '/admin/': typeof AdminIndexRoute
   '/app/': typeof AppIndexRoute
+  '/app/estoque/almoxarifados': typeof AppEstoqueAlmoxarifadosRoute
+  '/app/estoque/movimentacoes': typeof AppEstoqueMovimentacoesRoute
+  '/app/estoque/produtos': typeof AppEstoqueProdutosRoute
+  '/app/estoque/requisicoes': typeof AppEstoqueRequisicoesRoute
+  '/app/estoque/saldos': typeof AppEstoqueSaldosRoute
+  '/app/rh/colaboradores': typeof AppRhColaboradoresRoute
   '/app/obras/$obraId/compras': typeof AppObrasObraIdComprasRouteWithChildren
   '/app/obras/$obraId/orcamento': typeof AppObrasObraIdOrcamentoRoute
   '/app/obras/$obraId/rdo': typeof AppObrasObraIdRdoRouteWithChildren
@@ -224,6 +266,12 @@ export interface FileRoutesByTo {
   '/app/transferencias': typeof AppTransferenciasRoute
   '/admin': typeof AdminIndexRoute
   '/app': typeof AppIndexRoute
+  '/app/estoque/almoxarifados': typeof AppEstoqueAlmoxarifadosRoute
+  '/app/estoque/movimentacoes': typeof AppEstoqueMovimentacoesRoute
+  '/app/estoque/produtos': typeof AppEstoqueProdutosRoute
+  '/app/estoque/requisicoes': typeof AppEstoqueRequisicoesRoute
+  '/app/estoque/saldos': typeof AppEstoqueSaldosRoute
+  '/app/rh/colaboradores': typeof AppRhColaboradoresRoute
   '/app/obras/$obraId/compras': typeof AppObrasObraIdComprasRouteWithChildren
   '/app/obras/$obraId/orcamento': typeof AppObrasObraIdOrcamentoRoute
   '/app/obras/$obraId/rdo': typeof AppObrasObraIdRdoRouteWithChildren
@@ -254,6 +302,12 @@ export interface FileRoutesById {
   '/app/transferencias': typeof AppTransferenciasRoute
   '/admin/': typeof AdminIndexRoute
   '/app/': typeof AppIndexRoute
+  '/app/estoque/almoxarifados': typeof AppEstoqueAlmoxarifadosRoute
+  '/app/estoque/movimentacoes': typeof AppEstoqueMovimentacoesRoute
+  '/app/estoque/produtos': typeof AppEstoqueProdutosRoute
+  '/app/estoque/requisicoes': typeof AppEstoqueRequisicoesRoute
+  '/app/estoque/saldos': typeof AppEstoqueSaldosRoute
+  '/app/rh/colaboradores': typeof AppRhColaboradoresRoute
   '/app/obras/$obraId/compras': typeof AppObrasObraIdComprasRouteWithChildren
   '/app/obras/$obraId/orcamento': typeof AppObrasObraIdOrcamentoRoute
   '/app/obras/$obraId/rdo': typeof AppObrasObraIdRdoRouteWithChildren
@@ -285,6 +339,12 @@ export interface FileRouteTypes {
     | '/app/transferencias'
     | '/admin/'
     | '/app/'
+    | '/app/estoque/almoxarifados'
+    | '/app/estoque/movimentacoes'
+    | '/app/estoque/produtos'
+    | '/app/estoque/requisicoes'
+    | '/app/estoque/saldos'
+    | '/app/rh/colaboradores'
     | '/app/obras/$obraId/compras'
     | '/app/obras/$obraId/orcamento'
     | '/app/obras/$obraId/rdo'
@@ -312,6 +372,12 @@ export interface FileRouteTypes {
     | '/app/transferencias'
     | '/admin'
     | '/app'
+    | '/app/estoque/almoxarifados'
+    | '/app/estoque/movimentacoes'
+    | '/app/estoque/produtos'
+    | '/app/estoque/requisicoes'
+    | '/app/estoque/saldos'
+    | '/app/rh/colaboradores'
     | '/app/obras/$obraId/compras'
     | '/app/obras/$obraId/orcamento'
     | '/app/obras/$obraId/rdo'
@@ -341,6 +407,12 @@ export interface FileRouteTypes {
     | '/app/transferencias'
     | '/admin/'
     | '/app/'
+    | '/app/estoque/almoxarifados'
+    | '/app/estoque/movimentacoes'
+    | '/app/estoque/produtos'
+    | '/app/estoque/requisicoes'
+    | '/app/estoque/saldos'
+    | '/app/rh/colaboradores'
     | '/app/obras/$obraId/compras'
     | '/app/obras/$obraId/orcamento'
     | '/app/obras/$obraId/rdo'
@@ -511,6 +583,48 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AdminConfiguracoesRouteImport
       parentRoute: typeof AdminRoute
     }
+    '/app/rh/colaboradores': {
+      id: '/app/rh/colaboradores'
+      path: '/rh/colaboradores'
+      fullPath: '/app/rh/colaboradores'
+      preLoaderRoute: typeof AppRhColaboradoresRouteImport
+      parentRoute: typeof AppRoute
+    }
+    '/app/estoque/saldos': {
+      id: '/app/estoque/saldos'
+      path: '/estoque/saldos'
+      fullPath: '/app/estoque/saldos'
+      preLoaderRoute: typeof AppEstoqueSaldosRouteImport
+      parentRoute: typeof AppRoute
+    }
+    '/app/estoque/requisicoes': {
+      id: '/app/estoque/requisicoes'
+      path: '/estoque/requisicoes'
+      fullPath: '/app/estoque/requisicoes'
+      preLoaderRoute: typeof AppEstoqueRequisicoesRouteImport
+      parentRoute: typeof AppRoute
+    }
+    '/app/estoque/produtos': {
+      id: '/app/estoque/produtos'
+      path: '/estoque/produtos'
+      fullPath: '/app/estoque/produtos'
+      preLoaderRoute: typeof AppEstoqueProdutosRouteImport
+      parentRoute: typeof AppRoute
+    }
+    '/app/estoque/movimentacoes': {
+      id: '/app/estoque/movimentacoes'
+      path: '/estoque/movimentacoes'
+      fullPath: '/app/estoque/movimentacoes'
+      preLoaderRoute: typeof AppEstoqueMovimentacoesRouteImport
+      parentRoute: typeof AppRoute
+    }
+    '/app/estoque/almoxarifados': {
+      id: '/app/estoque/almoxarifados'
+      path: '/estoque/almoxarifados'
+      fullPath: '/app/estoque/almoxarifados'
+      preLoaderRoute: typeof AppEstoqueAlmoxarifadosRouteImport
+      parentRoute: typeof AppRoute
+    }
     '/app/obras/$obraId/rdo': {
       id: '/app/obras/$obraId/rdo'
       path: '/$obraId/rdo'
@@ -622,6 +736,12 @@ interface AppRouteChildren {
   AppObrasRoute: typeof AppObrasRouteWithChildren
   AppTransferenciasRoute: typeof AppTransferenciasRoute
   AppIndexRoute: typeof AppIndexRoute
+  AppEstoqueAlmoxarifadosRoute: typeof AppEstoqueAlmoxarifadosRoute
+  AppEstoqueMovimentacoesRoute: typeof AppEstoqueMovimentacoesRoute
+  AppEstoqueProdutosRoute: typeof AppEstoqueProdutosRoute
+  AppEstoqueRequisicoesRoute: typeof AppEstoqueRequisicoesRoute
+  AppEstoqueSaldosRoute: typeof AppEstoqueSaldosRoute
+  AppRhColaboradoresRoute: typeof AppRhColaboradoresRoute
 }
 
 const AppRouteChildren: AppRouteChildren = {
@@ -637,6 +757,12 @@ const AppRouteChildren: AppRouteChildren = {
   AppObrasRoute: AppObrasRouteWithChildren,
   AppTransferenciasRoute: AppTransferenciasRoute,
   AppIndexRoute: AppIndexRoute,
+  AppEstoqueAlmoxarifadosRoute: AppEstoqueAlmoxarifadosRoute,
+  AppEstoqueMovimentacoesRoute: AppEstoqueMovimentacoesRoute,
+  AppEstoqueProdutosRoute: AppEstoqueProdutosRoute,
+  AppEstoqueRequisicoesRoute: AppEstoqueRequisicoesRoute,
+  AppEstoqueSaldosRoute: AppEstoqueSaldosRoute,
+  AppRhColaboradoresRoute: AppRhColaboradoresRoute,
 }
 
 const AppRouteWithChildren = AppRoute._addFileChildren(AppRouteChildren)

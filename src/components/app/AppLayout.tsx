@@ -1,6 +1,6 @@
 import { Link, Outlet, useLocation, useNavigate } from "@tanstack/react-router";
 import { useState } from "react";
-import { LayoutDashboard, HardHat, LogOut, Building2, ListTree, ClipboardList, Truck, CreditCard, ShoppingCart, Wallet, Tags, Receipt, ArrowDownToLine, ArrowLeftRight, BarChart3, FileSpreadsheet, DollarSign, ChevronDown } from "lucide-react";
+import { LayoutDashboard, HardHat, LogOut, Building2, ListTree, ClipboardList, Truck, CreditCard, ShoppingCart, Wallet, Tags, Receipt, ArrowDownToLine, ArrowLeftRight, BarChart3, FileSpreadsheet, DollarSign, ChevronDown, Package, Warehouse, ArrowUpDown, ClipboardCheck, Users, UserPlus } from "lucide-react";
 import { Logo } from "@/components/Logo";
 import { useAuth } from "@/lib/auth-context";
 import { Button } from "@/components/ui/button";
@@ -24,7 +24,25 @@ const nav: Array<NavItem | NavGroup> = [
   { to: "/app", label: "Dashboard", icon: LayoutDashboard, exact: true },
   { to: "/app/empresas", label: "Empresas", icon: Building2 },
   { to: "/app/obras", label: "Obras", icon: HardHat },
-  { to: "/app/fornecedores", label: "Fornecedores", icon: Truck },
+  {
+    label: "Estoque",
+    icon: Package,
+    children: [
+      { to: "/app/estoque/produtos", label: "Produtos", icon: Package },
+      { to: "/app/estoque/almoxarifados", label: "Almoxarifados", icon: Warehouse },
+      { to: "/app/estoque/saldos", label: "Saldos", icon: ListTree },
+      { to: "/app/estoque/movimentacoes", label: "Movimentações", icon: ArrowUpDown },
+      { to: "/app/estoque/requisicoes", label: "Requisições", icon: ClipboardCheck },
+      { to: "/app/fornecedores", label: "Fornecedores", icon: Truck },
+    ],
+  },
+  {
+    label: "RH",
+    icon: Users,
+    children: [
+      { to: "/app/rh/colaboradores", label: "Colaboradores", icon: UserPlus },
+    ],
+  },
   {
     label: "Financeiro",
     icon: DollarSign,
