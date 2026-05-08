@@ -24,7 +24,25 @@ const nav: Array<NavItem | NavGroup> = [
   { to: "/app", label: "Dashboard", icon: LayoutDashboard, exact: true },
   { to: "/app/empresas", label: "Empresas", icon: Building2 },
   { to: "/app/obras", label: "Obras", icon: HardHat },
-  { to: "/app/fornecedores", label: "Fornecedores", icon: Truck },
+  {
+    label: "Estoque",
+    icon: Package,
+    children: [
+      { to: "/app/estoque/produtos", label: "Produtos", icon: Package },
+      { to: "/app/estoque/almoxarifados", label: "Almoxarifados", icon: Warehouse },
+      { to: "/app/estoque/saldos", label: "Saldos", icon: ListTree },
+      { to: "/app/estoque/movimentacoes", label: "Movimentações", icon: ArrowUpDown },
+      { to: "/app/estoque/requisicoes", label: "Requisições", icon: ClipboardCheck },
+      { to: "/app/fornecedores", label: "Fornecedores", icon: Truck },
+    ],
+  },
+  {
+    label: "RH",
+    icon: Users,
+    children: [
+      { to: "/app/rh/colaboradores", label: "Colaboradores", icon: UserPlus },
+    ],
+  },
   {
     label: "Financeiro",
     icon: DollarSign,
