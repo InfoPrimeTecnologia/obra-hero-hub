@@ -81,6 +81,7 @@ type Anexo = {
 function RdoDetailPage() {
   const { obraId, rdoId } = Route.useParams();
   const { user } = useAuth();
+  const { hasFeature } = usePlanModules();
 
   const [obra, setObra] = useState<Obra | null>(null);
   const [rdo, setRdo] = useState<Rdo | null>(null);
