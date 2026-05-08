@@ -1,0 +1,1 @@
+CREATE UNIQUE INDEX IF NOT EXISTS customers_email_unique_ci ON public.customers (lower(email));
