@@ -115,7 +115,7 @@ function ClienteDashboard() {
         supabase
           .from("colaboradores")
           .select("*", { count: "exact", head: true })
-          .eq("status", "ativo"),
+          .eq("ativo", true),
         supabase.from("estoque_saldos").select("produto_id, quantidade").lte("quantidade", 5),
         supabase
           .from("contas_pagar")
