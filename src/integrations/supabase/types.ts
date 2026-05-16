@@ -1709,7 +1709,10 @@ export type Database = {
           customer_id: string
           descricao: string | null
           estoque_minimo: number
+          foto_url: string | null
           id: string
+          marca: string | null
+          ncm: string | null
           nome: string
           unidade: string
           updated_at: string
@@ -1724,7 +1727,10 @@ export type Database = {
           customer_id: string
           descricao?: string | null
           estoque_minimo?: number
+          foto_url?: string | null
           id?: string
+          marca?: string | null
+          ncm?: string | null
           nome: string
           unidade?: string
           updated_at?: string
@@ -1739,7 +1745,10 @@ export type Database = {
           customer_id?: string
           descricao?: string | null
           estoque_minimo?: number
+          foto_url?: string | null
           id?: string
+          marca?: string | null
+          ncm?: string | null
           nome?: string
           unidade?: string
           updated_at?: string
