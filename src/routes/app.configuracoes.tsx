@@ -79,14 +79,15 @@ function ConfiguracoesPage() {
       if (error) toast.error(error.message);
       else toast.success("Configurações salvas");
     } else {
+      const { id: _ignore, ...rest } = empresa;
       const { error, data } = await supabase
         .from("customers")
         .insert({
+          ...rest,
           name: empresa.company_name || user.email || "Minha empresa",
           email: user.email!,
           owner_user_id: user.id,
           created_by: user.id,
-          ...empresa,
         })
         .select()
         .single();
