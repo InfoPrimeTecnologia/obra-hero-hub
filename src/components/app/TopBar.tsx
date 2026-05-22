@@ -38,6 +38,7 @@ const SEARCH_ITEMS: NavItem[] = [
   { to: "/app/conciliacao", label: "Conciliação" },
   { to: "/app/perfil", label: "Meu perfil" },
   { to: "/app/configuracoes", label: "Configurações" },
+  { to: "/app/relatorios", label: "Relatórios" },
 ];
 
 export function TopBar() {

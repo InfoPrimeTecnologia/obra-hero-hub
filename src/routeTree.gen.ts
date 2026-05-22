@@ -16,6 +16,7 @@ import { Route as IndexRouteImport } from './routes/index'
 import { Route as AppIndexRouteImport } from './routes/app.index'
 import { Route as AdminIndexRouteImport } from './routes/admin.index'
 import { Route as AppTransferenciasRouteImport } from './routes/app.transferencias'
+import { Route as AppRelatoriosRouteImport } from './routes/app.relatorios'
 import { Route as AppPerfilRouteImport } from './routes/app.perfil'
 import { Route as AppObrasRouteImport } from './routes/app.obras'
 import { Route as AppFornecedoresRouteImport } from './routes/app.fornecedores'
@@ -78,6 +79,11 @@ const AdminIndexRoute = AdminIndexRouteImport.update({
 const AppTransferenciasRoute = AppTransferenciasRouteImport.update({
   id: '/transferencias',
   path: '/transferencias',
+  getParentRoute: () => AppRoute,
+} as any)
+const AppRelatoriosRoute = AppRelatoriosRouteImport.update({
+  id: '/relatorios',
+  path: '/relatorios',
   getParentRoute: () => AppRoute,
 } as any)
 const AppPerfilRoute = AppPerfilRouteImport.update({
@@ -244,6 +250,7 @@ export interface FileRoutesByFullPath {
   '/app/fornecedores': typeof AppFornecedoresRoute
   '/app/obras': typeof AppObrasRouteWithChildren
   '/app/perfil': typeof AppPerfilRoute
+  '/app/relatorios': typeof AppRelatoriosRoute
   '/app/transferencias': typeof AppTransferenciasRoute
   '/admin/': typeof AdminIndexRoute
   '/app/': typeof AppIndexRoute
@@ -279,6 +286,7 @@ export interface FileRoutesByTo {
   '/app/fornecedores': typeof AppFornecedoresRoute
   '/app/obras': typeof AppObrasRouteWithChildren
   '/app/perfil': typeof AppPerfilRoute
+  '/app/relatorios': typeof AppRelatoriosRoute
   '/app/transferencias': typeof AppTransferenciasRoute
   '/admin': typeof AdminIndexRoute
   '/app': typeof AppIndexRoute
@@ -317,6 +325,7 @@ export interface FileRoutesById {
   '/app/fornecedores': typeof AppFornecedoresRoute
   '/app/obras': typeof AppObrasRouteWithChildren
   '/app/perfil': typeof AppPerfilRoute
+  '/app/relatorios': typeof AppRelatoriosRoute
   '/app/transferencias': typeof AppTransferenciasRoute
   '/admin/': typeof AdminIndexRoute
   '/app/': typeof AppIndexRoute
@@ -356,6 +365,7 @@ export interface FileRouteTypes {
     | '/app/fornecedores'
     | '/app/obras'
     | '/app/perfil'
+    | '/app/relatorios'
     | '/app/transferencias'
     | '/admin/'
     | '/app/'
@@ -391,6 +401,7 @@ export interface FileRouteTypes {
     | '/app/fornecedores'
     | '/app/obras'
     | '/app/perfil'
+    | '/app/relatorios'
     | '/app/transferencias'
     | '/admin'
     | '/app'
@@ -428,6 +439,7 @@ export interface FileRouteTypes {
     | '/app/fornecedores'
     | '/app/obras'
     | '/app/perfil'
+    | '/app/relatorios'
     | '/app/transferencias'
     | '/admin/'
     | '/app/'
@@ -500,6 +512,13 @@ declare module '@tanstack/react-router' {
       path: '/transferencias'
       fullPath: '/app/transferencias'
       preLoaderRoute: typeof AppTransferenciasRouteImport
+      parentRoute: typeof AppRoute
+    }
+    '/app/relatorios': {
+      id: '/app/relatorios'
+      path: '/relatorios'
+      fullPath: '/app/relatorios'
+      preLoaderRoute: typeof AppRelatoriosRouteImport
       parentRoute: typeof AppRoute
     }
     '/app/perfil': {
@@ -774,6 +793,7 @@ interface AppRouteChildren {
   AppFornecedoresRoute: typeof AppFornecedoresRoute
   AppObrasRoute: typeof AppObrasRouteWithChildren
   AppPerfilRoute: typeof AppPerfilRoute
+  AppRelatoriosRoute: typeof AppRelatoriosRoute
   AppTransferenciasRoute: typeof AppTransferenciasRoute
   AppIndexRoute: typeof AppIndexRoute
   AppEstoqueAlmoxarifadosRoute: typeof AppEstoqueAlmoxarifadosRoute
@@ -797,6 +817,7 @@ const AppRouteChildren: AppRouteChildren = {
   AppFornecedoresRoute: AppFornecedoresRoute,
   AppObrasRoute: AppObrasRouteWithChildren,
   AppPerfilRoute: AppPerfilRoute,
+  AppRelatoriosRoute: AppRelatoriosRoute,
   AppTransferenciasRoute: AppTransferenciasRoute,
   AppIndexRoute: AppIndexRoute,
   AppEstoqueAlmoxarifadosRoute: AppEstoqueAlmoxarifadosRoute,
