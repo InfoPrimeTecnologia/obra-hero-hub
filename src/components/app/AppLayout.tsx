@@ -4,6 +4,7 @@ import { LayoutDashboard, HardHat, LogOut, Building2, ListTree, ClipboardList, T
 import { Logo } from "@/components/Logo";
 import { useAuth } from "@/lib/auth-context";
 import { Button } from "@/components/ui/button";
+import { TopBar } from "@/components/app/TopBar";
 import { cn } from "@/lib/utils";
 import { useObraSelecionada } from "@/lib/obra-context";
 import { usePlanModules } from "@/lib/use-plan-modules";
@@ -86,7 +87,7 @@ export function AppLayout() {
 
   return (
     <div className="flex min-h-screen bg-background">
-      <aside className="flex w-64 flex-col bg-sidebar text-sidebar-foreground">
+      <aside className="sticky top-0 flex h-screen w-64 flex-col bg-sidebar text-sidebar-foreground">
         <div className="flex h-20 items-center justify-center border-b border-sidebar-border bg-white px-4">
           <Logo className="h-12" />
         </div>
@@ -215,6 +216,7 @@ export function AppLayout() {
         </div>
       </aside>
       <main className="flex-1 overflow-auto">
+        <TopBar />
         <Outlet />
       </main>
     </div>
