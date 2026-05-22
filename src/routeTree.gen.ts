@@ -16,6 +16,7 @@ import { Route as IndexRouteImport } from './routes/index'
 import { Route as AppIndexRouteImport } from './routes/app.index'
 import { Route as AdminIndexRouteImport } from './routes/admin.index'
 import { Route as AppTransferenciasRouteImport } from './routes/app.transferencias'
+import { Route as AppPerfilRouteImport } from './routes/app.perfil'
 import { Route as AppObrasRouteImport } from './routes/app.obras'
 import { Route as AppFornecedoresRouteImport } from './routes/app.fornecedores'
 import { Route as AppFluxoCaixaRouteImport } from './routes/app.fluxo-caixa'
@@ -23,6 +24,7 @@ import { Route as AppEmpresasRouteImport } from './routes/app.empresas'
 import { Route as AppContasReceberRouteImport } from './routes/app.contas-receber'
 import { Route as AppContasPagarRouteImport } from './routes/app.contas-pagar'
 import { Route as AppContasBancariasRouteImport } from './routes/app.contas-bancarias'
+import { Route as AppConfiguracoesRouteImport } from './routes/app.configuracoes'
 import { Route as AppConciliacaoRouteImport } from './routes/app.conciliacao'
 import { Route as AppCategoriasRouteImport } from './routes/app.categorias'
 import { Route as AppCartoesRouteImport } from './routes/app.cartoes'
@@ -78,6 +80,11 @@ const AppTransferenciasRoute = AppTransferenciasRouteImport.update({
   path: '/transferencias',
   getParentRoute: () => AppRoute,
 } as any)
+const AppPerfilRoute = AppPerfilRouteImport.update({
+  id: '/perfil',
+  path: '/perfil',
+  getParentRoute: () => AppRoute,
+} as any)
 const AppObrasRoute = AppObrasRouteImport.update({
   id: '/obras',
   path: '/obras',
@@ -111,6 +118,11 @@ const AppContasPagarRoute = AppContasPagarRouteImport.update({
 const AppContasBancariasRoute = AppContasBancariasRouteImport.update({
   id: '/contas-bancarias',
   path: '/contas-bancarias',
+  getParentRoute: () => AppRoute,
+} as any)
+const AppConfiguracoesRoute = AppConfiguracoesRouteImport.update({
+  id: '/configuracoes',
+  path: '/configuracoes',
   getParentRoute: () => AppRoute,
 } as any)
 const AppConciliacaoRoute = AppConciliacaoRouteImport.update({
@@ -223,6 +235,7 @@ export interface FileRoutesByFullPath {
   '/app/cartoes': typeof AppCartoesRoute
   '/app/categorias': typeof AppCategoriasRoute
   '/app/conciliacao': typeof AppConciliacaoRoute
+  '/app/configuracoes': typeof AppConfiguracoesRoute
   '/app/contas-bancarias': typeof AppContasBancariasRoute
   '/app/contas-pagar': typeof AppContasPagarRoute
   '/app/contas-receber': typeof AppContasReceberRoute
@@ -230,6 +243,7 @@ export interface FileRoutesByFullPath {
   '/app/fluxo-caixa': typeof AppFluxoCaixaRoute
   '/app/fornecedores': typeof AppFornecedoresRoute
   '/app/obras': typeof AppObrasRouteWithChildren
+  '/app/perfil': typeof AppPerfilRoute
   '/app/transferencias': typeof AppTransferenciasRoute
   '/admin/': typeof AdminIndexRoute
   '/app/': typeof AppIndexRoute
@@ -256,6 +270,7 @@ export interface FileRoutesByTo {
   '/app/cartoes': typeof AppCartoesRoute
   '/app/categorias': typeof AppCategoriasRoute
   '/app/conciliacao': typeof AppConciliacaoRoute
+  '/app/configuracoes': typeof AppConfiguracoesRoute
   '/app/contas-bancarias': typeof AppContasBancariasRoute
   '/app/contas-pagar': typeof AppContasPagarRoute
   '/app/contas-receber': typeof AppContasReceberRoute
@@ -263,6 +278,7 @@ export interface FileRoutesByTo {
   '/app/fluxo-caixa': typeof AppFluxoCaixaRoute
   '/app/fornecedores': typeof AppFornecedoresRoute
   '/app/obras': typeof AppObrasRouteWithChildren
+  '/app/perfil': typeof AppPerfilRoute
   '/app/transferencias': typeof AppTransferenciasRoute
   '/admin': typeof AdminIndexRoute
   '/app': typeof AppIndexRoute
@@ -292,6 +308,7 @@ export interface FileRoutesById {
   '/app/cartoes': typeof AppCartoesRoute
   '/app/categorias': typeof AppCategoriasRoute
   '/app/conciliacao': typeof AppConciliacaoRoute
+  '/app/configuracoes': typeof AppConfiguracoesRoute
   '/app/contas-bancarias': typeof AppContasBancariasRoute
   '/app/contas-pagar': typeof AppContasPagarRoute
   '/app/contas-receber': typeof AppContasReceberRoute
@@ -299,6 +316,7 @@ export interface FileRoutesById {
   '/app/fluxo-caixa': typeof AppFluxoCaixaRoute
   '/app/fornecedores': typeof AppFornecedoresRoute
   '/app/obras': typeof AppObrasRouteWithChildren
+  '/app/perfil': typeof AppPerfilRoute
   '/app/transferencias': typeof AppTransferenciasRoute
   '/admin/': typeof AdminIndexRoute
   '/app/': typeof AppIndexRoute
@@ -329,6 +347,7 @@ export interface FileRouteTypes {
     | '/app/cartoes'
     | '/app/categorias'
     | '/app/conciliacao'
+    | '/app/configuracoes'
     | '/app/contas-bancarias'
     | '/app/contas-pagar'
     | '/app/contas-receber'
@@ -336,6 +355,7 @@ export interface FileRouteTypes {
     | '/app/fluxo-caixa'
     | '/app/fornecedores'
     | '/app/obras'
+    | '/app/perfil'
     | '/app/transferencias'
     | '/admin/'
     | '/app/'
@@ -362,6 +382,7 @@ export interface FileRouteTypes {
     | '/app/cartoes'
     | '/app/categorias'
     | '/app/conciliacao'
+    | '/app/configuracoes'
     | '/app/contas-bancarias'
     | '/app/contas-pagar'
     | '/app/contas-receber'
@@ -369,6 +390,7 @@ export interface FileRouteTypes {
     | '/app/fluxo-caixa'
     | '/app/fornecedores'
     | '/app/obras'
+    | '/app/perfil'
     | '/app/transferencias'
     | '/admin'
     | '/app'
@@ -397,6 +419,7 @@ export interface FileRouteTypes {
     | '/app/cartoes'
     | '/app/categorias'
     | '/app/conciliacao'
+    | '/app/configuracoes'
     | '/app/contas-bancarias'
     | '/app/contas-pagar'
     | '/app/contas-receber'
@@ -404,6 +427,7 @@ export interface FileRouteTypes {
     | '/app/fluxo-caixa'
     | '/app/fornecedores'
     | '/app/obras'
+    | '/app/perfil'
     | '/app/transferencias'
     | '/admin/'
     | '/app/'
@@ -478,6 +502,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AppTransferenciasRouteImport
       parentRoute: typeof AppRoute
     }
+    '/app/perfil': {
+      id: '/app/perfil'
+      path: '/perfil'
+      fullPath: '/app/perfil'
+      preLoaderRoute: typeof AppPerfilRouteImport
+      parentRoute: typeof AppRoute
+    }
     '/app/obras': {
       id: '/app/obras'
       path: '/obras'
@@ -525,6 +556,13 @@ declare module '@tanstack/react-router' {
       path: '/contas-bancarias'
       fullPath: '/app/contas-bancarias'
       preLoaderRoute: typeof AppContasBancariasRouteImport
+      parentRoute: typeof AppRoute
+    }
+    '/app/configuracoes': {
+      id: '/app/configuracoes'
+      path: '/configuracoes'
+      fullPath: '/app/configuracoes'
+      preLoaderRoute: typeof AppConfiguracoesRouteImport
       parentRoute: typeof AppRoute
     }
     '/app/conciliacao': {
@@ -727,6 +765,7 @@ interface AppRouteChildren {
   AppCartoesRoute: typeof AppCartoesRoute
   AppCategoriasRoute: typeof AppCategoriasRoute
   AppConciliacaoRoute: typeof AppConciliacaoRoute
+  AppConfiguracoesRoute: typeof AppConfiguracoesRoute
   AppContasBancariasRoute: typeof AppContasBancariasRoute
   AppContasPagarRoute: typeof AppContasPagarRoute
   AppContasReceberRoute: typeof AppContasReceberRoute
@@ -734,6 +773,7 @@ interface AppRouteChildren {
   AppFluxoCaixaRoute: typeof AppFluxoCaixaRoute
   AppFornecedoresRoute: typeof AppFornecedoresRoute
   AppObrasRoute: typeof AppObrasRouteWithChildren
+  AppPerfilRoute: typeof AppPerfilRoute
   AppTransferenciasRoute: typeof AppTransferenciasRoute
   AppIndexRoute: typeof AppIndexRoute
   AppEstoqueAlmoxarifadosRoute: typeof AppEstoqueAlmoxarifadosRoute
@@ -748,6 +788,7 @@ const AppRouteChildren: AppRouteChildren = {
   AppCartoesRoute: AppCartoesRoute,
   AppCategoriasRoute: AppCategoriasRoute,
   AppConciliacaoRoute: AppConciliacaoRoute,
+  AppConfiguracoesRoute: AppConfiguracoesRoute,
   AppContasBancariasRoute: AppContasBancariasRoute,
   AppContasPagarRoute: AppContasPagarRoute,
   AppContasReceberRoute: AppContasReceberRoute,
@@ -755,6 +796,7 @@ const AppRouteChildren: AppRouteChildren = {
   AppFluxoCaixaRoute: AppFluxoCaixaRoute,
   AppFornecedoresRoute: AppFornecedoresRoute,
   AppObrasRoute: AppObrasRouteWithChildren,
+  AppPerfilRoute: AppPerfilRoute,
   AppTransferenciasRoute: AppTransferenciasRoute,
   AppIndexRoute: AppIndexRoute,
   AppEstoqueAlmoxarifadosRoute: AppEstoqueAlmoxarifadosRoute,
