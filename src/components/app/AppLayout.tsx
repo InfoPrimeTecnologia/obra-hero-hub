@@ -64,6 +64,7 @@ const nav: Array<NavItem | NavGroup> = [
       { to: "/app/conciliacao", label: "Conciliação", icon: FileSpreadsheet },
     ],
   },
+  { to: "/app/relatorios", label: "Relatórios", icon: FileBarChart2, module: "relatorios" },
 ];
 
 function isGroup(item: NavItem | NavGroup): item is NavGroup {
