@@ -1,6 +1,6 @@
 import { Link, Outlet, useLocation, useNavigate } from "@tanstack/react-router";
 import { useState } from "react";
-import { LayoutDashboard, HardHat, LogOut, Building2, ListTree, ClipboardList, Truck, CreditCard, ShoppingCart, Wallet, Tags, Receipt, ArrowDownToLine, ArrowLeftRight, BarChart3, FileSpreadsheet, DollarSign, ChevronDown, Package, Warehouse, ArrowUpDown, ClipboardCheck, Users, UserPlus } from "lucide-react";
+import { LayoutDashboard, HardHat, LogOut, Building2, ListTree, ClipboardList, Truck, CreditCard, ShoppingCart, Wallet, Tags, Receipt, ArrowDownToLine, ArrowLeftRight, BarChart3, FileSpreadsheet, DollarSign, ChevronDown, Package, Warehouse, ArrowUpDown, ClipboardCheck, Users, UserPlus, FileBarChart2 } from "lucide-react";
 import { Logo } from "@/components/Logo";
 import { useAuth } from "@/lib/auth-context";
 import { Button } from "@/components/ui/button";
@@ -64,6 +64,7 @@ const nav: Array<NavItem | NavGroup> = [
       { to: "/app/conciliacao", label: "Conciliação", icon: FileSpreadsheet },
     ],
   },
+  { to: "/app/relatorios", label: "Relatórios", icon: FileBarChart2, module: "relatorios" },
 ];
 
 function isGroup(item: NavItem | NavGroup): item is NavGroup {
