@@ -98,6 +98,12 @@ async function startServer() {
           },
         });
 
+        // SPA fallback: se worker retornar 404 para uma pagina, serve index.html
+        if (response.status === 404 && !isStaticAsset) {
+          const indexPath = join(__dirname, 'dist/client/index.html');
+          if (serveFile(res, indexPath, 200)) return;
+        }
+
         res.statusCode = response.status;
         for (const [key, value] of response.headers) {
           if (key.toLowerCase() !== 'content-encoding') {
