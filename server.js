@@ -44,7 +44,11 @@ async function startServer() {
   let workerHandler = null;
   try {
     const workerModule = await import('./dist/server/index.js');
-    workerHandler = workerModule.default || workerModule.createServerEntry;
+    workerHandler = workerModule.default?.fetch || workerModule.default;
+    if (typeof workerHandler !== 'function') {
+      console.warn('Worker default.fetch is not a function, trying createServerEntry...');
+      workerHandler = null;
+    }
     console.log('Worker handler loaded successfully');
   } catch (e) {
     console.warn('Could not load worker handler:', e.message);
