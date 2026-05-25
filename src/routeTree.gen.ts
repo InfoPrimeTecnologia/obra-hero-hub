@@ -44,6 +44,7 @@ import { Route as AppEstoqueRequisicoesRouteImport } from './routes/app.estoque.
 import { Route as AppEstoqueProdutosRouteImport } from './routes/app.estoque.produtos'
 import { Route as AppEstoqueMovimentacoesRouteImport } from './routes/app.estoque.movimentacoes'
 import { Route as AppEstoqueAlmoxarifadosRouteImport } from './routes/app.estoque.almoxarifados'
+import { Route as LovableEmailQueueProcessRouteImport } from './routes/lovable/email/queue/process'
 import { Route as AppObrasObraIdRdoRouteImport } from './routes/app.obras.$obraId.rdo'
 import { Route as AppObrasObraIdOrcamentoRouteImport } from './routes/app.obras.$obraId.orcamento'
 import { Route as AppObrasObraIdComprasRouteImport } from './routes/app.obras.$obraId.compras'
@@ -225,6 +226,12 @@ const AppEstoqueAlmoxarifadosRoute = AppEstoqueAlmoxarifadosRouteImport.update({
   path: '/estoque/almoxarifados',
   getParentRoute: () => AppRoute,
 } as any)
+const LovableEmailQueueProcessRoute =
+  LovableEmailQueueProcessRouteImport.update({
+    id: '/lovable/email/queue/process',
+    path: '/lovable/email/queue/process',
+    getParentRoute: () => rootRouteImport,
+  } as any)
 const AppObrasObraIdRdoRoute = AppObrasObraIdRdoRouteImport.update({
   id: '/$obraId/rdo',
   path: '/$obraId/rdo',
@@ -291,6 +298,7 @@ export interface FileRoutesByFullPath {
   '/app/obras/$obraId/compras': typeof AppObrasObraIdComprasRouteWithChildren
   '/app/obras/$obraId/orcamento': typeof AppObrasObraIdOrcamentoRoute
   '/app/obras/$obraId/rdo': typeof AppObrasObraIdRdoRouteWithChildren
+  '/lovable/email/queue/process': typeof LovableEmailQueueProcessRoute
   '/app/obras/$obraId/compras/$compraId': typeof AppObrasObraIdComprasCompraIdRoute
   '/app/obras/$obraId/rdo/$rdoId': typeof AppObrasObraIdRdoRdoIdRoute
 }
@@ -331,6 +339,7 @@ export interface FileRoutesByTo {
   '/app/obras/$obraId/compras': typeof AppObrasObraIdComprasRouteWithChildren
   '/app/obras/$obraId/orcamento': typeof AppObrasObraIdOrcamentoRoute
   '/app/obras/$obraId/rdo': typeof AppObrasObraIdRdoRouteWithChildren
+  '/lovable/email/queue/process': typeof LovableEmailQueueProcessRoute
   '/app/obras/$obraId/compras/$compraId': typeof AppObrasObraIdComprasCompraIdRoute
   '/app/obras/$obraId/rdo/$rdoId': typeof AppObrasObraIdRdoRdoIdRoute
 }
@@ -374,6 +383,7 @@ export interface FileRoutesById {
   '/app/obras/$obraId/compras': typeof AppObrasObraIdComprasRouteWithChildren
   '/app/obras/$obraId/orcamento': typeof AppObrasObraIdOrcamentoRoute
   '/app/obras/$obraId/rdo': typeof AppObrasObraIdRdoRouteWithChildren
+  '/lovable/email/queue/process': typeof LovableEmailQueueProcessRoute
   '/app/obras/$obraId/compras/$compraId': typeof AppObrasObraIdComprasCompraIdRoute
   '/app/obras/$obraId/rdo/$rdoId': typeof AppObrasObraIdRdoRdoIdRoute
 }
@@ -418,6 +428,7 @@ export interface FileRouteTypes {
     | '/app/obras/$obraId/compras'
     | '/app/obras/$obraId/orcamento'
     | '/app/obras/$obraId/rdo'
+    | '/lovable/email/queue/process'
     | '/app/obras/$obraId/compras/$compraId'
     | '/app/obras/$obraId/rdo/$rdoId'
   fileRoutesByTo: FileRoutesByTo
@@ -458,6 +469,7 @@ export interface FileRouteTypes {
     | '/app/obras/$obraId/compras'
     | '/app/obras/$obraId/orcamento'
     | '/app/obras/$obraId/rdo'
+    | '/lovable/email/queue/process'
     | '/app/obras/$obraId/compras/$compraId'
     | '/app/obras/$obraId/rdo/$rdoId'
   id:
@@ -500,6 +512,7 @@ export interface FileRouteTypes {
     | '/app/obras/$obraId/compras'
     | '/app/obras/$obraId/orcamento'
     | '/app/obras/$obraId/rdo'
+    | '/lovable/email/queue/process'
     | '/app/obras/$obraId/compras/$compraId'
     | '/app/obras/$obraId/rdo/$rdoId'
   fileRoutesById: FileRoutesById
@@ -513,6 +526,7 @@ export interface RootRouteChildren {
   AuthForgotPasswordRoute: typeof AuthForgotPasswordRoute
   AuthMagicLinkRoute: typeof AuthMagicLinkRoute
   AuthResetPasswordRoute: typeof AuthResetPasswordRoute
+  LovableEmailQueueProcessRoute: typeof LovableEmailQueueProcessRoute
 }
 
 declare module '@tanstack/react-router' {
@@ -762,6 +776,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AppEstoqueAlmoxarifadosRouteImport
       parentRoute: typeof AppRoute
     }
+    '/lovable/email/queue/process': {
+      id: '/lovable/email/queue/process'
+      path: '/lovable/email/queue/process'
+      fullPath: '/lovable/email/queue/process'
+      preLoaderRoute: typeof LovableEmailQueueProcessRouteImport
+      parentRoute: typeof rootRouteImport
+    }
     '/app/obras/$obraId/rdo': {
       id: '/app/obras/$obraId/rdo'
       path: '/$obraId/rdo'
@@ -919,6 +940,7 @@ const rootRouteChildren: RootRouteChildren = {
   AuthForgotPasswordRoute: AuthForgotPasswordRoute,
   AuthMagicLinkRoute: AuthMagicLinkRoute,
   AuthResetPasswordRoute: AuthResetPasswordRoute,
+  LovableEmailQueueProcessRoute: LovableEmailQueueProcessRoute,
 }
 export const routeTree = rootRouteImport
   ._addFileChildren(rootRouteChildren)
