@@ -15,6 +15,10 @@ import { Route as AdminRouteImport } from './routes/admin'
 import { Route as IndexRouteImport } from './routes/index'
 import { Route as AppIndexRouteImport } from './routes/app.index'
 import { Route as AdminIndexRouteImport } from './routes/admin.index'
+import { Route as AuthResetPasswordRouteImport } from './routes/auth.reset-password'
+import { Route as AuthMagicLinkRouteImport } from './routes/auth.magic-link'
+import { Route as AuthForgotPasswordRouteImport } from './routes/auth.forgot-password'
+import { Route as AuthConfirmRouteImport } from './routes/auth.confirm'
 import { Route as AppTransferenciasRouteImport } from './routes/app.transferencias'
 import { Route as AppRelatoriosRouteImport } from './routes/app.relatorios'
 import { Route as AppPerfilRouteImport } from './routes/app.perfil'
@@ -75,6 +79,26 @@ const AdminIndexRoute = AdminIndexRouteImport.update({
   id: '/',
   path: '/',
   getParentRoute: () => AdminRoute,
+} as any)
+const AuthResetPasswordRoute = AuthResetPasswordRouteImport.update({
+  id: '/auth/reset-password',
+  path: '/auth/reset-password',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const AuthMagicLinkRoute = AuthMagicLinkRouteImport.update({
+  id: '/auth/magic-link',
+  path: '/auth/magic-link',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const AuthForgotPasswordRoute = AuthForgotPasswordRouteImport.update({
+  id: '/auth/forgot-password',
+  path: '/auth/forgot-password',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const AuthConfirmRoute = AuthConfirmRouteImport.update({
+  id: '/auth/confirm',
+  path: '/auth/confirm',
+  getParentRoute: () => rootRouteImport,
 } as any)
 const AppTransferenciasRoute = AppTransferenciasRouteImport.update({
   id: '/transferencias',
@@ -252,6 +276,10 @@ export interface FileRoutesByFullPath {
   '/app/perfil': typeof AppPerfilRoute
   '/app/relatorios': typeof AppRelatoriosRoute
   '/app/transferencias': typeof AppTransferenciasRoute
+  '/auth/confirm': typeof AuthConfirmRoute
+  '/auth/forgot-password': typeof AuthForgotPasswordRoute
+  '/auth/magic-link': typeof AuthMagicLinkRoute
+  '/auth/reset-password': typeof AuthResetPasswordRoute
   '/admin/': typeof AdminIndexRoute
   '/app/': typeof AppIndexRoute
   '/app/estoque/almoxarifados': typeof AppEstoqueAlmoxarifadosRoute
@@ -288,6 +316,10 @@ export interface FileRoutesByTo {
   '/app/perfil': typeof AppPerfilRoute
   '/app/relatorios': typeof AppRelatoriosRoute
   '/app/transferencias': typeof AppTransferenciasRoute
+  '/auth/confirm': typeof AuthConfirmRoute
+  '/auth/forgot-password': typeof AuthForgotPasswordRoute
+  '/auth/magic-link': typeof AuthMagicLinkRoute
+  '/auth/reset-password': typeof AuthResetPasswordRoute
   '/admin': typeof AdminIndexRoute
   '/app': typeof AppIndexRoute
   '/app/estoque/almoxarifados': typeof AppEstoqueAlmoxarifadosRoute
@@ -327,6 +359,10 @@ export interface FileRoutesById {
   '/app/perfil': typeof AppPerfilRoute
   '/app/relatorios': typeof AppRelatoriosRoute
   '/app/transferencias': typeof AppTransferenciasRoute
+  '/auth/confirm': typeof AuthConfirmRoute
+  '/auth/forgot-password': typeof AuthForgotPasswordRoute
+  '/auth/magic-link': typeof AuthMagicLinkRoute
+  '/auth/reset-password': typeof AuthResetPasswordRoute
   '/admin/': typeof AdminIndexRoute
   '/app/': typeof AppIndexRoute
   '/app/estoque/almoxarifados': typeof AppEstoqueAlmoxarifadosRoute
@@ -367,6 +403,10 @@ export interface FileRouteTypes {
     | '/app/perfil'
     | '/app/relatorios'
     | '/app/transferencias'
+    | '/auth/confirm'
+    | '/auth/forgot-password'
+    | '/auth/magic-link'
+    | '/auth/reset-password'
     | '/admin/'
     | '/app/'
     | '/app/estoque/almoxarifados'
@@ -403,6 +443,10 @@ export interface FileRouteTypes {
     | '/app/perfil'
     | '/app/relatorios'
     | '/app/transferencias'
+    | '/auth/confirm'
+    | '/auth/forgot-password'
+    | '/auth/magic-link'
+    | '/auth/reset-password'
     | '/admin'
     | '/app'
     | '/app/estoque/almoxarifados'
@@ -441,6 +485,10 @@ export interface FileRouteTypes {
     | '/app/perfil'
     | '/app/relatorios'
     | '/app/transferencias'
+    | '/auth/confirm'
+    | '/auth/forgot-password'
+    | '/auth/magic-link'
+    | '/auth/reset-password'
     | '/admin/'
     | '/app/'
     | '/app/estoque/almoxarifados'
@@ -461,6 +509,10 @@ export interface RootRouteChildren {
   AdminRoute: typeof AdminRouteWithChildren
   AppRoute: typeof AppRouteWithChildren
   LoginRoute: typeof LoginRoute
+  AuthConfirmRoute: typeof AuthConfirmRoute
+  AuthForgotPasswordRoute: typeof AuthForgotPasswordRoute
+  AuthMagicLinkRoute: typeof AuthMagicLinkRoute
+  AuthResetPasswordRoute: typeof AuthResetPasswordRoute
 }
 
 declare module '@tanstack/react-router' {
@@ -506,6 +558,34 @@ declare module '@tanstack/react-router' {
       fullPath: '/admin/'
       preLoaderRoute: typeof AdminIndexRouteImport
       parentRoute: typeof AdminRoute
+    }
+    '/auth/reset-password': {
+      id: '/auth/reset-password'
+      path: '/auth/reset-password'
+      fullPath: '/auth/reset-password'
+      preLoaderRoute: typeof AuthResetPasswordRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/auth/magic-link': {
+      id: '/auth/magic-link'
+      path: '/auth/magic-link'
+      fullPath: '/auth/magic-link'
+      preLoaderRoute: typeof AuthMagicLinkRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/auth/forgot-password': {
+      id: '/auth/forgot-password'
+      path: '/auth/forgot-password'
+      fullPath: '/auth/forgot-password'
+      preLoaderRoute: typeof AuthForgotPasswordRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/auth/confirm': {
+      id: '/auth/confirm'
+      path: '/auth/confirm'
+      fullPath: '/auth/confirm'
+      preLoaderRoute: typeof AuthConfirmRouteImport
+      parentRoute: typeof rootRouteImport
     }
     '/app/transferencias': {
       id: '/app/transferencias'
@@ -835,6 +915,10 @@ const rootRouteChildren: RootRouteChildren = {
   AdminRoute: AdminRouteWithChildren,
   AppRoute: AppRouteWithChildren,
   LoginRoute: LoginRoute,
+  AuthConfirmRoute: AuthConfirmRoute,
+  AuthForgotPasswordRoute: AuthForgotPasswordRoute,
+  AuthMagicLinkRoute: AuthMagicLinkRoute,
+  AuthResetPasswordRoute: AuthResetPasswordRoute,
 }
 export const routeTree = rootRouteImport
   ._addFileChildren(rootRouteChildren)

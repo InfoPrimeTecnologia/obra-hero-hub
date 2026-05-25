@@ -1,5 +1,6 @@
 import { createFileRoute, useNavigate, Link } from "@tanstack/react-router";
 import { useState, type FormEvent } from "react";
+import { useServerFn } from "@tanstack/react-start";
 import { Logo } from "@/components/Logo";
 import loginHero from "@/assets/login-construction.jpg";
 import { Button } from "@/components/ui/button";
@@ -9,6 +10,7 @@ import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/com
 import { Tabs, TabsList, TabsTrigger, TabsContent } from "@/components/ui/tabs";
 import { useAuth } from "@/lib/auth-context";
 import { toast } from "sonner";
+import { resendConfirmation, requestMagicLink, signupWithEmail } from "@/lib/auth-email.functions";
 
 export const Route = createFileRoute("/login")({
   component: LoginPage,
