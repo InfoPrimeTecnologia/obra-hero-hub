@@ -17,8 +17,11 @@ export const Route = createFileRoute("/login")({
 });
 
 function LoginPage() {
-  const { signIn, signUp } = useAuth();
+  const { signIn } = useAuth();
   const navigate = useNavigate();
+  const resendFn = useServerFn(resendConfirmation);
+  const magicLinkFn = useServerFn(requestMagicLink);
+  const signupFn = useServerFn(signupWithEmail);
   const [loading, setLoading] = useState(false);
   const [tab, setTab] = useState<"login" | "signup">("login");
 
@@ -31,6 +34,7 @@ function LoginPage() {
   const [signupCpfCnpj, setSignupCpfCnpj] = useState("");
   const [signupPassword, setSignupPassword] = useState("");
   const [signupConfirm, setSignupConfirm] = useState("");
+  const [signupSent, setSignupSent] = useState(false);
 
   const passwordChecks = {
     length: signupPassword.length >= 8,
@@ -43,6 +47,7 @@ function LoginPage() {
 
   const [needsConfirm, setNeedsConfirm] = useState(false);
   const [resending, setResending] = useState(false);
+  const [sendingMagic, setSendingMagic] = useState(false);
 
   const handleResendConfirmation = async () => {
     if (!loginEmail) {
@@ -50,17 +55,30 @@ function LoginPage() {
       return;
     }
     setResending(true);
-    const { supabase } = await import("@/integrations/supabase/client");
-    const { error } = await supabase.auth.resend({
-      type: "signup",
-      email: loginEmail,
-      options: { emailRedirectTo: `${window.location.origin}/` },
-    });
-    setResending(false);
-    if (error) {
-      toast.error("Não foi possível reenviar", { description: error.message });
-    } else {
-      toast.success("E-mail de confirmação reenviado!");
+    try {
+      const r = await resendFn({ data: { email: loginEmail, origin: window.location.origin } });
+      if (r.ok) toast.success("E-mail de confirmação enviado!");
+      else toast.error(r.error);
+    } catch (e: any) {
+      toast.error("Falha ao reenviar", { description: e?.message });
+    } finally {
+      setResending(false);
+    }
+  };
+
+  const handleMagicLink = async () => {
+    if (!loginEmail) {
+      toast.error("Informe seu e-mail acima");
+      return;
+    }
+    setSendingMagic(true);
+    try {
+      await magicLinkFn({ data: { email: loginEmail, origin: window.location.origin } });
+      toast.success("Se este e-mail existir, enviamos um link de acesso.");
+    } catch (e: any) {
+      toast.error("Falha ao enviar magic link", { description: e?.message });
+    } finally {
+      setSendingMagic(false);
     }
   };
 
@@ -85,7 +103,6 @@ function LoginPage() {
       toast.error("Falha no login", { description: error.message });
     } else {
       toast.success("Bem-vindo de volta!");
-      // O redirecionamento por papel é feito na rota /admin e /app
       navigate({ to: "/admin" });
     }
   };
@@ -101,19 +118,27 @@ function LoginPage() {
       return;
     }
     setLoading(true);
-    const { error } = await signUp({
-      email: signupEmail,
-      password: signupPassword,
-      fullName: signupName,
-      companyName: signupCompany || undefined,
-      cpfCnpj: signupCpfCnpj || undefined,
-    });
-    setLoading(false);
-    if (error) {
-      toast.error("Falha no cadastro", { description: error.message });
-    } else {
-      toast.success("Conta criada! Verifique seu e-mail para confirmar.");
-      setTab("login");
+    try {
+      const r = await signupFn({
+        data: {
+          email: signupEmail,
+          password: signupPassword,
+          fullName: signupName,
+          companyName: signupCompany || null,
+          cpfCnpj: signupCpfCnpj || null,
+          origin: window.location.origin,
+        },
+      });
+      if (r.ok) {
+        toast.success("Conta criada! Verifique seu e-mail para confirmar.");
+        setSignupSent(true);
+      } else {
+        toast.error("Falha no cadastro", { description: r.error });
+      }
+    } catch (err: any) {
+      toast.error("Falha no cadastro", { description: err?.message });
+    } finally {
+      setLoading(false);
     }
   };
 
