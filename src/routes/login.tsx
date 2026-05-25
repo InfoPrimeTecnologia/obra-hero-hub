@@ -56,14 +56,14 @@ function LoginPage() {
   const [resending, setResending] = useState(false);
   const [sendingMagic, setSendingMagic] = useState(false);
 
-  const handleResendConfirmation = async () => {
-    if (!loginEmail) {
+  const handleResendConfirmation = async (email = loginEmail) => {
+    if (!email) {
       toast.error("Informe seu e-mail acima");
       return;
     }
     setResending(true);
     try {
-      const r = await resendFn({ data: { email: loginEmail, origin: window.location.origin } });
+      const r = await resendFn({ data: { email, origin: window.location.origin } });
       if (r.ok) toast.success("E-mail de confirmação enviado!");
       else toast.error(r.error);
     } catch (e: any) {
@@ -237,7 +237,7 @@ function LoginPage() {
                           variant="outline"
                           size="sm"
                           className="w-full"
-                          onClick={handleResendConfirmation}
+                          onClick={() => handleResendConfirmation()}
                           disabled={resending || !loginEmail}
                         >
                           {resending ? "Reenviando..." : "Reenviar e-mail de confirmação"}
@@ -262,6 +262,14 @@ function LoginPage() {
                         onClick={() => { setSignupSent(false); setTab("login"); }}
                       >
                         Ir para o login
+                      </Button>
+                      <Button
+                        type="button"
+                        className="w-full"
+                        onClick={() => handleResendConfirmation(signupEmail)}
+                        disabled={resending || !signupEmail}
+                      >
+                        {resending ? "Reenviando..." : "Reenviar e-mail de confirmação"}
                       </Button>
                     </div>
                   ) : (
