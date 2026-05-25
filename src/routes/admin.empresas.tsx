@@ -1,5 +1,7 @@
 import { createFileRoute } from "@tanstack/react-router";
+import { useServerFn } from "@tanstack/react-start";
 import { useEffect, useMemo, useState, type FormEvent } from "react";
+import { deleteCustomerAndUser } from "@/lib/admin-users.functions";
 import { PageHeader } from "@/components/admin/PageHeader";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
@@ -117,6 +119,7 @@ function EmpresasPage() {
   // delete
   const [deleteId, setDeleteId] = useState<string | null>(null);
   const [deleting, setDeleting] = useState(false);
+  const deleteCustomerFn = useServerFn(deleteCustomerAndUser);
 
   // detail
   const [detailCustomer, setDetailCustomer] = useState<Customer | null>(null);
@@ -229,19 +232,24 @@ function EmpresasPage() {
   const handleDelete = async () => {
     if (!deleteId) return;
     setDeleting(true);
-    const { error } = await supabase.from("customers").delete().eq("id", deleteId);
-    setDeleting(false);
-    if (error) {
-      toast.error("Erro ao excluir", {
-        description: error.message.includes("violates foreign key")
-          ? "Esta empresa possui dados vinculados (obras, assinaturas, etc). Remova-os antes."
-          : error.message,
-      });
-      return;
+    try {
+      const r = await deleteCustomerFn({ data: { customerId: deleteId } });
+      if (!r.ok) {
+        toast.error("Erro ao excluir", { description: r.error });
+        return;
+      }
+      if ("warning" in r && r.warning) {
+        toast.warning(r.warning);
+      } else {
+        toast.success("Empresa e usuário excluídos");
+      }
+      setDeleteId(null);
+      void load();
+    } catch (e: any) {
+      toast.error("Erro ao excluir", { description: e?.message });
+    } finally {
+      setDeleting(false);
     }
-    toast.success("Empresa excluída");
-    setDeleteId(null);
-    void load();
   };
 
   const openDetail = async (c: Customer) => {
