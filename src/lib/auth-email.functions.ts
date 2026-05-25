@@ -14,6 +14,12 @@ import {
 
 const emailSchema = z.string().email().max(255).transform((s) => s.toLowerCase().trim());
 
+function resolveBaseUrl(clientOrigin: string) {
+  const override = process.env.APP_URL?.trim();
+  const base = override && override.length > 0 ? override : clientOrigin;
+  return base.replace(/\/$/, '');
+}
+
 function hasConfirmedMestreEmail(user: { email_confirmed_at?: string | null; app_metadata?: Record<string, unknown> }) {
   const customStatus = user.app_metadata?.mestre_email_confirmed;
   if (customStatus === false) return false;
