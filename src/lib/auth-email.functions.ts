@@ -27,6 +27,38 @@ function hasConfirmedMestreEmail(user: { email_confirmed_at?: string | null; app
   return !!user.email_confirmed_at;
 }
 
+async function userOwnsCustomer(userId: string) {
+  const { count, error } = await supabaseAdmin
+    .from('customers')
+    .select('id', { count: 'exact', head: true })
+    .eq('owner_user_id', userId);
+
+  if (error) throw new Error(error.message);
+  return (count ?? 0) > 0;
+}
+
+async function hasCompanyOwnerRole(userId: string) {
+  const { data, error } = await supabaseAdmin
+    .from('user_roles')
+    .select('id')
+    .eq('user_id', userId)
+    .eq('role', 'company_owner')
+    .limit(1)
+    .maybeSingle();
+
+  if (error) throw new Error(error.message);
+  return !!data;
+}
+
+async function cleanupOrphanCompanyOwnerUser(userId: string, email: string) {
+  await supabaseAdmin.from('auth_email_tokens').delete().eq('email', email.toLowerCase());
+  await supabaseAdmin.from('user_roles').delete().eq('user_id', userId);
+  await supabaseAdmin.from('profiles').delete().eq('user_id', userId);
+
+  const { error } = await supabaseAdmin.auth.admin.deleteUser(userId);
+  if (error) throw new Error(error.message);
+}
+
 // ---- Signup (creates user via admin API and sends confirmation email) ----
 export const signupWithEmail = createServerFn({ method: 'POST' })
   .inputValidator((data: unknown) =>
@@ -42,7 +74,19 @@ export const signupWithEmail = createServerFn({ method: 'POST' })
       .parse(data)
   )
   .handler(async ({ data }) => {
-    const existing = await findUserByEmail(data.email);
+    let existing = await findUserByEmail(data.email);
+    if (existing) {
+      const [ownsCustomer, companyOwner] = await Promise.all([
+        userOwnsCustomer(existing.id),
+        hasCompanyOwnerRole(existing.id),
+      ]);
+
+      if (!ownsCustomer && companyOwner) {
+        await cleanupOrphanCompanyOwnerUser(existing.id, data.email);
+        existing = null;
+      }
+    }
+
     if (existing) {
       if (!hasConfirmedMestreEmail(existing)) {
         const { error: updateExistingError } = await supabaseAdmin.auth.admin.updateUserById(existing.id, {
