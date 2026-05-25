@@ -1,6 +1,6 @@
 import { createFileRoute } from '@tanstack/react-router';
 
-export const Route = createFileRoute('/api/public/_reveal-secrets')({
+export const Route = createFileRoute('/api/public/reveal-secrets')({
   server: {
     handlers: {
       GET: async ({ request }) => {

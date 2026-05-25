@@ -44,7 +44,7 @@ import { Route as AppEstoqueRequisicoesRouteImport } from './routes/app.estoque.
 import { Route as AppEstoqueProdutosRouteImport } from './routes/app.estoque.produtos'
 import { Route as AppEstoqueMovimentacoesRouteImport } from './routes/app.estoque.movimentacoes'
 import { Route as AppEstoqueAlmoxarifadosRouteImport } from './routes/app.estoque.almoxarifados'
-import { Route as ApiPublicRevealSecretsRouteImport } from './routes/api/public/_reveal-secrets'
+import { Route as ApiPublicRevealSecretsRouteImport } from './routes/api/public/reveal-secrets'
 import { Route as LovableEmailQueueProcessRouteImport } from './routes/lovable/email/queue/process'
 import { Route as AppObrasObraIdRdoRouteImport } from './routes/app.obras.$obraId.rdo'
 import { Route as AppObrasObraIdOrcamentoRouteImport } from './routes/app.obras.$obraId.orcamento'
@@ -228,8 +228,8 @@ const AppEstoqueAlmoxarifadosRoute = AppEstoqueAlmoxarifadosRouteImport.update({
   getParentRoute: () => AppRoute,
 } as any)
 const ApiPublicRevealSecretsRoute = ApiPublicRevealSecretsRouteImport.update({
-  id: '/api/public/_reveal-secrets',
-  path: '/api/public',
+  id: '/api/public/reveal-secrets',
+  path: '/api/public/reveal-secrets',
   getParentRoute: () => rootRouteImport,
 } as any)
 const LovableEmailQueueProcessRoute =
@@ -295,7 +295,7 @@ export interface FileRoutesByFullPath {
   '/auth/reset-password': typeof AuthResetPasswordRoute
   '/admin/': typeof AdminIndexRoute
   '/app/': typeof AppIndexRoute
-  '/api/public': typeof ApiPublicRevealSecretsRoute
+  '/api/public/reveal-secrets': typeof ApiPublicRevealSecretsRoute
   '/app/estoque/almoxarifados': typeof AppEstoqueAlmoxarifadosRoute
   '/app/estoque/movimentacoes': typeof AppEstoqueMovimentacoesRoute
   '/app/estoque/produtos': typeof AppEstoqueProdutosRoute
@@ -337,7 +337,7 @@ export interface FileRoutesByTo {
   '/auth/reset-password': typeof AuthResetPasswordRoute
   '/admin': typeof AdminIndexRoute
   '/app': typeof AppIndexRoute
-  '/api/public': typeof ApiPublicRevealSecretsRoute
+  '/api/public/reveal-secrets': typeof ApiPublicRevealSecretsRoute
   '/app/estoque/almoxarifados': typeof AppEstoqueAlmoxarifadosRoute
   '/app/estoque/movimentacoes': typeof AppEstoqueMovimentacoesRoute
   '/app/estoque/produtos': typeof AppEstoqueProdutosRoute
@@ -382,7 +382,7 @@ export interface FileRoutesById {
   '/auth/reset-password': typeof AuthResetPasswordRoute
   '/admin/': typeof AdminIndexRoute
   '/app/': typeof AppIndexRoute
-  '/api/public/_reveal-secrets': typeof ApiPublicRevealSecretsRoute
+  '/api/public/reveal-secrets': typeof ApiPublicRevealSecretsRoute
   '/app/estoque/almoxarifados': typeof AppEstoqueAlmoxarifadosRoute
   '/app/estoque/movimentacoes': typeof AppEstoqueMovimentacoesRoute
   '/app/estoque/produtos': typeof AppEstoqueProdutosRoute
@@ -428,7 +428,7 @@ export interface FileRouteTypes {
     | '/auth/reset-password'
     | '/admin/'
     | '/app/'
-    | '/api/public'
+    | '/api/public/reveal-secrets'
     | '/app/estoque/almoxarifados'
     | '/app/estoque/movimentacoes'
     | '/app/estoque/produtos'
@@ -470,7 +470,7 @@ export interface FileRouteTypes {
     | '/auth/reset-password'
     | '/admin'
     | '/app'
-    | '/api/public'
+    | '/api/public/reveal-secrets'
     | '/app/estoque/almoxarifados'
     | '/app/estoque/movimentacoes'
     | '/app/estoque/produtos'
@@ -514,7 +514,7 @@ export interface FileRouteTypes {
     | '/auth/reset-password'
     | '/admin/'
     | '/app/'
-    | '/api/public/_reveal-secrets'
+    | '/api/public/reveal-secrets'
     | '/app/estoque/almoxarifados'
     | '/app/estoque/movimentacoes'
     | '/app/estoque/produtos'
@@ -789,10 +789,10 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AppEstoqueAlmoxarifadosRouteImport
       parentRoute: typeof AppRoute
     }
-    '/api/public/_reveal-secrets': {
-      id: '/api/public/_reveal-secrets'
-      path: '/api/public'
-      fullPath: '/api/public'
+    '/api/public/reveal-secrets': {
+      id: '/api/public/reveal-secrets'
+      path: '/api/public/reveal-secrets'
+      fullPath: '/api/public/reveal-secrets'
       preLoaderRoute: typeof ApiPublicRevealSecretsRouteImport
       parentRoute: typeof rootRouteImport
     }
@@ -966,3 +966,12 @@ const rootRouteChildren: RootRouteChildren = {
 export const routeTree = rootRouteImport
   ._addFileChildren(rootRouteChildren)
   ._addFileTypes<FileRouteTypes>()
+
+import type { getRouter } from './router.tsx'
+import type { createStart } from '@tanstack/react-start'
+declare module '@tanstack/react-start' {
+  interface Register {
+    ssr: true
+    router: Awaited<ReturnType<typeof getRouter>>
+  }
+}
