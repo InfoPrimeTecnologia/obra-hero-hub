@@ -38,6 +38,22 @@ export const signupWithEmail = createServerFn({ method: 'POST' })
   .handler(async ({ data }) => {
     const existing = await findUserByEmail(data.email);
     if (existing) {
+      if (!hasConfirmedMestreEmail(existing)) {
+        const token = await createToken({
+          email: data.email,
+          type: 'signup',
+          userId: existing.id,
+          ttlMinutes: 60,
+        });
+        const link = `${data.origin.replace(/\/$/, '')}/auth/confirm?token=${token}`;
+        await sendEmail({
+          to: data.email,
+          subject: 'Confirme seu e-mail - Mestre 360',
+          html: tplConfirmEmail(link),
+        });
+        return { ok: true as const };
+      }
+
       return { ok: false as const, error: 'Já existe uma conta com este e-mail.' };
     }
 
