@@ -3,7 +3,7 @@ import crypto from 'crypto';
 import { supabaseAdmin } from '@/integrations/supabase/client.server';
 
 const FROM = 'Mestre 360 <noreply@mestre360.com.br>';
-const GATEWAY_URL = 'https://connector-gateway.lovable.dev/resend';
+const RESEND_API_URL = 'https://api.resend.com';
 
 export type TokenType = 'signup' | 'recovery' | 'magic_link';
 
