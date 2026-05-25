@@ -206,6 +206,19 @@ function LoginPage() {
                     <Button type="submit" className="w-full" disabled={loading}>
                       {loading ? "Entrando..." : "Entrar"}
                     </Button>
+                    <div className="flex items-center justify-between text-xs">
+                      <Link to="/auth/forgot-password" className="text-primary hover:underline">
+                        Esqueci minha senha
+                      </Link>
+                      <button
+                        type="button"
+                        onClick={handleMagicLink}
+                        disabled={sendingMagic || !loginEmail}
+                        className="text-primary hover:underline disabled:opacity-50"
+                      >
+                        {sendingMagic ? "Enviando..." : "Entrar com magic link"}
+                      </button>
+                    </div>
                     {needsConfirm && (
                       <div className="rounded-md border border-border bg-muted/40 p-3 text-sm">
                         <p className="mb-2 text-muted-foreground">
@@ -226,6 +239,24 @@ function LoginPage() {
                   </form>
                 </TabsContent>
                 <TabsContent value="signup">
+                  {signupSent ? (
+                    <div className="space-y-4 pt-4">
+                      <div className="rounded-md border border-border bg-muted/40 p-4 text-sm">
+                        <p className="font-medium mb-2">✉️ Verifique seu e-mail</p>
+                        <p className="text-muted-foreground">
+                          Enviamos um link de confirmação para <strong>{signupEmail}</strong>. Clique no link para ativar sua conta.
+                        </p>
+                      </div>
+                      <Button
+                        type="button"
+                        variant="outline"
+                        className="w-full"
+                        onClick={() => { setSignupSent(false); setTab("login"); }}
+                      >
+                        Ir para o login
+                      </Button>
+                    </div>
+                  ) : (
                   <form onSubmit={handleSignup} className="space-y-4 pt-4">
                     <div className="space-y-2">
                       <Label htmlFor="signup-name">Nome *</Label>
