@@ -124,19 +124,8 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   };
 
   const signUp = async (input: SignUpInput) => {
-    const { error } = await supabase.auth.signUp({
-      email: input.email,
-      password: input.password,
-      options: {
-        emailRedirectTo: `${window.location.origin}/`,
-        data: {
-          full_name: input.fullName,
-          company_name: input.companyName ?? null,
-          cpf_cnpj: input.cpfCnpj ?? null,
-        },
-      },
-    });
-    return { error };
+    void input;
+    return { error: new Error("Use o cadastro personalizado do Mestre 360.") };
   };
 
   const signOut = async () => {
