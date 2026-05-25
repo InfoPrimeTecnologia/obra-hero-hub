@@ -44,7 +44,6 @@ import { Route as AppEstoqueRequisicoesRouteImport } from './routes/app.estoque.
 import { Route as AppEstoqueProdutosRouteImport } from './routes/app.estoque.produtos'
 import { Route as AppEstoqueMovimentacoesRouteImport } from './routes/app.estoque.movimentacoes'
 import { Route as AppEstoqueAlmoxarifadosRouteImport } from './routes/app.estoque.almoxarifados'
-import { Route as ApiPublicRevealSecretsRouteImport } from './routes/api/public/reveal-secrets'
 import { Route as LovableEmailQueueProcessRouteImport } from './routes/lovable/email/queue/process'
 import { Route as AppObrasObraIdRdoRouteImport } from './routes/app.obras.$obraId.rdo'
 import { Route as AppObrasObraIdOrcamentoRouteImport } from './routes/app.obras.$obraId.orcamento'
@@ -227,11 +226,6 @@ const AppEstoqueAlmoxarifadosRoute = AppEstoqueAlmoxarifadosRouteImport.update({
   path: '/estoque/almoxarifados',
   getParentRoute: () => AppRoute,
 } as any)
-const ApiPublicRevealSecretsRoute = ApiPublicRevealSecretsRouteImport.update({
-  id: '/api/public/reveal-secrets',
-  path: '/api/public/reveal-secrets',
-  getParentRoute: () => rootRouteImport,
-} as any)
 const LovableEmailQueueProcessRoute =
   LovableEmailQueueProcessRouteImport.update({
     id: '/lovable/email/queue/process',
@@ -295,7 +289,6 @@ export interface FileRoutesByFullPath {
   '/auth/reset-password': typeof AuthResetPasswordRoute
   '/admin/': typeof AdminIndexRoute
   '/app/': typeof AppIndexRoute
-  '/api/public/reveal-secrets': typeof ApiPublicRevealSecretsRoute
   '/app/estoque/almoxarifados': typeof AppEstoqueAlmoxarifadosRoute
   '/app/estoque/movimentacoes': typeof AppEstoqueMovimentacoesRoute
   '/app/estoque/produtos': typeof AppEstoqueProdutosRoute
@@ -337,7 +330,6 @@ export interface FileRoutesByTo {
   '/auth/reset-password': typeof AuthResetPasswordRoute
   '/admin': typeof AdminIndexRoute
   '/app': typeof AppIndexRoute
-  '/api/public/reveal-secrets': typeof ApiPublicRevealSecretsRoute
   '/app/estoque/almoxarifados': typeof AppEstoqueAlmoxarifadosRoute
   '/app/estoque/movimentacoes': typeof AppEstoqueMovimentacoesRoute
   '/app/estoque/produtos': typeof AppEstoqueProdutosRoute
@@ -382,7 +374,6 @@ export interface FileRoutesById {
   '/auth/reset-password': typeof AuthResetPasswordRoute
   '/admin/': typeof AdminIndexRoute
   '/app/': typeof AppIndexRoute
-  '/api/public/reveal-secrets': typeof ApiPublicRevealSecretsRoute
   '/app/estoque/almoxarifados': typeof AppEstoqueAlmoxarifadosRoute
   '/app/estoque/movimentacoes': typeof AppEstoqueMovimentacoesRoute
   '/app/estoque/produtos': typeof AppEstoqueProdutosRoute
@@ -428,7 +419,6 @@ export interface FileRouteTypes {
     | '/auth/reset-password'
     | '/admin/'
     | '/app/'
-    | '/api/public/reveal-secrets'
     | '/app/estoque/almoxarifados'
     | '/app/estoque/movimentacoes'
     | '/app/estoque/produtos'
@@ -470,7 +460,6 @@ export interface FileRouteTypes {
     | '/auth/reset-password'
     | '/admin'
     | '/app'
-    | '/api/public/reveal-secrets'
     | '/app/estoque/almoxarifados'
     | '/app/estoque/movimentacoes'
     | '/app/estoque/produtos'
@@ -514,7 +503,6 @@ export interface FileRouteTypes {
     | '/auth/reset-password'
     | '/admin/'
     | '/app/'
-    | '/api/public/reveal-secrets'
     | '/app/estoque/almoxarifados'
     | '/app/estoque/movimentacoes'
     | '/app/estoque/produtos'
@@ -538,7 +526,6 @@ export interface RootRouteChildren {
   AuthForgotPasswordRoute: typeof AuthForgotPasswordRoute
   AuthMagicLinkRoute: typeof AuthMagicLinkRoute
   AuthResetPasswordRoute: typeof AuthResetPasswordRoute
-  ApiPublicRevealSecretsRoute: typeof ApiPublicRevealSecretsRoute
   LovableEmailQueueProcessRoute: typeof LovableEmailQueueProcessRoute
 }
 
@@ -789,13 +776,6 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AppEstoqueAlmoxarifadosRouteImport
       parentRoute: typeof AppRoute
     }
-    '/api/public/reveal-secrets': {
-      id: '/api/public/reveal-secrets'
-      path: '/api/public/reveal-secrets'
-      fullPath: '/api/public/reveal-secrets'
-      preLoaderRoute: typeof ApiPublicRevealSecretsRouteImport
-      parentRoute: typeof rootRouteImport
-    }
     '/lovable/email/queue/process': {
       id: '/lovable/email/queue/process'
       path: '/lovable/email/queue/process'
@@ -960,7 +940,6 @@ const rootRouteChildren: RootRouteChildren = {
   AuthForgotPasswordRoute: AuthForgotPasswordRoute,
   AuthMagicLinkRoute: AuthMagicLinkRoute,
   AuthResetPasswordRoute: AuthResetPasswordRoute,
-  ApiPublicRevealSecretsRoute: ApiPublicRevealSecretsRoute,
   LovableEmailQueueProcessRoute: LovableEmailQueueProcessRoute,
 }
 export const routeTree = rootRouteImport
