@@ -1,3 +1,4 @@
+import 'dotenv/config';
 import http from 'node:http';
 import { existsSync, readFileSync } from 'node:fs';
 import { dirname, join, extname } from 'node:path';
