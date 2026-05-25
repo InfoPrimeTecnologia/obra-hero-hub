@@ -72,17 +72,14 @@ export async function isOnCooldown(email: string, type: TokenType) {
 }
 
 export async function sendEmail(args: { to: string; subject: string; html: string }) {
-  const LOVABLE_API_KEY = process.env.LOVABLE_API_KEY;
   const RESEND_API_KEY = process.env.RESEND_API_KEY;
-  if (!LOVABLE_API_KEY) throw new Error('LOVABLE_API_KEY is not configured');
   if (!RESEND_API_KEY) throw new Error('RESEND_API_KEY is not configured');
 
-  const res = await fetch(`${GATEWAY_URL}/emails`, {
+  const res = await fetch(`${RESEND_API_URL}/emails`, {
     method: 'POST',
     headers: {
       'Content-Type': 'application/json',
-      Authorization: `Bearer ${LOVABLE_API_KEY}`,
-      'X-Connection-Api-Key': RESEND_API_KEY,
+      Authorization: `Bearer ${RESEND_API_KEY}`,
     },
     body: JSON.stringify({
       from: FROM,
