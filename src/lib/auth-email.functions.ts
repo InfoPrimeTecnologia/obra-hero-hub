@@ -69,7 +69,7 @@ export const signupWithEmail = createServerFn({ method: 'POST' })
           userId: existing.id,
           ttlMinutes: 60,
         });
-        const link = `${data.origin.replace(/\/$/, '')}/auth/confirm?token=${token}`;
+        const link = `${resolveBaseUrl(data.origin)}/auth/confirm?token=${token}`;
         await sendEmail({
           to: data.email,
           subject: 'Confirme seu e-mail - Mestre 360',
@@ -105,7 +105,7 @@ export const signupWithEmail = createServerFn({ method: 'POST' })
       ttlMinutes: 60,
     });
 
-    const link = `${data.origin.replace(/\/$/, '')}/auth/confirm?token=${token}`;
+    const link = `${resolveBaseUrl(data.origin)}/auth/confirm?token=${token}`;
     try {
       await sendEmail({
         to: data.email,
@@ -162,7 +162,7 @@ export const resendConfirmation = createServerFn({ method: 'POST' })
       userId: user.id,
       ttlMinutes: 60,
     });
-    const link = `${data.origin.replace(/\/$/, '')}/auth/confirm?token=${token}`;
+    const link = `${resolveBaseUrl(data.origin)}/auth/confirm?token=${token}`;
     await sendEmail({
       to: data.email,
       subject: 'Confirme seu e-mail - Mestre 360',
@@ -188,7 +188,7 @@ export const requestPasswordReset = createServerFn({ method: 'POST' })
       userId: user.id,
       ttlMinutes: 60,
     });
-    const link = `${data.origin.replace(/\/$/, '')}/auth/reset-password?token=${token}`;
+    const link = `${resolveBaseUrl(data.origin)}/auth/reset-password?token=${token}`;
     await sendEmail({
       to: data.email,
       subject: 'Redefinir senha - Mestre 360',
@@ -236,7 +236,7 @@ export const requestMagicLink = createServerFn({ method: 'POST' })
       userId: user.id,
       ttlMinutes: 15,
     });
-    const link = `${data.origin.replace(/\/$/, '')}/auth/magic-link?token=${token}`;
+    const link = `${resolveBaseUrl(data.origin)}/auth/magic-link?token=${token}`;
     await sendEmail({
       to: data.email,
       subject: 'Seu link de acesso - Mestre 360',
