@@ -39,6 +39,24 @@ export const signupWithEmail = createServerFn({ method: 'POST' })
     const existing = await findUserByEmail(data.email);
     if (existing) {
       if (!hasConfirmedMestreEmail(existing)) {
+        const { error: updateExistingError } = await supabaseAdmin.auth.admin.updateUserById(existing.id, {
+          password: data.password,
+          email_confirm: true,
+          app_metadata: {
+            ...(existing.app_metadata ?? {}),
+            mestre_email_confirmed: false,
+          },
+          user_metadata: {
+            ...(existing.user_metadata ?? {}),
+            full_name: data.fullName,
+            company_name: data.companyName ?? null,
+            cpf_cnpj: data.cpfCnpj ?? null,
+          },
+        });
+        if (updateExistingError) {
+          return { ok: false as const, error: updateExistingError.message };
+        }
+
         const token = await createToken({
           email: data.email,
           type: 'signup',
