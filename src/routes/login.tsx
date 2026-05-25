@@ -1,5 +1,5 @@
 import { createFileRoute, useNavigate, Link } from "@tanstack/react-router";
-import { useState, type FormEvent } from "react";
+import { useEffect, useState, type FormEvent } from "react";
 import { useServerFn } from "@tanstack/react-start";
 import { Logo } from "@/components/Logo";
 import loginHero from "@/assets/login-construction.jpg";
@@ -17,13 +17,20 @@ export const Route = createFileRoute("/login")({
 });
 
 function LoginPage() {
-  const { signIn } = useAuth();
+  const { signIn, user, isAdmin, loading: authLoading } = useAuth();
   const navigate = useNavigate();
   const resendFn = useServerFn(resendConfirmation);
   const magicLinkFn = useServerFn(requestMagicLink);
   const signupFn = useServerFn(signupWithEmail);
   const [loading, setLoading] = useState(false);
+  const [justLoggedIn, setJustLoggedIn] = useState(false);
   const [tab, setTab] = useState<"login" | "signup">("login");
+
+  useEffect(() => {
+    if (!justLoggedIn || authLoading || !user) return;
+    navigate({ to: isAdmin ? "/admin" : "/app" });
+  }, [justLoggedIn, authLoading, user, isAdmin, navigate]);
+
 
   const [loginEmail, setLoginEmail] = useState("");
   const [loginPassword, setLoginPassword] = useState("");
@@ -103,9 +110,10 @@ function LoginPage() {
       toast.error("Falha no login", { description: error.message });
     } else {
       toast.success("Bem-vindo de volta!");
-      navigate({ to: "/admin" });
+      setJustLoggedIn(true);
     }
   };
+
 
   const handleSignup = async (e: FormEvent) => {
     e.preventDefault();
