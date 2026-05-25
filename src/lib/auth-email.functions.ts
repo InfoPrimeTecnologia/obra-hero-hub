@@ -14,6 +14,13 @@ import {
 
 const emailSchema = z.string().email().max(255).transform((s) => s.toLowerCase().trim());
 
+function hasConfirmedMestreEmail(user: { email_confirmed_at?: string | null; app_metadata?: Record<string, unknown> }) {
+  const customStatus = user.app_metadata?.mestre_email_confirmed;
+  if (customStatus === false) return false;
+  if (customStatus === true) return true;
+  return !!user.email_confirmed_at;
+}
+
 // ---- Signup (creates user via admin API and sends confirmation email) ----
 export const signupWithEmail = createServerFn({ method: 'POST' })
   .inputValidator((data: unknown) =>
@@ -37,7 +44,10 @@ export const signupWithEmail = createServerFn({ method: 'POST' })
     const { data: created, error: createErr } = await supabaseAdmin.auth.admin.createUser({
       email: data.email,
       password: data.password,
-      email_confirm: false,
+      email_confirm: true,
+      app_metadata: {
+        mestre_email_confirmed: false,
+      },
       user_metadata: {
         full_name: data.fullName,
         company_name: data.companyName ?? null,
@@ -56,11 +66,16 @@ export const signupWithEmail = createServerFn({ method: 'POST' })
     });
 
     const link = `${data.origin.replace(/\/$/, '')}/auth/confirm?token=${token}`;
-    await sendEmail({
-      to: data.email,
-      subject: 'Confirme seu e-mail - Mestre 360',
-      html: tplConfirmEmail(link),
-    });
+    try {
+      await sendEmail({
+        to: data.email,
+        subject: 'Confirme seu e-mail - Mestre 360',
+        html: tplConfirmEmail(link),
+      });
+    } catch (error) {
+      await supabaseAdmin.auth.admin.deleteUser(created.user.id);
+      throw error;
+    }
 
     return { ok: true as const };
   });
@@ -74,8 +89,13 @@ export const confirmEmail = createServerFn({ method: 'POST' })
     const row = await consumeToken({ token: data.token, type: 'signup' });
     if (!row) return { ok: false as const, error: 'Link inválido ou expirado.' };
     if (!row.user_id) return { ok: false as const, error: 'Usuário não encontrado.' };
+    const { data: userData } = await supabaseAdmin.auth.admin.getUserById(row.user_id);
     const { error } = await supabaseAdmin.auth.admin.updateUserById(row.user_id, {
       email_confirm: true,
+      app_metadata: {
+        ...(userData.user?.app_metadata ?? {}),
+        mestre_email_confirmed: true,
+      },
     });
     if (error) return { ok: false as const, error: error.message };
     return { ok: true as const };
@@ -93,7 +113,7 @@ export const resendConfirmation = createServerFn({ method: 'POST' })
     const user = await findUserByEmail(data.email);
     // Sempre retorne ok para evitar enumeração
     if (!user) return { ok: true as const };
-    if (user.email_confirmed_at) {
+    if (hasConfirmedMestreEmail(user)) {
       return { ok: false as const, error: 'Este e-mail já está confirmado.' };
     }
     const token = await createToken({
