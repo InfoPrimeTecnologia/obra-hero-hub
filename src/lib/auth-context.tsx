@@ -119,7 +119,11 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   }, []);
 
   const signIn = async (email: string, password: string) => {
-    const { error } = await supabase.auth.signInWithPassword({ email, password });
+    const { data, error } = await supabase.auth.signInWithPassword({ email, password });
+    if (!error && data.user?.app_metadata?.mestre_email_confirmed === false) {
+      await supabase.auth.signOut();
+      return { error: new Error("E-mail ainda não confirmado. Verifique sua caixa de entrada.") };
+    }
     return { error };
   };
 
