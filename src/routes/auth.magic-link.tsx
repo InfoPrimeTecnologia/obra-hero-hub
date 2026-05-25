@@ -21,7 +21,7 @@ function MagicLinkPage() {
     if (!token) {
       setState('error'); setMessage('Token ausente.'); return;
     }
-    consume({ data: { token } })
+    consume({ data: { token, origin: window.location.origin } })
       .then((r) => {
         if (r.ok && r.actionLink) {
           // Redireciona pro action_link gerado pelo Supabase, que cria a sessão e volta pra home

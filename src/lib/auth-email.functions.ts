@@ -292,7 +292,10 @@ export const requestMagicLink = createServerFn({ method: 'POST' })
 // ---- Consume magic link: returns a one-time action_link the client can hit to get a session ----
 export const consumeMagicLink = createServerFn({ method: 'POST' })
   .inputValidator((data: unknown) =>
-    z.object({ token: z.string().min(16).max(128) }).parse(data)
+    z.object({
+      token: z.string().min(16).max(128),
+      origin: z.string().url().max(255).optional(),
+    }).parse(data)
   )
   .handler(async ({ data }) => {
     const row = await consumeToken({ token: data.token, type: 'magic_link' });
@@ -302,10 +305,12 @@ export const consumeMagicLink = createServerFn({ method: 'POST' })
     // Garante email confirmado (login por magic link conta como confirmação)
     await supabaseAdmin.auth.admin.updateUserById(row.user_id, { email_confirm: true });
 
+    const redirectBase = resolveBaseUrl(data.origin ?? '');
     // Gera um link de magic link do Supabase — o frontend extrai os tokens do hash
     const { data: linkData, error } = await supabaseAdmin.auth.admin.generateLink({
       type: 'magiclink',
       email: row.email,
+      options: redirectBase ? { redirectTo: `${redirectBase}/app` } : undefined,
     });
     if (error || !linkData?.properties?.action_link) {
       return { ok: false as const, error: error?.message ?? 'Falha ao gerar sessão.' };
