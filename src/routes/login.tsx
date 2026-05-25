@@ -237,7 +237,7 @@ function LoginPage() {
                           variant="outline"
                           size="sm"
                           className="w-full"
-                          onClick={handleResendConfirmation}
+                          onClick={() => handleResendConfirmation()}
                           disabled={resending || !loginEmail}
                         >
                           {resending ? "Reenviando..." : "Reenviar e-mail de confirmação"}
