@@ -119,6 +119,7 @@ function EmpresasPage() {
   // delete
   const [deleteId, setDeleteId] = useState<string | null>(null);
   const [deleting, setDeleting] = useState(false);
+  const deleteCustomerFn = useServerFn(deleteCustomerAndUser);
 
   // detail
   const [detailCustomer, setDetailCustomer] = useState<Customer | null>(null);
