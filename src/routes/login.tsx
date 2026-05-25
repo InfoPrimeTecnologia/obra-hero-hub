@@ -17,13 +17,20 @@ export const Route = createFileRoute("/login")({
 });
 
 function LoginPage() {
-  const { signIn } = useAuth();
+  const { signIn, user, isAdmin, loading: authLoading } = useAuth();
   const navigate = useNavigate();
   const resendFn = useServerFn(resendConfirmation);
   const magicLinkFn = useServerFn(requestMagicLink);
   const signupFn = useServerFn(signupWithEmail);
   const [loading, setLoading] = useState(false);
+  const [justLoggedIn, setJustLoggedIn] = useState(false);
   const [tab, setTab] = useState<"login" | "signup">("login");
+
+  useEffect(() => {
+    if (!justLoggedIn || authLoading || !user) return;
+    navigate({ to: isAdmin ? "/admin" : "/app" });
+  }, [justLoggedIn, authLoading, user, isAdmin, navigate]);
+
 
   const [loginEmail, setLoginEmail] = useState("");
   const [loginPassword, setLoginPassword] = useState("");
