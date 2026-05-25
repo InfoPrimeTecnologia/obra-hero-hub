@@ -93,9 +93,12 @@ export async function sendEmail(args: { to: string; subject: string; html: strin
   });
   if (!res.ok) {
     const body = await res.text();
+    console.error('[sendEmail] Resend failed', { status: res.status, body, to: args.to, from: FROM });
     throw new Error(`Resend send failed [${res.status}]: ${body}`);
   }
-  return res.json();
+  const json = await res.json();
+  console.log('[sendEmail] sent', { to: args.to, id: json?.id });
+  return json;
 }
 
 // ----- Templates -----
