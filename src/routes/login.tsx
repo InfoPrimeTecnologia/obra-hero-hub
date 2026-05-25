@@ -110,9 +110,10 @@ function LoginPage() {
       toast.error("Falha no login", { description: error.message });
     } else {
       toast.success("Bem-vindo de volta!");
-      navigate({ to: "/admin" });
+      setJustLoggedIn(true);
     }
   };
+
 
   const handleSignup = async (e: FormEvent) => {
     e.preventDefault();
