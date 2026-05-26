@@ -126,6 +126,7 @@ function AssinaturaPage() {
   const [subscription, setSubscription] = useState<Subscription | null>(null);
   const [invoices, setInvoices] = useState<Invoice[]>([]);
   const [billingType, setBillingType] = useState<BillingType>("UNDEFINED");
+  const [billingPeriod, setBillingPeriod] = useState<"monthly" | "semiannual" | "annual">("monthly");
 
   const load = async () => {
     setLoading(true);
