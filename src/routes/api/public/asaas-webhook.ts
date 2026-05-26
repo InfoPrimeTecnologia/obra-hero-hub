@@ -123,19 +123,22 @@ export const Route = createFileRoute("/api/public/asaas-webhook")({
             if (sub) {
               const { data: created } = await supabaseAdmin
                 .from("invoices")
-                .insert({
-                  customer_id: sub.customer_id,
-                  subscription_id: sub.id,
-                  description: pay.description ?? "Mensalidade",
-                  amount: pay.value ?? 0,
-                  status: mapStatus(pay.status),
-                  payment_method: mapMethod(pay.billingType),
-                  due_date: pay.dueDate ?? new Date().toISOString().slice(0, 10),
-                  asaas_payment_id: pay.id,
-                  invoice_url: pay.invoiceUrl ?? null,
-                  bank_slip_url: pay.bankSlipUrl ?? null,
-                  payment_link: pay.invoiceUrl ?? null,
-                })
+                .insert([
+                  {
+                    customer_id: sub.customer_id,
+                    subscription_id: sub.id,
+                    description: pay.description ?? "Mensalidade",
+                    amount: pay.value ?? 0,
+                    status: mapStatus(pay.status),
+                    payment_method: mapMethod(pay.billingType),
+                    due_date:
+                      pay.dueDate ?? new Date().toISOString().slice(0, 10),
+                    asaas_payment_id: pay.id,
+                    invoice_url: pay.invoiceUrl ?? null,
+                    bank_slip_url: pay.bankSlipUrl ?? null,
+                    payment_link: pay.invoiceUrl ?? null,
+                  },
+                ])
                 .select("*")
                 .single();
               inv = created;
