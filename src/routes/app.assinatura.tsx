@@ -161,7 +161,7 @@ function AssinaturaPage() {
         data: { customerId, planId, billingType },
       });
       toast.success("Assinatura ativada!", {
-        description: "Sua cobrança foi gerada no Asaas.",
+        description: "Sua cobrança já está disponível em 'Suas faturas'.",
       });
       await load();
     } catch (e) {

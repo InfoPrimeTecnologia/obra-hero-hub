@@ -133,6 +133,39 @@ export const createAsaasSubscription = createServerFn({ method: "POST" })
       .single();
     if (insErr) throw new Error(insErr.message);
 
+    // Busca os pagamentos já gerados pela assinatura e cria as faturas locais
+    // (assim o cliente vê a cobrança no sistema sem depender do webhook).
+    try {
+      const payments = await asaasFetch<{ data: AsaasPaymentResp[] }>(
+        `/subscriptions/${sub.id}/payments`,
+        { method: "GET" },
+      );
+      const rows = (payments?.data ?? []).map((p) => ({
+        customer_id: data.customerId,
+        subscription_id: inserted.id,
+        description: `Assinatura ${plan.name}`,
+        amount: Number(p.value),
+        due_date: p.dueDate,
+        status: "pending" as const,
+        payment_method: (data.billingType === "BOLETO"
+          ? "boleto"
+          : data.billingType === "PIX"
+            ? "pix"
+            : data.billingType === "CREDIT_CARD"
+              ? "credit_card"
+              : "undefined") as "boleto" | "pix" | "credit_card" | "undefined",
+        asaas_payment_id: p.id,
+        invoice_url: p.invoiceUrl ?? null,
+        bank_slip_url: p.bankSlipUrl ?? null,
+        payment_link: p.invoiceUrl ?? null,
+      }));
+      if (rows.length > 0) {
+        await supabase.from("invoices").insert(rows);
+      }
+    } catch (err) {
+      console.error("Falha ao sincronizar faturas iniciais:", err);
+    }
+
     return { subscriptionId: inserted.id, asaasId: sub.id };
   });
 
