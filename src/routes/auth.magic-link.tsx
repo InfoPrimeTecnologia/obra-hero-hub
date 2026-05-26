@@ -25,10 +25,18 @@ function MagicLinkPage() {
       setState('error'); setMessage('Token ausente.'); return;
     }
     consume({ data: { token, origin: window.location.origin } })
-      .then((r) => {
-        if (r.ok && r.actionLink) {
-          // Redireciona pro action_link gerado pelo Supabase, que cria a sessão e volta pra home
-          window.location.href = r.actionLink;
+      .then(async (r) => {
+        if (r.ok && r.tokenHash) {
+          const { error } = await supabase.auth.verifyOtp({
+            type: 'magiclink',
+            token_hash: r.tokenHash,
+          });
+          if (error) {
+            setState('error');
+            setMessage(error.message);
+            return;
+          }
+          window.location.href = '/app';
         } else if (!r.ok) {
           setState('error'); setMessage(r.error);
         }
