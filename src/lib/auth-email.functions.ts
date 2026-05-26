@@ -289,7 +289,7 @@ export const requestMagicLink = createServerFn({ method: 'POST' })
     return { ok: true as const };
   });
 
-// ---- Consume magic link: returns a one-time action_link the client can hit to get a session ----
+// ---- Consume magic link: returns token_hash so the client can verifyOtp and create a session in-place ----
 export const consumeMagicLink = createServerFn({ method: 'POST' })
   .inputValidator((data: unknown) =>
     z.object({
@@ -305,15 +305,18 @@ export const consumeMagicLink = createServerFn({ method: 'POST' })
     // Garante email confirmado (login por magic link conta como confirmação)
     await supabaseAdmin.auth.admin.updateUserById(row.user_id, { email_confirm: true });
 
-    const redirectBase = resolveBaseUrl(data.origin ?? '');
-    // Gera um link de magic link do Supabase — o frontend extrai os tokens do hash
+    // Gera um magic link no Supabase só para obter o token_hash; o cliente faz verifyOtp
+    // localmente, evitando depender da Site URL / Redirect URLs configuradas no Supabase.
     const { data: linkData, error } = await supabaseAdmin.auth.admin.generateLink({
       type: 'magiclink',
       email: row.email,
-      options: redirectBase ? { redirectTo: `${redirectBase}/app` } : undefined,
     });
-    if (error || !linkData?.properties?.action_link) {
+    if (error || !linkData?.properties?.hashed_token) {
       return { ok: false as const, error: error?.message ?? 'Falha ao gerar sessão.' };
     }
-    return { ok: true as const, actionLink: linkData.properties.action_link };
+    return {
+      ok: true as const,
+      tokenHash: linkData.properties.hashed_token,
+      email: row.email,
+    };
   });
