@@ -23,10 +23,8 @@ type AsaasSubscriptionResp = {
   nextDueDate: string;
 };
 
-async function ensureAsaasCustomer(
-  supabase: ReturnType<typeof requireSupabaseAuth> extends never ? never : any,
-  customerId: string,
-): Promise<string> {
+// eslint-disable-next-line @typescript-eslint/no-explicit-any
+async function ensureAsaasCustomer(supabase: any, customerId: string): Promise<string> {
   const { data: customer, error } = await supabase
     .from("customers")
     .select("*")

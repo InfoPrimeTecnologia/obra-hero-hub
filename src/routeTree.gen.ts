@@ -46,6 +46,7 @@ import { Route as AppEstoqueRequisicoesRouteImport } from './routes/app.estoque.
 import { Route as AppEstoqueProdutosRouteImport } from './routes/app.estoque.produtos'
 import { Route as AppEstoqueMovimentacoesRouteImport } from './routes/app.estoque.movimentacoes'
 import { Route as AppEstoqueAlmoxarifadosRouteImport } from './routes/app.estoque.almoxarifados'
+import { Route as ApiPublicAsaasWebhookRouteImport } from './routes/api/public/asaas-webhook'
 import { Route as LovableEmailTransactionalSendRouteImport } from './routes/lovable/email/transactional/send'
 import { Route as LovableEmailTransactionalPreviewRouteImport } from './routes/lovable/email/transactional/preview'
 import { Route as LovableEmailQueueProcessRouteImport } from './routes/lovable/email/queue/process'
@@ -240,6 +241,11 @@ const AppEstoqueAlmoxarifadosRoute = AppEstoqueAlmoxarifadosRouteImport.update({
   path: '/estoque/almoxarifados',
   getParentRoute: () => AppRoute,
 } as any)
+const ApiPublicAsaasWebhookRoute = ApiPublicAsaasWebhookRouteImport.update({
+  id: '/api/public/asaas-webhook',
+  path: '/api/public/asaas-webhook',
+  getParentRoute: () => rootRouteImport,
+} as any)
 const LovableEmailTransactionalSendRoute =
   LovableEmailTransactionalSendRouteImport.update({
     id: '/lovable/email/transactional/send',
@@ -316,6 +322,7 @@ export interface FileRoutesByFullPath {
   '/email/unsubscribe': typeof EmailUnsubscribeRoute
   '/admin/': typeof AdminIndexRoute
   '/app/': typeof AppIndexRoute
+  '/api/public/asaas-webhook': typeof ApiPublicAsaasWebhookRoute
   '/app/estoque/almoxarifados': typeof AppEstoqueAlmoxarifadosRoute
   '/app/estoque/movimentacoes': typeof AppEstoqueMovimentacoesRoute
   '/app/estoque/produtos': typeof AppEstoqueProdutosRoute
@@ -361,6 +368,7 @@ export interface FileRoutesByTo {
   '/email/unsubscribe': typeof EmailUnsubscribeRoute
   '/admin': typeof AdminIndexRoute
   '/app': typeof AppIndexRoute
+  '/api/public/asaas-webhook': typeof ApiPublicAsaasWebhookRoute
   '/app/estoque/almoxarifados': typeof AppEstoqueAlmoxarifadosRoute
   '/app/estoque/movimentacoes': typeof AppEstoqueMovimentacoesRoute
   '/app/estoque/produtos': typeof AppEstoqueProdutosRoute
@@ -409,6 +417,7 @@ export interface FileRoutesById {
   '/email/unsubscribe': typeof EmailUnsubscribeRoute
   '/admin/': typeof AdminIndexRoute
   '/app/': typeof AppIndexRoute
+  '/api/public/asaas-webhook': typeof ApiPublicAsaasWebhookRoute
   '/app/estoque/almoxarifados': typeof AppEstoqueAlmoxarifadosRoute
   '/app/estoque/movimentacoes': typeof AppEstoqueMovimentacoesRoute
   '/app/estoque/produtos': typeof AppEstoqueProdutosRoute
@@ -458,6 +467,7 @@ export interface FileRouteTypes {
     | '/email/unsubscribe'
     | '/admin/'
     | '/app/'
+    | '/api/public/asaas-webhook'
     | '/app/estoque/almoxarifados'
     | '/app/estoque/movimentacoes'
     | '/app/estoque/produtos'
@@ -503,6 +513,7 @@ export interface FileRouteTypes {
     | '/email/unsubscribe'
     | '/admin'
     | '/app'
+    | '/api/public/asaas-webhook'
     | '/app/estoque/almoxarifados'
     | '/app/estoque/movimentacoes'
     | '/app/estoque/produtos'
@@ -550,6 +561,7 @@ export interface FileRouteTypes {
     | '/email/unsubscribe'
     | '/admin/'
     | '/app/'
+    | '/api/public/asaas-webhook'
     | '/app/estoque/almoxarifados'
     | '/app/estoque/movimentacoes'
     | '/app/estoque/produtos'
@@ -577,6 +589,7 @@ export interface RootRouteChildren {
   AuthMagicLinkRoute: typeof AuthMagicLinkRoute
   AuthResetPasswordRoute: typeof AuthResetPasswordRoute
   EmailUnsubscribeRoute: typeof EmailUnsubscribeRoute
+  ApiPublicAsaasWebhookRoute: typeof ApiPublicAsaasWebhookRoute
   LovableEmailSuppressionRoute: typeof LovableEmailSuppressionRoute
   LovableEmailQueueProcessRoute: typeof LovableEmailQueueProcessRoute
   LovableEmailTransactionalPreviewRoute: typeof LovableEmailTransactionalPreviewRoute
@@ -844,6 +857,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AppEstoqueAlmoxarifadosRouteImport
       parentRoute: typeof AppRoute
     }
+    '/api/public/asaas-webhook': {
+      id: '/api/public/asaas-webhook'
+      path: '/api/public/asaas-webhook'
+      fullPath: '/api/public/asaas-webhook'
+      preLoaderRoute: typeof ApiPublicAsaasWebhookRouteImport
+      parentRoute: typeof rootRouteImport
+    }
     '/lovable/email/transactional/send': {
       id: '/lovable/email/transactional/send'
       path: '/lovable/email/transactional/send'
@@ -1023,6 +1043,7 @@ const rootRouteChildren: RootRouteChildren = {
   AuthMagicLinkRoute: AuthMagicLinkRoute,
   AuthResetPasswordRoute: AuthResetPasswordRoute,
   EmailUnsubscribeRoute: EmailUnsubscribeRoute,
+  ApiPublicAsaasWebhookRoute: ApiPublicAsaasWebhookRoute,
   LovableEmailSuppressionRoute: LovableEmailSuppressionRoute,
   LovableEmailQueueProcessRoute: LovableEmailQueueProcessRoute,
   LovableEmailTransactionalPreviewRoute: LovableEmailTransactionalPreviewRoute,
