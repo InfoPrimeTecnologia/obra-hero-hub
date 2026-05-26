@@ -2552,6 +2552,54 @@ export type Database = {
         }
         Relationships: []
       }
+      whatsapp_send_log: {
+        Row: {
+          created_at: string
+          customer_id: string
+          error: string | null
+          file_name: string | null
+          id: string
+          message: string | null
+          obra_id: string | null
+          phone_number: string
+          provider: string
+          rdo_id: string | null
+          response: Json | null
+          sent_by: string | null
+          status: string
+        }
+        Insert: {
+          created_at?: string
+          customer_id: string
+          error?: string | null
+          file_name?: string | null
+          id?: string
+          message?: string | null
+          obra_id?: string | null
+          phone_number: string
+          provider?: string
+          rdo_id?: string | null
+          response?: Json | null
+          sent_by?: string | null
+          status: string
+        }
+        Update: {
+          created_at?: string
+          customer_id?: string
+          error?: string | null
+          file_name?: string | null
+          id?: string
+          message?: string | null
+          obra_id?: string | null
+          phone_number?: string
+          provider?: string
+          rdo_id?: string | null
+          response?: Json | null
+          sent_by?: string | null
+          status?: string
+        }
+        Relationships: []
+      }
     }
     Views: {
       [_ in never]: never

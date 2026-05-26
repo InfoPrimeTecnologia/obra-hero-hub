@@ -1,6 +1,6 @@
 import { createFileRoute, Link } from "@tanstack/react-router";
 import { useEffect, useState } from "react";
-import { ArrowLeft, ClipboardList, Plus, FileText } from "lucide-react";
+import { ArrowLeft, ClipboardList, Plus, FileText, MessageCircle } from "lucide-react";
 import { PageHeader } from "@/components/admin/PageHeader";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
@@ -126,14 +126,24 @@ function RdoListPage() {
                     {r.responsavel ?? "—"} • {r.condicao}
                   </p>
                 </div>
-                <Button size="sm" variant="outline" asChild>
-                  <Link
-                    to="/app/obras/$obraId/rdo/$rdoId"
-                    params={{ obraId, rdoId: r.id }}
-                  >
-                    <FileText className="mr-2 h-4 w-4" /> Abrir
-                  </Link>
-                </Button>
+                <div className="flex gap-2">
+                  <Button size="sm" variant="outline" asChild>
+                    <Link
+                      to="/app/obras/$obraId/rdo/$rdoId"
+                      params={{ obraId, rdoId: r.id }}
+                    >
+                      <FileText className="mr-2 h-4 w-4" /> Abrir
+                    </Link>
+                  </Button>
+                  <Button size="sm" variant="outline" asChild title="Abrir RDO para enviar via WhatsApp">
+                    <Link
+                      to="/app/obras/$obraId/rdo/$rdoId"
+                      params={{ obraId, rdoId: r.id }}
+                    >
+                      <MessageCircle className="mr-2 h-4 w-4" /> WhatsApp
+                    </Link>
+                  </Button>
+                </div>
               </CardHeader>
             </Card>
           ))

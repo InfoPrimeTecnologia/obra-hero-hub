@@ -28,6 +28,9 @@ import {
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/lib/auth-context";
 import { usePlanModules } from "@/lib/use-plan-modules";
+import { sendRdoWhatsApp } from "@/lib/whatsapp.functions";
+import { useServerFn } from "@tanstack/react-start";
+import { jsPDF } from "jspdf";
 import { toast } from "sonner";
 
 export const Route = createFileRoute("/app/obras/$obraId/rdo/$rdoId")({
@@ -296,10 +299,76 @@ function RdoDetailPage() {
       .join("\n");
   };
 
-  const enviarWhats = () => {
-    if (!obra?.contact_whatsapp) return toast.error("Cadastre o WhatsApp do contato da obra");
-    const tel = obra.contact_whatsapp.replace(/\D/g, "");
-    window.open(`https://wa.me/${tel}?text=${encodeURIComponent(montarRelatorio())}`, "_blank");
+  const sendWhats = useServerFn(sendRdoWhatsApp);
+  const [enviandoWa, setEnviandoWa] = useState(false);
+
+  const gerarPdfBase64 = (): string => {
+    const doc = new jsPDF({ unit: "pt", format: "a4" });
+    const margin = 40;
+    let y = margin;
+    const lineH = 14;
+    const maxW = 515;
+    const write = (txt: string, opts?: { bold?: boolean; size?: number }) => {
+      doc.setFont("helvetica", opts?.bold ? "bold" : "normal");
+      doc.setFontSize(opts?.size ?? 10);
+      const lines = doc.splitTextToSize(txt, maxW);
+      for (const ln of lines) {
+        if (y > 800) { doc.addPage(); y = margin; }
+        doc.text(ln, margin, y);
+        y += lineH;
+      }
+    };
+    write(`RDO — ${obra!.name}`, { bold: true, size: 14 });
+    write(`Data: ${new Date(rdo!.data + "T00:00:00").toLocaleDateString("pt-BR")}`);
+    write(`Condição: ${rdo!.condicao}`);
+    if (rdo!.responsavel) write(`Responsável: ${rdo!.responsavel}`);
+    y += 6;
+    write(`Clima — manhã: ${rdo!.clima_manha ?? "—"} | tarde: ${rdo!.clima_tarde ?? "—"} | noite: ${rdo!.clima_noite ?? "—"}`);
+    if (equipes.length) {
+      y += 6; write("Equipe", { bold: true, size: 12 });
+      equipes.forEach((e) => write(`• ${e.funcao}${e.empreiteiro ? ` (${e.empreiteiro})` : ""} — ${e.quantidade}x, ${e.horas}h`));
+    }
+    if (atividades.length) {
+      y += 6; write("Atividades", { bold: true, size: 12 });
+      atividades.forEach((a) => write(`• ${a.descricao} (${a.percentual}%)`));
+    }
+    if (ocorrencias.length) {
+      y += 6; write("Ocorrências", { bold: true, size: 12 });
+      ocorrencias.forEach((o) => write(`• [${o.tipo}] ${o.descricao}`));
+    }
+    if (rdo!.observacoes) {
+      y += 6; write("Observações", { bold: true, size: 12 });
+      write(rdo!.observacoes);
+    }
+    if (anexos.length) { y += 6; write(`${anexos.length} anexo(s).`); }
+    const dataUri = doc.output("datauristring");
+    return dataUri.split(",")[1];
+  };
+
+  const enviarWhats = async () => {
+    if (!obra || !rdo) return;
+    if (!obra.contact_whatsapp) return toast.error("Cadastre o WhatsApp do contato da obra");
+    setEnviandoWa(true);
+    try {
+      const pdfBase64 = gerarPdfBase64();
+      const fileName = `RDO-${obra.name.replace(/\s+/g, "_")}-${rdo.data}.pdf`;
+      await sendWhats({
+        data: {
+          rdoId: rdo.id,
+          obraId: obra.id,
+          customerId: obra.customer_id,
+          phoneNumber: obra.contact_whatsapp,
+          message: montarRelatorio(),
+          fileName,
+          pdfBase64,
+        },
+      });
+      toast.success("RDO enviado por WhatsApp");
+    } catch (e) {
+      toast.error("Falha no envio", { description: e instanceof Error ? e.message : String(e) });
+    } finally {
+      setEnviandoWa(false);
+    }
   };
   const enviarEmail = () => {
     if (!obra?.contact_email) return toast.error("Cadastre o e-mail do contato");
@@ -326,8 +395,8 @@ function RdoDetailPage() {
               </Link>
             </Button>
             {hasFeature("rdo_whatsapp") && (
-              <Button variant="outline" onClick={enviarWhats}>
-                <MessageCircle className="mr-2 h-4 w-4" /> WhatsApp
+              <Button variant="outline" onClick={enviarWhats} disabled={enviandoWa}>
+                <MessageCircle className="mr-2 h-4 w-4" /> {enviandoWa ? "Enviando..." : "WhatsApp"}
               </Button>
             )}
             <Button variant="outline" onClick={enviarEmail}>
