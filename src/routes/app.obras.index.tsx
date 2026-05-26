@@ -28,7 +28,7 @@ import { useAuth } from "@/lib/auth-context";
 import { useObraSelecionada, type Obra } from "@/lib/obra-context";
 import { toast } from "sonner";
 
-export const Route = createFileRoute("/app/obras")({
+export const Route = createFileRoute("/app/obras/")({
   component: ObrasPage,
 });
 
