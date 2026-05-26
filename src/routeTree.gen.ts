@@ -34,6 +34,7 @@ import { Route as AppConfiguracoesRouteImport } from './routes/app.configuracoes
 import { Route as AppConciliacaoRouteImport } from './routes/app.conciliacao'
 import { Route as AppCategoriasRouteImport } from './routes/app.categorias'
 import { Route as AppCartoesRouteImport } from './routes/app.cartoes'
+import { Route as AppAssinaturaRouteImport } from './routes/app.assinatura'
 import { Route as AdminTicketsRouteImport } from './routes/admin.tickets'
 import { Route as AdminPlanosRouteImport } from './routes/admin.planos'
 import { Route as AdminFaturasRouteImport } from './routes/admin.faturas'
@@ -181,6 +182,11 @@ const AppCartoesRoute = AppCartoesRouteImport.update({
   path: '/cartoes',
   getParentRoute: () => AppRoute,
 } as any)
+const AppAssinaturaRoute = AppAssinaturaRouteImport.update({
+  id: '/assinatura',
+  path: '/assinatura',
+  getParentRoute: () => AppRoute,
+} as any)
 const AdminTicketsRoute = AdminTicketsRouteImport.update({
   id: '/tickets',
   path: '/tickets',
@@ -301,6 +307,7 @@ export interface FileRoutesByFullPath {
   '/admin/faturas': typeof AdminFaturasRoute
   '/admin/planos': typeof AdminPlanosRoute
   '/admin/tickets': typeof AdminTicketsRoute
+  '/app/assinatura': typeof AppAssinaturaRoute
   '/app/cartoes': typeof AppCartoesRoute
   '/app/categorias': typeof AppCategoriasRoute
   '/app/conciliacao': typeof AppConciliacaoRoute
@@ -347,6 +354,7 @@ export interface FileRoutesByTo {
   '/admin/faturas': typeof AdminFaturasRoute
   '/admin/planos': typeof AdminPlanosRoute
   '/admin/tickets': typeof AdminTicketsRoute
+  '/app/assinatura': typeof AppAssinaturaRoute
   '/app/cartoes': typeof AppCartoesRoute
   '/app/categorias': typeof AppCategoriasRoute
   '/app/conciliacao': typeof AppConciliacaoRoute
@@ -396,6 +404,7 @@ export interface FileRoutesById {
   '/admin/faturas': typeof AdminFaturasRoute
   '/admin/planos': typeof AdminPlanosRoute
   '/admin/tickets': typeof AdminTicketsRoute
+  '/app/assinatura': typeof AppAssinaturaRoute
   '/app/cartoes': typeof AppCartoesRoute
   '/app/categorias': typeof AppCategoriasRoute
   '/app/conciliacao': typeof AppConciliacaoRoute
@@ -446,6 +455,7 @@ export interface FileRouteTypes {
     | '/admin/faturas'
     | '/admin/planos'
     | '/admin/tickets'
+    | '/app/assinatura'
     | '/app/cartoes'
     | '/app/categorias'
     | '/app/conciliacao'
@@ -492,6 +502,7 @@ export interface FileRouteTypes {
     | '/admin/faturas'
     | '/admin/planos'
     | '/admin/tickets'
+    | '/app/assinatura'
     | '/app/cartoes'
     | '/app/categorias'
     | '/app/conciliacao'
@@ -540,6 +551,7 @@ export interface FileRouteTypes {
     | '/admin/faturas'
     | '/admin/planos'
     | '/admin/tickets'
+    | '/app/assinatura'
     | '/app/cartoes'
     | '/app/categorias'
     | '/app/conciliacao'
@@ -773,6 +785,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AppCartoesRouteImport
       parentRoute: typeof AppRoute
     }
+    '/app/assinatura': {
+      id: '/app/assinatura'
+      path: '/assinatura'
+      fullPath: '/app/assinatura'
+      preLoaderRoute: typeof AppAssinaturaRouteImport
+      parentRoute: typeof AppRoute
+    }
     '/admin/tickets': {
       id: '/admin/tickets'
       path: '/tickets'
@@ -984,6 +1003,7 @@ const AppObrasRouteWithChildren = AppObrasRoute._addFileChildren(
 )
 
 interface AppRouteChildren {
+  AppAssinaturaRoute: typeof AppAssinaturaRoute
   AppCartoesRoute: typeof AppCartoesRoute
   AppCategoriasRoute: typeof AppCategoriasRoute
   AppConciliacaoRoute: typeof AppConciliacaoRoute
@@ -1008,6 +1028,7 @@ interface AppRouteChildren {
 }
 
 const AppRouteChildren: AppRouteChildren = {
+  AppAssinaturaRoute: AppAssinaturaRoute,
   AppCartoesRoute: AppCartoesRoute,
   AppCategoriasRoute: AppCategoriasRoute,
   AppConciliacaoRoute: AppConciliacaoRoute,
