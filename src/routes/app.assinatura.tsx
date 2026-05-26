@@ -202,7 +202,7 @@ function AssinaturaPage() {
     }
     setActivating(planId);
     try {
-      await subscribe({ data: { customerId, planId, billingType } });
+      await subscribe({ data: { customerId, planId, billingType, billingPeriod } });
       toast.success("Assinatura ativada!", {
         description: "Sua cobrança já está disponível em 'Faturas'.",
       });
