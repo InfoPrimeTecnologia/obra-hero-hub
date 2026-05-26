@@ -2,9 +2,12 @@ import { createFileRoute, Link, useSearch } from '@tanstack/react-router';
 import { useServerFn } from '@tanstack/react-start';
 import { useEffect, useState } from 'react';
 import { consumeMagicLink } from '@/lib/auth-email.functions';
+import { supabase } from '@/integrations/supabase/client';
 import { Logo } from '@/components/Logo';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
+
+
 
 export const Route = createFileRoute('/auth/magic-link')({
   validateSearch: (s: Record<string, unknown>) => ({ token: (s.token as string) ?? '' }),
@@ -22,10 +25,18 @@ function MagicLinkPage() {
       setState('error'); setMessage('Token ausente.'); return;
     }
     consume({ data: { token, origin: window.location.origin } })
-      .then((r) => {
-        if (r.ok && r.actionLink) {
-          // Redireciona pro action_link gerado pelo Supabase, que cria a sessão e volta pra home
-          window.location.href = r.actionLink;
+      .then(async (r) => {
+        if (r.ok && r.tokenHash) {
+          const { error } = await supabase.auth.verifyOtp({
+            type: 'magiclink',
+            token_hash: r.tokenHash,
+          });
+          if (error) {
+            setState('error');
+            setMessage(error.message);
+            return;
+          }
+          window.location.href = '/app';
         } else if (!r.ok) {
           setState('error'); setMessage(r.error);
         }
