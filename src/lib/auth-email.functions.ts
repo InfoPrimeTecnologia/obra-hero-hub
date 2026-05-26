@@ -74,23 +74,24 @@ export const signupWithEmail = createServerFn({ method: 'POST' })
       .parse(data)
   )
   .handler(async ({ data }) => {
-    // Verifica CPF/CNPJ duplicado em customers (independente de owner)
+    // Verifica CPF/CNPJ duplicado em customers (compara apenas dígitos)
     if (data.cpfCnpj && data.cpfCnpj.trim()) {
       const digits = data.cpfCnpj.replace(/\D/g, '');
       if (digits.length > 0) {
-        const { data: existingByDoc } = await supabaseAdmin
+        const { data: allCust } = await supabaseAdmin
           .from('customers')
-          .select('id, email')
-          .ilike('cpf_cnpj', `%${digits.slice(0, 4)}%`);
-        const dup = (existingByDoc ?? []).find(
-          (c: { cpf_cnpj?: string | null; email?: string | null }) =>
-            (c as any).cpf_cnpj && (c as any).cpf_cnpj.replace(/\D/g, '') === digits
+          .select('id, cpf_cnpj')
+          .not('cpf_cnpj', 'is', null);
+        const dup = (allCust ?? []).find(
+          (c: { cpf_cnpj: string | null }) =>
+            (c.cpf_cnpj ?? '').replace(/\D/g, '') === digits
         );
         if (dup) {
           return { ok: false as const, error: 'Já existe uma empresa cadastrada com este CPF/CNPJ.' };
         }
       }
     }
+
 
     let existing = await findUserByEmail(data.email);
     if (existing) {
