@@ -185,7 +185,7 @@ export const createAsaasCharge = createServerFn({ method: "POST" })
         payment_link: pay.invoiceUrl ?? null,
         payment_method:
           data.billingType === "BOLETO"
-            ? "bank_slip"
+            ? "boleto"
             : data.billingType === "PIX"
               ? "pix"
               : data.billingType === "CREDIT_CARD"
