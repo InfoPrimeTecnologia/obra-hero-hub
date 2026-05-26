@@ -48,7 +48,8 @@ export const sendRdoWhatsApp = createServerFn({ method: "POST" })
     form.append("externalKey", data.rdoId ?? crypto.randomUUID());
     if (hasFile && data.pdfBase64) {
       const bytes = base64ToUint8(data.pdfBase64);
-      const blob = new Blob([bytes], { type: "application/pdf" });
+      const ab = bytes.buffer.slice(bytes.byteOffset, bytes.byteOffset + bytes.byteLength) as ArrayBuffer;
+      const blob = new Blob([ab], { type: "application/pdf" });
       form.append("media", blob, data.fileName ?? "rdo.pdf");
     }
 
