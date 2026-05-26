@@ -1,0 +1,2 @@
+CREATE UNIQUE INDEX IF NOT EXISTS customers_email_unique_idx ON public.customers (lower(email));
+CREATE UNIQUE INDEX IF NOT EXISTS customers_cpfcnpj_unique_idx ON public.customers (regexp_replace(cpf_cnpj, '\D', '', 'g')) WHERE cpf_cnpj IS NOT NULL AND length(regexp_replace(cpf_cnpj, '\D', '', 'g')) > 0;
