@@ -221,11 +221,12 @@ function LoginPage() {
                       <button
                         type="button"
                         onClick={handleMagicLink}
-                        disabled={sendingMagic || !loginEmail}
+                        disabled={sendingMagic}
                         className="text-primary hover:underline disabled:opacity-50"
                       >
                         {sendingMagic ? "Enviando..." : "Entrar com magic link"}
                       </button>
+
                     </div>
                     {needsConfirm && (
                       <div className="rounded-md border border-border bg-muted/40 p-3 text-sm">
