@@ -467,79 +467,154 @@ function AssinaturaPage() {
                     <p className="text-sm text-muted-foreground">Nenhum plano disponível.</p>
                   </div>
                 ) : (
-                  <div className="grid gap-5 md:grid-cols-2 lg:grid-cols-3">
-                    {plans.map((plan) => {
-                      const isCurrent = activeSub?.plan_id === plan.id;
-                      return (
-                        <div
-                          key={plan.id}
-                          className={`relative flex flex-col rounded-2xl border p-6 transition-all duration-200 hover:-translate-y-0.5 hover:shadow-lg ${
-                            plan.is_featured
-                              ? "border-primary/40 bg-gradient-to-br from-primary/[0.04] to-transparent shadow-md ring-1 ring-primary/10"
-                              : "border-border/60 bg-card"
-                          } ${isCurrent ? "ring-2 ring-primary/40" : ""}`}
-                        >
-                          {plan.is_featured && (
-                            <div className="absolute -top-3 left-1/2 -translate-x-1/2">
-                              <span className="inline-flex items-center gap-1 rounded-full bg-gradient-to-r from-pink-500 to-rose-500 px-3 py-1 text-[10px] font-bold uppercase tracking-wider text-white shadow-lg shadow-pink-500/30">
-                                <Sparkles className="h-3 w-3" />
-                                Recomendado
-                              </span>
-                            </div>
-                          )}
-                          <div className="mb-4">
-                            <h3 className="text-lg font-bold tracking-tight">{plan.name}</h3>
-                            {plan.description && (
-                              <p className="mt-1 text-sm leading-relaxed text-muted-foreground">
-                                {plan.description}
-                              </p>
-                            )}
-                          </div>
-                          <div className="mb-5">
-                            <span className="text-3xl font-bold tracking-tight">
-                              {formatCurrency(Number(plan.price))}
-                            </span>
-                            <span className="ml-1 text-sm text-muted-foreground">
-                              /{cycleLabel[plan.cycle] ?? plan.cycle}
-                            </span>
-                          </div>
-                          {plan.features.length > 0 && (
-                            <ul className="mb-6 space-y-2.5 text-sm">
-                              {plan.features.map((f, i) => (
-                                <li key={i} className="flex items-start gap-2.5">
-                                  <div className="mt-0.5 flex h-5 w-5 shrink-0 items-center justify-center rounded-full bg-emerald-100 dark:bg-emerald-500/15">
-                                    <Check className="h-3 w-3 text-emerald-600 dark:text-emerald-400" />
-                                  </div>
-                                  <span className="leading-relaxed">{f}</span>
-                                </li>
-                              ))}
-                            </ul>
-                          )}
-                          <div className="mt-auto pt-2">
-                            <Button
-                              className="w-full rounded-full"
-                              variant={isCurrent ? "outline" : plan.is_featured ? "default" : "secondary"}
-                              disabled={isCurrent || activating !== null || !customerId}
-                              onClick={() => handleActivate(plan.id)}
+                  <>
+                    {/* Period toggle */}
+                    <div className="mb-6 flex justify-center">
+                      <div className="inline-flex items-center gap-1 rounded-full border border-border/60 bg-muted/40 p-1">
+                        {(
+                          [
+                            { id: "monthly", label: "Mensal", badge: null },
+                            { id: "semiannual", label: "Semestral", badge: "-5%" },
+                            { id: "annual", label: "Anual", badge: "-10%" },
+                          ] as const
+                        ).map((opt) => {
+                          const active = billingPeriod === opt.id;
+                          return (
+                            <button
+                              key={opt.id}
+                              type="button"
+                              onClick={() => setBillingPeriod(opt.id)}
+                              className={`relative inline-flex items-center gap-1.5 rounded-full px-4 py-1.5 text-sm font-semibold transition-all ${
+                                active
+                                  ? "bg-background text-foreground shadow-sm"
+                                  : "text-muted-foreground hover:text-foreground"
+                              }`}
                             >
-                              {activating === plan.id ? (
-                                <>
-                                  <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-                                  Ativando...
-                                </>
-                              ) : isCurrent ? (
-                                "Plano atual"
-                              ) : activeSub ? (
-                                "Mudar para este plano"
-                              ) : (
-                                "Assinar este plano"
+                              {opt.label}
+                              {opt.badge && (
+                                <span
+                                  className={`rounded-full px-1.5 py-0.5 text-[10px] font-bold ${
+                                    active
+                                      ? "bg-emerald-100 text-emerald-700 dark:bg-emerald-500/20 dark:text-emerald-400"
+                                      : "bg-emerald-50 text-emerald-700 dark:bg-emerald-500/10 dark:text-emerald-400"
+                                  }`}
+                                >
+                                  {opt.badge}
+                                </span>
                               )}
-                            </Button>
+                            </button>
+                          );
+                        })}
+                      </div>
+                    </div>
+
+                    <div className="grid gap-5 md:grid-cols-2 lg:grid-cols-3">
+                      {plans.map((plan) => {
+                        const isCurrent = activeSub?.plan_id === plan.id;
+                        const monthly = Number(plan.price);
+                        const periodMonths =
+                          billingPeriod === "annual" ? 12 : billingPeriod === "semiannual" ? 6 : 1;
+                        const discount =
+                          billingPeriod === "annual" ? 0.1 : billingPeriod === "semiannual" ? 0.05 : 0;
+                        const total = Math.round(monthly * periodMonths * (1 - discount) * 100) / 100;
+                        const effectiveMonthly =
+                          Math.round((total / periodMonths) * 100) / 100;
+                        const periodLabel =
+                          billingPeriod === "annual"
+                            ? "ano"
+                            : billingPeriod === "semiannual"
+                              ? "semestre"
+                              : "mês";
+                        return (
+                          <div
+                            key={plan.id}
+                            className={`relative flex flex-col rounded-2xl border p-6 transition-all duration-200 hover:-translate-y-0.5 hover:shadow-lg ${
+                              plan.is_featured
+                                ? "border-primary/40 bg-gradient-to-br from-primary/[0.04] to-transparent shadow-md ring-1 ring-primary/10"
+                                : "border-border/60 bg-card"
+                            } ${isCurrent ? "ring-2 ring-primary/40" : ""}`}
+                          >
+                            {plan.is_featured && (
+                              <div className="absolute -top-3 left-1/2 -translate-x-1/2">
+                                <span className="inline-flex items-center gap-1 rounded-full bg-gradient-to-r from-pink-500 to-rose-500 px-3 py-1 text-[10px] font-bold uppercase tracking-wider text-white shadow-lg shadow-pink-500/30">
+                                  <Sparkles className="h-3 w-3" />
+                                  Recomendado
+                                </span>
+                              </div>
+                            )}
+                            {isCurrent && (
+                              <div className="absolute -top-3 right-4">
+                                <span className="inline-flex items-center rounded-full bg-emerald-600 px-2.5 py-0.5 text-[10px] font-bold uppercase tracking-wider text-white shadow">
+                                  Plano atual
+                                </span>
+                              </div>
+                            )}
+                            <div className="mb-4">
+                              <h3 className="text-lg font-bold tracking-tight">{plan.name}</h3>
+                              {plan.description && (
+                                <p className="mt-1 text-sm leading-relaxed text-muted-foreground">
+                                  {plan.description}
+                                </p>
+                              )}
+                            </div>
+                            <div className="mb-5">
+                              <div className="flex items-baseline gap-1">
+                                <span className="text-3xl font-bold tracking-tight">
+                                  {formatCurrency(effectiveMonthly)}
+                                </span>
+                                <span className="text-sm text-muted-foreground">/mês</span>
+                              </div>
+                              {billingPeriod !== "monthly" ? (
+                                <p className="mt-1 text-xs text-muted-foreground">
+                                  {formatCurrency(total)} cobrado por {periodLabel}
+                                  <span className="ml-1.5 font-semibold text-emerald-600 dark:text-emerald-400">
+                                    economize {Math.round(discount * 100)}%
+                                  </span>
+                                </p>
+                              ) : (
+                                <p className="mt-1 text-xs text-muted-foreground">
+                                  Cobrança {periodLabel === "mês" ? "mensal" : periodLabel}
+                                </p>
+                              )}
+                            </div>
+                            {plan.features.length > 0 && (
+                              <ul className="mb-6 space-y-2.5 text-sm">
+                                {plan.features.map((f, i) => (
+                                  <li key={i} className="flex items-start gap-2.5">
+                                    <div className="mt-0.5 flex h-5 w-5 shrink-0 items-center justify-center rounded-full bg-emerald-100 dark:bg-emerald-500/15">
+                                      <Check className="h-3 w-3 text-emerald-600 dark:text-emerald-400" />
+                                    </div>
+                                    <span className="leading-relaxed">{f}</span>
+                                  </li>
+                                ))}
+                              </ul>
+                            )}
+                            <div className="mt-auto pt-2">
+                              <Button
+                                className="w-full rounded-full"
+                                variant={isCurrent ? "outline" : plan.is_featured ? "default" : "secondary"}
+                                disabled={isCurrent || activating !== null || !customerId}
+                                onClick={() => handleActivate(plan.id)}
+                              >
+                                {activating === plan.id ? (
+                                  <>
+                                    <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                                    Ativando...
+                                  </>
+                                ) : isCurrent ? (
+                                  "Plano atual"
+                                ) : activeSub ? (
+                                  "Mudar para este plano"
+                                ) : (
+                                  "Assinar este plano"
+                                )}
+                              </Button>
+                            </div>
                           </div>
-                        </div>
-                      );
-                    })}
-                  </div>
+                        );
+                      })}
+                    </div>
+                  </>
                 )}
               </TabsContent>
             </Tabs>
