@@ -67,6 +67,9 @@ const SubscribeSchema = z.object({
   planId: z.string().uuid(),
   billingType: z.enum(["BOLETO", "PIX", "CREDIT_CARD", "UNDEFINED"]).default("UNDEFINED"),
   dueDay: z.number().int().min(1).max(28).optional(),
+  // Período da assinatura escolhido pelo cliente (override do plano).
+  // monthly = preço cheio; semiannual = 6x com 5% off; annual = 12x com 10% off.
+  billingPeriod: z.enum(["monthly", "semiannual", "annual"]).optional(),
 });
 
 export const createAsaasSubscription = createServerFn({ method: "POST" })
@@ -104,14 +107,28 @@ export const createAsaasSubscription = createServerFn({ method: "POST" })
     if (nextDue <= today) nextDue.setMonth(nextDue.getMonth() + 1);
     const nextDueStr = nextDue.toISOString().slice(0, 10);
 
+    // Determina ciclo/valor a partir do período escolhido (override do plano).
+    // Considera plan.price como preço mensal base.
+    const monthlyPrice = Number(plan.price);
+    const period = data.billingPeriod ?? (plan.cycle as "monthly" | "semiannual" | "annual");
+    let effectiveCycle: "monthly" | "semiannual" | "annual" = "monthly";
+    let effectiveValue = monthlyPrice;
+    if (period === "semiannual") {
+      effectiveCycle = "semiannual";
+      effectiveValue = Math.round(monthlyPrice * 6 * 0.95 * 100) / 100;
+    } else if (period === "annual") {
+      effectiveCycle = "annual";
+      effectiveValue = Math.round(monthlyPrice * 12 * 0.9 * 100) / 100;
+    }
+
     const sub = await asaasFetch<AsaasSubscriptionResp>("/subscriptions", {
       method: "POST",
       body: JSON.stringify({
         customer: asaasCustomerId,
         billingType: data.billingType,
-        value: Number(plan.price),
+        value: effectiveValue,
         nextDueDate: nextDueStr,
-        cycle: mapCycle(plan.cycle as never),
+        cycle: mapCycle(effectiveCycle),
         description: `Assinatura ${plan.name}`,
         externalReference: data.customerId,
       }),
@@ -123,8 +140,8 @@ export const createAsaasSubscription = createServerFn({ method: "POST" })
         customer_id: data.customerId,
         plan_id: data.planId,
         status: "active",
-        cycle: plan.cycle,
-        price: plan.price,
+        cycle: effectiveCycle,
+        price: effectiveValue,
         due_day: safeDueDay,
         next_due_date: nextDueStr,
         asaas_subscription_id: sub.id,
