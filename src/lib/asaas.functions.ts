@@ -67,6 +67,9 @@ const SubscribeSchema = z.object({
   planId: z.string().uuid(),
   billingType: z.enum(["BOLETO", "PIX", "CREDIT_CARD", "UNDEFINED"]).default("UNDEFINED"),
   dueDay: z.number().int().min(1).max(28).optional(),
+  // Período da assinatura escolhido pelo cliente (override do plano).
+  // monthly = preço cheio; semiannual = 6x com 5% off; annual = 12x com 10% off.
+  billingPeriod: z.enum(["monthly", "semiannual", "annual"]).optional(),
 });
 
 export const createAsaasSubscription = createServerFn({ method: "POST" })
