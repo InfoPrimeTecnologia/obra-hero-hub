@@ -2,9 +2,12 @@ import { createFileRoute, Link, useSearch } from '@tanstack/react-router';
 import { useServerFn } from '@tanstack/react-start';
 import { useEffect, useState } from 'react';
 import { consumeMagicLink } from '@/lib/auth-email.functions';
+import { supabase } from '@/integrations/supabase/client';
 import { Logo } from '@/components/Logo';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
+
+
 
 export const Route = createFileRoute('/auth/magic-link')({
   validateSearch: (s: Record<string, unknown>) => ({ token: (s.token as string) ?? '' }),
