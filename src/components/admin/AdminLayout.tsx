@@ -38,6 +38,12 @@ export function AdminLayout() {
         <div className="flex h-20 items-center justify-center border-b border-sidebar-border bg-white px-4">
           <Logo className="h-12" />
         </div>
+        <div className="border-b border-sidebar-border bg-sidebar-primary/10 px-4 py-3 text-center">
+          <p className="text-xs font-semibold uppercase tracking-widest text-sidebar-primary">
+            Painel Super Admin
+          </p>
+        </div>
+
         <nav className="flex-1 space-y-1 p-3">
           {nav.map((item) => {
             const active = item.exact
