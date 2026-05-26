@@ -62,9 +62,9 @@
 }
 
 :root {
-  --radius: 0.625rem;
+  --radius: 0.875rem;
   /* Mestre 360 brand: navy #1B2C5C primary, orange #F39200 accent */
-  --background: oklch(0.99 0.005 240);
+  --background: oklch(0.985 0.004 250);
   --foreground: oklch(0.22 0.06 265);
   --card: oklch(1 0 0);
   --card-foreground: oklch(0.22 0.06 265);
@@ -72,16 +72,16 @@
   --popover-foreground: oklch(0.22 0.06 265);
   --primary: oklch(0.31 0.09 265);
   --primary-foreground: oklch(0.98 0.005 240);
-  --secondary: oklch(0.96 0.01 240);
+  --secondary: oklch(0.965 0.008 245);
   --secondary-foreground: oklch(0.31 0.09 265);
-  --muted: oklch(0.96 0.01 240);
-  --muted-foreground: oklch(0.5 0.03 260);
+  --muted: oklch(0.965 0.008 245);
+  --muted-foreground: oklch(0.52 0.025 260);
   --accent: oklch(0.74 0.17 60);
   --accent-foreground: oklch(0.22 0.06 265);
   --destructive: oklch(0.58 0.22 27);
   --destructive-foreground: oklch(0.98 0.005 240);
-  --border: oklch(0.92 0.012 250);
-  --input: oklch(0.92 0.012 250);
+  --border: oklch(0.93 0.008 250);
+  --input: oklch(0.93 0.008 250);
   --ring: oklch(0.31 0.09 265);
   --chart-1: oklch(0.31 0.09 265);
   --chart-2: oklch(0.74 0.17 60);
@@ -97,7 +97,8 @@
   --sidebar-border: oklch(0.3 0.07 265);
   --sidebar-ring: oklch(0.74 0.17 60);
   --gradient-brand: linear-gradient(135deg, oklch(0.31 0.09 265), oklch(0.4 0.1 265));
-  --shadow-card: 0 1px 3px 0 oklch(0.22 0.06 265 / 0.06), 0 1px 2px 0 oklch(0.22 0.06 265 / 0.04);
+  --shadow-card: 0 1px 2px 0 oklch(0.22 0.06 265 / 0.04), 0 1px 3px 0 oklch(0.22 0.06 265 / 0.03);
+  --shadow-elevated: 0 4px 16px -4px oklch(0.22 0.06 265 / 0.08), 0 2px 6px -2px oklch(0.22 0.06 265 / 0.04);
 }
 
 .dark {
