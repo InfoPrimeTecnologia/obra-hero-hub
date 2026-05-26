@@ -147,14 +147,13 @@ export const createAsaasSubscription = createServerFn({ method: "POST" })
         amount: Number(p.value),
         due_date: p.dueDate,
         status: "pending" as const,
-        payment_method:
-          data.billingType === "BOLETO"
-            ? "boleto"
-            : data.billingType === "PIX"
-              ? "pix"
-              : data.billingType === "CREDIT_CARD"
-                ? "credit_card"
-                : "undefined",
+        payment_method: (data.billingType === "BOLETO"
+          ? "boleto"
+          : data.billingType === "PIX"
+            ? "pix"
+            : data.billingType === "CREDIT_CARD"
+              ? "credit_card"
+              : "undefined") as "boleto" | "pix" | "credit_card" | "undefined",
         asaas_payment_id: p.id,
         invoice_url: p.invoiceUrl ?? null,
         bank_slip_url: p.bankSlipUrl ?? null,
