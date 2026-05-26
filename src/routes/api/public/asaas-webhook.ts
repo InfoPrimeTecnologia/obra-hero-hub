@@ -21,7 +21,10 @@ type AsaasWebhookEvent = {
   };
 };
 
-function mapStatus(s?: string): string {
+type InvoiceStatus = "pending" | "paid" | "overdue" | "canceled" | "refunded";
+type PayMethod = "boleto" | "credit_card" | "pix" | "transfer" | "undefined";
+
+function mapStatus(s?: string): InvoiceStatus {
   switch (s) {
     case "RECEIVED":
     case "CONFIRMED":
@@ -34,7 +37,7 @@ function mapStatus(s?: string): string {
       return "refunded";
     case "CHARGEBACK_REQUESTED":
     case "CHARGEBACK_DISPUTE":
-      return "chargeback";
+      return "canceled";
     case "PENDING":
     case "AWAITING_RISK_ANALYSIS":
       return "pending";
@@ -43,10 +46,10 @@ function mapStatus(s?: string): string {
   }
 }
 
-function mapMethod(s?: string): string {
+function mapMethod(s?: string): PayMethod {
   switch (s) {
     case "BOLETO":
-      return "bank_slip";
+      return "boleto";
     case "PIX":
       return "pix";
     case "CREDIT_CARD":
