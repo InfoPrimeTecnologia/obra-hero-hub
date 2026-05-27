@@ -71,6 +71,39 @@ export type Database = {
         }
         Relationships: []
       }
+      app_releases: {
+        Row: {
+          created_at: string
+          created_by: string | null
+          highlight: string | null
+          id: string
+          items: Json
+          released_at: string
+          updated_at: string
+          version: string
+        }
+        Insert: {
+          created_at?: string
+          created_by?: string | null
+          highlight?: string | null
+          id?: string
+          items?: Json
+          released_at?: string
+          updated_at?: string
+          version: string
+        }
+        Update: {
+          created_at?: string
+          created_by?: string | null
+          highlight?: string | null
+          id?: string
+          items?: Json
+          released_at?: string
+          updated_at?: string
+          version?: string
+        }
+        Relationships: []
+      }
       auth_email_tokens: {
         Row: {
           created_at: string
