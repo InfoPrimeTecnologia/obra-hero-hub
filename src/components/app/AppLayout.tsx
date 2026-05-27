@@ -91,7 +91,7 @@ export function AppLayout() {
     <div className="flex min-h-screen bg-background">
       <aside className="sticky top-0 flex h-screen w-64 flex-col bg-sidebar text-sidebar-foreground">
         <div className="flex h-16 items-center justify-center border-b border-sidebar-border bg-sidebar px-4 md:h-[68px]">
-          <Logo className="h-9" />
+          <Logo variant="light" className="h-8" />
         </div>
         {obra ? (
           <div className="border-b border-sidebar-border px-4 py-3">

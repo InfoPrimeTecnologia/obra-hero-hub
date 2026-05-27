@@ -139,6 +139,7 @@ export const createAsaasSubscription = createServerFn({ method: "POST" })
       .insert({
         customer_id: data.customerId,
         plan_id: data.planId,
+        // criada como active no Asaas; acesso só libera após fatura paga (gate)
         status: "active",
         cycle: effectiveCycle,
         price: effectiveValue,
@@ -150,38 +151,68 @@ export const createAsaasSubscription = createServerFn({ method: "POST" })
       .single();
     if (insErr) throw new Error(insErr.message);
 
-    // Busca os pagamentos já gerados pela assinatura e cria as faturas locais
-    // (assim o cliente vê a cobrança no sistema sem depender do webhook).
+    // Busca os pagamentos já gerados pela assinatura e cria as faturas locais.
+    // Se a assinatura ainda não gerou um payment (acontece ocasionalmente),
+    // forçamos a criação de uma cobrança avulsa para a primeira parcela —
+    // assim o cliente sempre vê uma fatura imediatamente.
+    let firstPayments: AsaasPaymentResp[] = [];
     try {
       const payments = await asaasFetch<{ data: AsaasPaymentResp[] }>(
         `/subscriptions/${sub.id}/payments`,
         { method: "GET" },
       );
-      const rows = (payments?.data ?? []).map((p) => ({
-        customer_id: data.customerId,
-        subscription_id: inserted.id,
-        description: `Assinatura ${plan.name}`,
-        amount: Number(p.value),
-        due_date: p.dueDate,
-        status: "pending" as const,
-        payment_method: (data.billingType === "BOLETO"
-          ? "boleto"
-          : data.billingType === "PIX"
-            ? "pix"
-            : data.billingType === "CREDIT_CARD"
-              ? "credit_card"
-              : "undefined") as "boleto" | "pix" | "credit_card" | "undefined",
-        asaas_payment_id: p.id,
-        invoice_url: p.invoiceUrl ?? null,
-        bank_slip_url: p.bankSlipUrl ?? null,
-        payment_link: p.invoiceUrl ?? null,
-      }));
-      if (rows.length > 0) {
-        await supabase.from("invoices").insert(rows);
-      }
+      firstPayments = payments?.data ?? [];
     } catch (err) {
-      console.error("Falha ao sincronizar faturas iniciais:", err);
+      console.error("[asaas] falha ao listar payments da subscription:", err);
     }
+
+    if (firstPayments.length === 0) {
+      try {
+        const forced = await asaasFetch<AsaasPaymentResp>("/payments", {
+          method: "POST",
+          body: JSON.stringify({
+            customer: asaasCustomerId,
+            billingType: data.billingType,
+            value: effectiveValue,
+            dueDate: nextDueStr,
+            description: `Assinatura ${plan.name}`,
+            externalReference: inserted.id,
+          }),
+        });
+        firstPayments = [forced];
+        console.log(`[asaas] payment fallback criado id=${forced.id}`);
+      } catch (err) {
+        console.error("[asaas] falha ao criar payment fallback:", err);
+      }
+    }
+
+    const rows = firstPayments.map((p) => ({
+      customer_id: data.customerId,
+      subscription_id: inserted.id,
+      description: `Assinatura ${plan.name}`,
+      amount: Number(p.value),
+      due_date: p.dueDate,
+      status: "pending" as const,
+      payment_method: (data.billingType === "BOLETO"
+        ? "boleto"
+        : data.billingType === "PIX"
+          ? "pix"
+          : data.billingType === "CREDIT_CARD"
+            ? "credit_card"
+            : "undefined") as "boleto" | "pix" | "credit_card" | "undefined",
+      asaas_payment_id: p.id,
+      invoice_url: p.invoiceUrl ?? null,
+      bank_slip_url: p.bankSlipUrl ?? null,
+      payment_link: p.invoiceUrl ?? null,
+    }));
+    if (rows.length > 0) {
+      const { error: invErr } = await supabase.from("invoices").insert(rows);
+      if (invErr) console.error("[asaas] erro ao inserir faturas locais:", invErr);
+    }
+
+    console.log(
+      `[asaas] subscription criada id=${sub.id} valor=${effectiveValue} faturas=${rows.length}`,
+    );
 
     return { subscriptionId: inserted.id, asaasId: sub.id };
   });
