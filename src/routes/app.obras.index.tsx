@@ -1,6 +1,6 @@
 import { createFileRoute, Link, useNavigate } from "@tanstack/react-router";
-import { useEffect, useState, type FormEvent } from "react";
-import { Plus, FolderOpen, CheckCircle2, ListTree, Building2 } from "lucide-react";
+import { useEffect, useRef, useState, type FormEvent } from "react";
+import { Plus, FolderOpen, CheckCircle2, ListTree, Building2, Camera, Loader2, ImageIcon } from "lucide-react";
 import { PageHeader } from "@/components/admin/PageHeader";
 import { Card, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
