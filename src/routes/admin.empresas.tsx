@@ -150,7 +150,7 @@ function EmpresasPage() {
         .from("subscriptions")
         .select("id, customer_id, plan_id, status, price, cycle, next_due_date, started_at, canceled_at")
         .neq("status", "canceled"),
-      supabase.from("plans").select("id, name, price, cycle"),
+      supabase.from("plans").select("id, name, price, cycle, modules, features").eq("is_active", true).order("display_order"),
     ]);
     if (error) {
       toast.error("Erro ao carregar empresas", { description: error.message });
