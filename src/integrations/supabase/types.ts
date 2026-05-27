@@ -1638,6 +1638,7 @@ export type Database = {
           description: string | null
           empresa_id: string | null
           expected_end_date: string | null
+          foto_url: string | null
           id: string
           name: string
           start_date: string | null
@@ -1661,6 +1662,7 @@ export type Database = {
           description?: string | null
           empresa_id?: string | null
           expected_end_date?: string | null
+          foto_url?: string | null
           id?: string
           name: string
           start_date?: string | null
@@ -1684,6 +1686,7 @@ export type Database = {
           description?: string | null
           empresa_id?: string | null
           expected_end_date?: string | null
+          foto_url?: string | null
           id?: string
           name?: string
           start_date?: string | null
