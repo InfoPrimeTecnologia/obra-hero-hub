@@ -1,6 +1,6 @@
 import { createFileRoute, Link, useNavigate } from "@tanstack/react-router";
-import { useEffect, useState, type FormEvent } from "react";
-import { Plus, FolderOpen, CheckCircle2, ListTree, Building2 } from "lucide-react";
+import { useEffect, useRef, useState, type FormEvent } from "react";
+import { Plus, FolderOpen, CheckCircle2, ListTree, Building2, Camera, Loader2, ImageIcon } from "lucide-react";
 import { PageHeader } from "@/components/admin/PageHeader";
 import { Card, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
@@ -33,6 +33,49 @@ export const Route = createFileRoute("/app/obras/")({
 });
 
 type Empresa = { id: string; nome: string };
+
+function ObraThumb({
+  obra,
+  uploading,
+  onPick,
+}: {
+  obra: Obra;
+  uploading: boolean;
+  onPick: (file: File) => void;
+}) {
+  const ref = useRef<HTMLInputElement>(null);
+  return (
+    <button
+      type="button"
+      onClick={() => ref.current?.click()}
+      className="relative h-16 w-20 shrink-0 overflow-hidden rounded-md border bg-muted text-muted-foreground transition hover:opacity-90"
+      title="Trocar foto da obra"
+    >
+      {obra.foto_url ? (
+        <img src={obra.foto_url} alt={obra.name} className="h-full w-full object-cover" />
+      ) : (
+        <div className="flex h-full w-full items-center justify-center">
+          <ImageIcon className="h-5 w-5" />
+        </div>
+      )}
+      <span className="absolute inset-x-0 bottom-0 flex items-center justify-center gap-1 bg-black/50 py-0.5 text-[10px] text-white">
+        {uploading ? <Loader2 className="h-3 w-3 animate-spin" /> : <Camera className="h-3 w-3" />}
+        {uploading ? "..." : obra.foto_url ? "Trocar" : "Adicionar"}
+      </span>
+      <input
+        ref={ref}
+        type="file"
+        accept="image/*"
+        className="hidden"
+        onChange={(e) => {
+          const f = e.target.files?.[0];
+          if (f) onPick(f);
+          e.target.value = "";
+        }}
+      />
+    </button>
+  );
+}
 
 function ObrasPage() {
   const { user } = useAuth();
@@ -303,8 +346,13 @@ function ObrasPage() {
             const ativa = obraAtiva?.id === o.id;
             return (
               <Card key={o.id}>
-                <CardContent className="flex flex-wrap items-center justify-between gap-3 p-4">
-                  <div>
+                <CardContent className="flex flex-wrap items-center gap-4 p-4">
+                  <ObraThumb
+                    obra={o}
+                    uploading={uploadingFoto === o.id}
+                    onPick={(file) => uploadFoto(o.id, file)}
+                  />
+                  <div className="flex-1 min-w-[200px]">
                     <div className="flex items-center gap-2">
                       <p className="font-medium">{o.name}</p>
                       {ativa && (
