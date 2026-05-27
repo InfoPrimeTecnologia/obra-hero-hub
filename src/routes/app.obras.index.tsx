@@ -53,13 +53,15 @@ function ObrasPage() {
   const [contactWhatsapp, setContactWhatsapp] = useState("");
   const [city, setCity] = useState("");
   const [state, setState] = useState("");
+  const [fotoFile, setFotoFile] = useState<File | null>(null);
+  const [uploadingFoto, setUploadingFoto] = useState<string | null>(null);
 
   const carregar = async () => {
     const [{ data: obrasData, error: obrasErr }, { data: empresasData }] = await Promise.all([
       supabase
         .from("obras")
         .select(
-          "id,name,customer_id,empresa_id,contact_name,contact_email,contact_whatsapp,address_city,address_state,status",
+          "id,name,customer_id,empresa_id,contact_name,contact_email,contact_whatsapp,address_city,address_state,status,foto_url",
         )
         .order("created_at", { ascending: false }),
       supabase.from("empresas").select("id,nome").order("nome"),
@@ -70,6 +72,25 @@ function ObrasPage() {
     }
     setObras((obrasData ?? []) as Obra[]);
     setEmpresas((empresasData ?? []) as Empresa[]);
+  };
+
+  const uploadFoto = async (obraId: string, file: File) => {
+    setUploadingFoto(obraId);
+    try {
+      const ext = file.name.split(".").pop() ?? "jpg";
+      const path = `${obraId}/${Date.now()}.${ext}`;
+      const { error: upErr } = await supabase.storage.from("obra-fotos").upload(path, file, { upsert: true });
+      if (upErr) throw upErr;
+      const { data: pub } = supabase.storage.from("obra-fotos").getPublicUrl(path);
+      const { error: updErr } = await supabase.from("obras").update({ foto_url: pub.publicUrl }).eq("id", obraId);
+      if (updErr) throw updErr;
+      toast.success("Foto atualizada");
+      void carregar();
+    } catch (e: any) {
+      toast.error("Erro ao enviar foto", { description: e?.message });
+    } finally {
+      setUploadingFoto(null);
+    }
   };
 
   useEffect(() => {
