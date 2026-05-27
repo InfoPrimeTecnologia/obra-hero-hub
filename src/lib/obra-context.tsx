@@ -11,6 +11,7 @@ export type Obra = {
   address_city: string | null;
   address_state: string | null;
   status: string;
+  foto_url?: string | null;
 };
 
 type Ctx = {
