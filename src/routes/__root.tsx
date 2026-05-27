@@ -1,8 +1,44 @@
 import { Outlet, Link, createRootRoute, HeadContent, Scripts } from "@tanstack/react-router";
+import { useEffect } from "react";
 import { AuthProvider } from "@/lib/auth-context";
 import { Toaster } from "@/components/ui/sonner";
 
 import appCss from "../styles.css?url";
+
+// Auto-reload when a dynamic chunk fails to load after a new deploy.
+// Symptom: clicks on <Link> / route nav do nothing; console shows
+// "Importing a module script failed" or "Failed to fetch dynamically imported module".
+function useChunkReloadGuard() {
+  useEffect(() => {
+    if (typeof window === "undefined") return;
+    const KEY = "mestre360.chunk_reload_at";
+    const shouldReload = (msg: string) =>
+      /Importing a module script failed|Failed to fetch dynamically imported module|ChunkLoadError|error loading dynamically imported module/i.test(
+        msg,
+      );
+    const tryReload = () => {
+      try {
+        const last = Number(sessionStorage.getItem(KEY) || "0");
+        if (Date.now() - last < 10000) return;
+        sessionStorage.setItem(KEY, String(Date.now()));
+      } catch {}
+      window.location.reload();
+    };
+    const onError = (e: ErrorEvent) => {
+      if (e?.message && shouldReload(e.message)) tryReload();
+    };
+    const onRejection = (e: PromiseRejectionEvent) => {
+      const msg = (e?.reason && (e.reason.message || String(e.reason))) || "";
+      if (shouldReload(msg)) tryReload();
+    };
+    window.addEventListener("error", onError);
+    window.addEventListener("unhandledrejection", onRejection);
+    return () => {
+      window.removeEventListener("error", onError);
+      window.removeEventListener("unhandledrejection", onRejection);
+    };
+  }, []);
+}
 
 function NotFoundComponent() {
   return (
