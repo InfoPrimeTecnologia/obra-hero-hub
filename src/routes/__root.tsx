@@ -108,5 +108,6 @@ function RootShell({ children }: { children: React.ReactNode }) {
 }
 
 function RootComponent() {
+  useChunkReloadGuard();
   return <Outlet />;
 }
