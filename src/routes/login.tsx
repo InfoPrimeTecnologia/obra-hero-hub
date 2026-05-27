@@ -8,9 +8,12 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
 import { Tabs, TabsList, TabsTrigger, TabsContent } from "@/components/ui/tabs";
+import { Checkbox } from "@/components/ui/checkbox";
 import { useAuth } from "@/lib/auth-context";
 import { toast } from "sonner";
 import { resendConfirmation, requestMagicLink, signupWithEmail } from "@/lib/auth-email.functions";
+
+const REMEMBER_KEY = "mestre360.remember_email";
 
 export const Route = createFileRoute("/login")({
   component: LoginPage,
@@ -34,6 +37,17 @@ function LoginPage() {
 
   const [loginEmail, setLoginEmail] = useState("");
   const [loginPassword, setLoginPassword] = useState("");
+  const [remember, setRemember] = useState(true);
+
+  useEffect(() => {
+    try {
+      const saved = localStorage.getItem(REMEMBER_KEY);
+      if (saved) {
+        setLoginEmail(saved);
+        setRemember(true);
+      }
+    } catch { /* ignore */ }
+  }, []);
 
   const [signupName, setSignupName] = useState("");
   const [signupCompany, setSignupCompany] = useState("");
@@ -109,6 +123,10 @@ function LoginPage() {
       }
       toast.error("Falha no login", { description: error.message });
     } else {
+      try {
+        if (remember) localStorage.setItem(REMEMBER_KEY, loginEmail);
+        else localStorage.removeItem(REMEMBER_KEY);
+      } catch { /* ignore */ }
       toast.success("Bem-vindo de volta!");
       setJustLoggedIn(true);
     }
@@ -210,6 +228,16 @@ function LoginPage() {
                         value={loginPassword}
                         onChange={(e) => setLoginPassword(e.target.value)}
                       />
+                    </div>
+                    <div className="flex items-center gap-2">
+                      <Checkbox
+                        id="remember-me"
+                        checked={remember}
+                        onCheckedChange={(v) => setRemember(v === true)}
+                      />
+                      <Label htmlFor="remember-me" className="cursor-pointer text-sm font-normal">
+                        Lembrar meu e-mail neste dispositivo
+                      </Label>
                     </div>
                     <Button type="submit" className="w-full" disabled={loading}>
                       {loading ? "Entrando..." : "Entrar"}

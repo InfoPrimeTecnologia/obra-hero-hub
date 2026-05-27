@@ -1,13 +1,15 @@
 import { Link, Outlet, useLocation, useNavigate } from "@tanstack/react-router";
-import { useState } from "react";
-import { LayoutDashboard, HardHat, LogOut, Building2, ListTree, ClipboardList, Truck, CreditCard, ShoppingCart, Wallet, Tags, Receipt, ArrowDownToLine, ArrowLeftRight, BarChart3, FileSpreadsheet, DollarSign, ChevronDown, Package, Warehouse, ArrowUpDown, ClipboardCheck, Users, UserPlus, FileBarChart2, Sparkles } from "lucide-react";
+import { useEffect, useState } from "react";
+import { LayoutDashboard, HardHat, LogOut, Building2, ListTree, ClipboardList, Truck, CreditCard, ShoppingCart, Wallet, Tags, Receipt, ArrowDownToLine, ArrowLeftRight, BarChart3, FileSpreadsheet, DollarSign, ChevronDown, Package, Warehouse, ArrowUpDown, ClipboardCheck, Users, UserPlus, FileBarChart2, Sparkles, Layers } from "lucide-react";
 import { Logo } from "@/components/Logo";
 import { useAuth } from "@/lib/auth-context";
 import { Button } from "@/components/ui/button";
 import { TopBar } from "@/components/app/TopBar";
 import { cn } from "@/lib/utils";
-import { useObraSelecionada } from "@/lib/obra-context";
+import { useObraSelecionada, type Obra } from "@/lib/obra-context";
 import { usePlanModules } from "@/lib/use-plan-modules";
+import { supabase } from "@/integrations/supabase/client";
+import { toast } from "sonner";
 
 type NavItem = {
   to: string;
@@ -27,7 +29,6 @@ type NavGroup = {
 const nav: Array<NavItem | NavGroup> = [
   { to: "/app", label: "Dashboard", icon: LayoutDashboard, exact: true },
   { to: "/app/empresas", label: "Empresas", icon: Building2 },
-  { to: "/app/obras", label: "Obras", icon: HardHat, module: "obras" },
   {
     label: "Estoque",
     icon: Package,
@@ -74,17 +75,38 @@ function isGroup(item: NavItem | NavGroup): item is NavGroup {
 
 export function AppLayout() {
   const { signOut, user } = useAuth();
-  const { obra } = useObraSelecionada();
+  const { obra, setObra } = useObraSelecionada();
   const location = useLocation();
   const navigate = useNavigate();
-  const [openGroups, setOpenGroups] = useState<Record<string, boolean>>({});
+  const [openGroups, setOpenGroups] = useState<Record<string, boolean>>({ Obras: true });
   const { has: hasModule } = usePlanModules();
+  const [obrasList, setObrasList] = useState<Obra[]>([]);
+
+  useEffect(() => {
+    if (!hasModule("obras")) return;
+    let alive = true;
+    (async () => {
+      const { data } = await supabase
+        .from("obras")
+        .select("id,name,customer_id,empresa_id,contact_name,contact_email,contact_whatsapp,address_city,address_state,status,foto_url")
+        .eq("status", "active")
+        .order("name");
+      if (alive) setObrasList((data ?? []) as Obra[]);
+    })();
+    return () => { alive = false; };
+  }, [hasModule, obra?.id]);
 
   const visibleNav = nav.filter((item) => !item.module || hasModule(item.module));
 
   const handleSignOut = async () => {
     await signOut();
     navigate({ to: "/login" });
+  };
+
+  const selecionarObra = (o: Obra) => {
+    setObra(o);
+    toast.success(`Obra ativa: ${o.name}`);
+    navigate({ to: "/app" });
   };
 
   return (
@@ -125,6 +147,74 @@ export function AppLayout() {
           </div>
         ) : null}
         <nav className="flex-1 space-y-1 overflow-y-auto p-3">
+          {hasModule("obras") && (() => {
+            const obrasOpen = openGroups["Obras"] ?? true;
+            const obrasActive = location.pathname.startsWith("/app/obras");
+            return (
+              <div>
+                <button
+                  type="button"
+                  onClick={() => setOpenGroups((p) => ({ ...p, Obras: !obrasOpen }))}
+                  className={cn(
+                    "flex w-full items-center gap-3 rounded-md px-3 py-2.5 text-sm font-medium transition-colors",
+                    obrasActive
+                      ? "text-sidebar-foreground"
+                      : "text-sidebar-foreground/80 hover:bg-sidebar-accent hover:text-sidebar-accent-foreground"
+                  )}
+                >
+                  <HardHat className="h-4 w-4" />
+                  <span className="flex-1 text-left">Obras</span>
+                  <ChevronDown className={cn("h-4 w-4 transition-transform", obrasOpen ? "rotate-180" : "")} />
+                </button>
+                {obrasOpen && (
+                  <div className="mt-1 ml-3 space-y-1 border-l border-sidebar-border pl-3">
+                    <Link
+                      to="/app/obras"
+                      className={cn(
+                        "flex items-center gap-3 rounded-md px-3 py-2 text-sm transition-colors",
+                        location.pathname === "/app/obras"
+                          ? "bg-sidebar-primary text-sidebar-primary-foreground"
+                          : "text-sidebar-foreground/70 hover:bg-sidebar-accent hover:text-sidebar-accent-foreground"
+                      )}
+                    >
+                      <Layers className="h-4 w-4" />
+                      Todas as obras
+                    </Link>
+                    {obra && (
+                      <button
+                        type="button"
+                        onClick={() => { setObra(null); navigate({ to: "/app" }); }}
+                        className="flex w-full items-center gap-3 rounded-md px-3 py-2 text-xs text-sidebar-foreground/60 hover:bg-sidebar-accent hover:text-sidebar-accent-foreground"
+                      >
+                        Limpar filtro
+                      </button>
+                    )}
+                    {obrasList.map((o) => {
+                      const ativa = obra?.id === o.id;
+                      return (
+                        <button
+                          key={o.id}
+                          type="button"
+                          onClick={() => selecionarObra(o)}
+                          className={cn(
+                            "flex w-full items-center gap-3 rounded-md px-3 py-2 text-sm transition-colors",
+                            ativa
+                              ? "bg-sidebar-primary text-sidebar-primary-foreground"
+                              : "text-sidebar-foreground/70 hover:bg-sidebar-accent hover:text-sidebar-accent-foreground"
+                          )}
+                        >
+                          <span className="truncate">{o.name}</span>
+                        </button>
+                      );
+                    })}
+                    {obrasList.length === 0 && (
+                      <p className="px-3 py-1 text-xs text-sidebar-foreground/50">Nenhuma obra ativa</p>
+                    )}
+                  </div>
+                )}
+              </div>
+            );
+          })()}
           {visibleNav.map((item) => {
             if (isGroup(item)) {
               const groupActive = item.children.some((c) =>
