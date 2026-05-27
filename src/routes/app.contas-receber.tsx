@@ -165,6 +165,7 @@ function ContasReceberPage() {
         }
       />
       <div className="space-y-3 p-8">
+        <ObraScopeBadge />
         <Card><CardContent className="p-4">
           <p className="text-xs text-muted-foreground">A receber (pendente)</p>
           <p className="text-2xl font-bold">R$ {totalPend.toFixed(2)}</p>
