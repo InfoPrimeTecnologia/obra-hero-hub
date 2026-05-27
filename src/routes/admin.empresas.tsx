@@ -554,6 +554,89 @@ function EmpresasPage() {
         </AlertDialogContent>
       </AlertDialog>
 
+      {/* Assign plan dialog */}
+      <Dialog open={!!assignCustomer} onOpenChange={(o) => !o && setAssignCustomer(null)}>
+        <DialogContent className="max-w-md">
+          <DialogHeader>
+            <DialogTitle>Atribuir plano</DialogTitle>
+            <DialogDescription>
+              {assignCustomer?.company_name ?? assignCustomer?.name} — defina o plano e libere as funcionalidades.
+            </DialogDescription>
+          </DialogHeader>
+          <div className="space-y-4">
+            <div className="space-y-2">
+              <Label>Plano</Label>
+              <Select
+                value={assignForm.plan_id}
+                onValueChange={(v) => {
+                  const p = plans.find((x) => x.id === v);
+                  setAssignForm((f) => ({
+                    ...f,
+                    plan_id: v,
+                    price: p ? String(p.price) : f.price,
+                    cycle: p?.cycle ?? f.cycle,
+                  }));
+                }}
+              >
+                <SelectTrigger><SelectValue placeholder="Selecione um plano" /></SelectTrigger>
+                <SelectContent>
+                  {plans.map((p) => (
+                    <SelectItem key={p.id} value={p.id}>{p.name} · {fmtBRL(Number(p.price))}/{p.cycle === "yearly" ? "ano" : "mês"}</SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+            </div>
+            <div className="grid grid-cols-3 gap-3">
+              <div className="space-y-2 col-span-1">
+                <Label>Valor (R$)</Label>
+                <Input
+                  type="number" step="0.01" min="0"
+                  value={assignForm.price}
+                  onChange={(e) => setAssignForm({ ...assignForm, price: e.target.value })}
+                />
+              </div>
+              <div className="space-y-2 col-span-1">
+                <Label>Ciclo</Label>
+                <Select value={assignForm.cycle} onValueChange={(v) => setAssignForm({ ...assignForm, cycle: v })}>
+                  <SelectTrigger><SelectValue /></SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="monthly">Mensal</SelectItem>
+                    <SelectItem value="yearly">Anual</SelectItem>
+                  </SelectContent>
+                </Select>
+              </div>
+              <div className="space-y-2 col-span-1">
+                <Label>Dia venc.</Label>
+                <Input
+                  type="number" min="1" max="28"
+                  value={assignForm.due_day}
+                  onChange={(e) => setAssignForm({ ...assignForm, due_day: Number(e.target.value) })}
+                />
+              </div>
+            </div>
+            <label className="flex items-start gap-3 rounded-md border border-border bg-secondary/40 p-3 cursor-pointer">
+              <Checkbox
+                checked={assignForm.activate_now}
+                onCheckedChange={(v) => setAssignForm({ ...assignForm, activate_now: Boolean(v) })}
+              />
+              <div className="text-sm">
+                <div className="font-medium">Ativar imediatamente (cortesia)</div>
+                <p className="text-xs text-muted-foreground">
+                  Registra uma fatura como paga e libera o acesso ao sistema agora.
+                  Desmarque para apenas criar a assinatura e aguardar pagamento real.
+                </p>
+              </div>
+            </label>
+          </div>
+          <DialogFooter>
+            <Button variant="outline" onClick={() => setAssignCustomer(null)}>Cancelar</Button>
+            <Button onClick={handleAssignPlan} disabled={assigning || !assignForm.plan_id}>
+              {assigning ? "Salvando..." : "Atribuir plano"}
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
+
       {/* Detail dialog */}
       <Dialog open={!!detailCustomer} onOpenChange={(o) => !o && setDetailCustomer(null)}>
         <DialogContent className="max-w-3xl max-h-[85vh] overflow-y-auto">
