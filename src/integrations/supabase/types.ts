@@ -442,6 +442,65 @@ export type Database = {
         }
         Relationships: []
       }
+      compra_notas_fiscais: {
+        Row: {
+          arquivo_nome: string | null
+          arquivo_url: string | null
+          chave: string | null
+          compra_id: string
+          created_at: string
+          created_by: string | null
+          customer_id: string
+          emitida_em: string | null
+          id: string
+          numero: string | null
+          observacoes: string | null
+          serie: string | null
+          updated_at: string
+          valor: number | null
+        }
+        Insert: {
+          arquivo_nome?: string | null
+          arquivo_url?: string | null
+          chave?: string | null
+          compra_id: string
+          created_at?: string
+          created_by?: string | null
+          customer_id: string
+          emitida_em?: string | null
+          id?: string
+          numero?: string | null
+          observacoes?: string | null
+          serie?: string | null
+          updated_at?: string
+          valor?: number | null
+        }
+        Update: {
+          arquivo_nome?: string | null
+          arquivo_url?: string | null
+          chave?: string | null
+          compra_id?: string
+          created_at?: string
+          created_by?: string | null
+          customer_id?: string
+          emitida_em?: string | null
+          id?: string
+          numero?: string | null
+          observacoes?: string | null
+          serie?: string | null
+          updated_at?: string
+          valor?: number | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "compra_notas_fiscais_compra_id_fkey"
+            columns: ["compra_id"]
+            isOneToOne: false
+            referencedRelation: "compras"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       compra_parcelas: {
         Row: {
           compra_id: string
