@@ -34,6 +34,49 @@ export const Route = createFileRoute("/app/obras/")({
 
 type Empresa = { id: string; nome: string };
 
+function ObraThumb({
+  obra,
+  uploading,
+  onPick,
+}: {
+  obra: Obra;
+  uploading: boolean;
+  onPick: (file: File) => void;
+}) {
+  const ref = useRef<HTMLInputElement>(null);
+  return (
+    <button
+      type="button"
+      onClick={() => ref.current?.click()}
+      className="relative h-16 w-20 shrink-0 overflow-hidden rounded-md border bg-muted text-muted-foreground transition hover:opacity-90"
+      title="Trocar foto da obra"
+    >
+      {obra.foto_url ? (
+        <img src={obra.foto_url} alt={obra.name} className="h-full w-full object-cover" />
+      ) : (
+        <div className="flex h-full w-full items-center justify-center">
+          <ImageIcon className="h-5 w-5" />
+        </div>
+      )}
+      <span className="absolute inset-x-0 bottom-0 flex items-center justify-center gap-1 bg-black/50 py-0.5 text-[10px] text-white">
+        {uploading ? <Loader2 className="h-3 w-3 animate-spin" /> : <Camera className="h-3 w-3" />}
+        {uploading ? "..." : obra.foto_url ? "Trocar" : "Adicionar"}
+      </span>
+      <input
+        ref={ref}
+        type="file"
+        accept="image/*"
+        className="hidden"
+        onChange={(e) => {
+          const f = e.target.files?.[0];
+          if (f) onPick(f);
+          e.target.value = "";
+        }}
+      />
+    </button>
+  );
+}
+
 function ObrasPage() {
   const { user } = useAuth();
   const { obra: obraAtiva, setObra } = useObraSelecionada();
