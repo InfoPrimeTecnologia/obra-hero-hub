@@ -107,14 +107,15 @@ function ContasReceberPage() {
   };
 
   const hoje = new Date().toISOString().slice(0, 10);
-  const filtrados = items.filter((c) => {
+  const escopo = obra ? items.filter((c) => c.obra_id === obra.id) : items;
+  const filtrados = escopo.filter((c) => {
     if (filtro === "todos") return true;
     if (filtro === "pendente") return c.status === "pendente";
     if (filtro === "recebido") return c.status === "recebido";
     if (filtro === "vencido") return c.status === "pendente" && c.vencimento < hoje;
     return true;
   });
-  const totalPend = items.filter(c => c.status === "pendente").reduce((s, c) => s + Number(c.valor), 0);
+  const totalPend = escopo.filter(c => c.status === "pendente").reduce((s, c) => s + Number(c.valor), 0);
 
   return (
     <div>
