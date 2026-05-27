@@ -36,6 +36,7 @@ const statusColor = (s: string) =>
 
 function ContasPagarPage() {
   const { user } = useAuth();
+  const { obra } = useObraSelecionada();
   const [items, setItems] = useState<CP[]>([]);
   const [contas, setContas] = useState<{ id: string; nome: string }[]>([]);
   const [cats, setCats] = useState<{ id: string; nome: string }[]>([]);
