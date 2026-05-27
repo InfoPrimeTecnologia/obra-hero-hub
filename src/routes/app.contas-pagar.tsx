@@ -185,6 +185,7 @@ function ContasPagarPage() {
         }
       />
       <div className="space-y-3 p-8">
+        <ObraScopeBadge />
         <div className="grid grid-cols-2 gap-3">
           <Card><CardContent className="p-4">
             <p className="text-xs text-muted-foreground">Pendente</p>
