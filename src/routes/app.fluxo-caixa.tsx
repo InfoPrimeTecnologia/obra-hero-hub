@@ -7,6 +7,8 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Badge } from "@/components/ui/badge";
 import { supabase } from "@/integrations/supabase/client";
+import { useObraSelecionada } from "@/lib/obra-context";
+import { ObraScopeBadge } from "@/components/app/ObraScopeBadge";
 import { toast } from "sonner";
 
 export const Route = createFileRoute("/app/fluxo-caixa")({
@@ -21,6 +23,7 @@ function FluxoCaixaPage() {
   const hoje = new Date();
   const inicioMes = new Date(hoje.getFullYear(), hoje.getMonth(), 1).toISOString().slice(0, 10);
   const fimMes = new Date(hoje.getFullYear(), hoje.getMonth() + 1, 0).toISOString().slice(0, 10);
+  const { obra } = useObraSelecionada();
   const [de, setDe] = useState(inicioMes);
   const [ate, setAte] = useState(fimMes);
   const [contas, setContas] = useState<{ id: string; nome: string; saldo_atual: number }[]>([]);
@@ -29,11 +32,17 @@ function FluxoCaixaPage() {
   const [crs, setCrs] = useState<CR[]>([]);
 
   const carregar = async () => {
+    let qL = supabase.from("lancamentos").select("*").gte("data", de).lte("data", ate).order("data");
+    let qP = supabase.from("contas_pagar").select("valor,vencimento,status,descricao").eq("status", "pendente").gte("vencimento", de).lte("vencimento", ate);
+    let qR = supabase.from("contas_receber").select("valor,vencimento,status,descricao").eq("status", "pendente").gte("vencimento", de).lte("vencimento", ate);
+    if (obra) {
+      qL = qL.eq("obra_id", obra.id);
+      qP = qP.eq("obra_id", obra.id);
+      qR = qR.eq("obra_id", obra.id);
+    }
     const [{ data: cb }, { data: l }, { data: cp }, { data: cr }] = await Promise.all([
       supabase.from("contas_bancarias").select("id,nome,saldo_atual").eq("ativo", true),
-      supabase.from("lancamentos").select("*").gte("data", de).lte("data", ate).order("data"),
-      supabase.from("contas_pagar").select("valor,vencimento,status,descricao").eq("status", "pendente").gte("vencimento", de).lte("vencimento", ate),
-      supabase.from("contas_receber").select("valor,vencimento,status,descricao").eq("status", "pendente").gte("vencimento", de).lte("vencimento", ate),
+      qL, qP, qR,
     ]);
     setContas((cb ?? []) as any);
     setLancs((l ?? []) as Lanc[]);
@@ -41,7 +50,7 @@ function FluxoCaixaPage() {
     setCrs((cr ?? []) as CR[]);
   };
 
-  useEffect(() => { void carregar().catch((e) => toast.error(e.message)); }, [de, ate]);
+  useEffect(() => { void carregar().catch((e) => toast.error(e.message)); }, [de, ate, obra?.id]);
 
   const realizado = useMemo(() => {
     const ativos = lancs.filter(l => !l.estornado);
@@ -65,6 +74,7 @@ function FluxoCaixaPage() {
         description="Realizado vs previsto, por período"
       />
       <div className="space-y-4 p-8">
+        <ObraScopeBadge />
         <div className="flex flex-wrap items-end gap-3">
           <div className="space-y-1"><Label>De</Label><Input type="date" value={de} onChange={(e) => setDe(e.target.value)} /></div>
           <div className="space-y-1"><Label>Até</Label><Input type="date" value={ate} onChange={(e) => setAte(e.target.value)} /></div>

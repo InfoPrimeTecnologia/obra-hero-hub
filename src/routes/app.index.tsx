@@ -238,8 +238,21 @@ function ClienteDashboard() {
       <div className="space-y-6 p-6 md:p-8">
         {/* Hero */}
         <div className="relative overflow-hidden rounded-xl border bg-sidebar p-6 text-sidebar-foreground md:p-8">
-          <div className="absolute -right-20 -top-20 h-64 w-64 rounded-full bg-accent/20 blur-3xl" />
-          <div className="absolute -bottom-24 right-32 h-48 w-48 rounded-full bg-sidebar-primary/30 blur-3xl" />
+          {obra?.foto_url ? (
+            <>
+              <img
+                src={obra.foto_url}
+                alt={obra.name}
+                className="absolute inset-0 h-full w-full object-cover opacity-30"
+              />
+              <div className="absolute inset-0 bg-gradient-to-r from-sidebar via-sidebar/80 to-transparent" />
+            </>
+          ) : (
+            <>
+              <div className="absolute -right-20 -top-20 h-64 w-64 rounded-full bg-accent/20 blur-3xl" />
+              <div className="absolute -bottom-24 right-32 h-48 w-48 rounded-full bg-sidebar-primary/30 blur-3xl" />
+            </>
+          )}
           <div className="relative flex flex-col gap-4 md:flex-row md:items-center md:justify-between">
             <div>
               <p className="text-sm text-sidebar-foreground/70">{greeting},</p>

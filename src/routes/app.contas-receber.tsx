@@ -15,6 +15,8 @@ import {
 } from "@/components/ui/dialog";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/lib/auth-context";
+import { useObraSelecionada } from "@/lib/obra-context";
+import { ObraScopeBadge } from "@/components/app/ObraScopeBadge";
 import { toast } from "sonner";
 
 export const Route = createFileRoute("/app/contas-receber")({
@@ -32,6 +34,7 @@ const statusColor = (s: string) =>
 
 function ContasReceberPage() {
   const { user } = useAuth();
+  const { obra } = useObraSelecionada();
   const [items, setItems] = useState<CR[]>([]);
   const [contas, setContas] = useState<{ id: string; nome: string }[]>([]);
   const [cats, setCats] = useState<{ id: string; nome: string }[]>([]);
@@ -104,14 +107,15 @@ function ContasReceberPage() {
   };
 
   const hoje = new Date().toISOString().slice(0, 10);
-  const filtrados = items.filter((c) => {
+  const escopo = obra ? items.filter((c) => c.obra_id === obra.id) : items;
+  const filtrados = escopo.filter((c) => {
     if (filtro === "todos") return true;
     if (filtro === "pendente") return c.status === "pendente";
     if (filtro === "recebido") return c.status === "recebido";
     if (filtro === "vencido") return c.status === "pendente" && c.vencimento < hoje;
     return true;
   });
-  const totalPend = items.filter(c => c.status === "pendente").reduce((s, c) => s + Number(c.valor), 0);
+  const totalPend = escopo.filter(c => c.status === "pendente").reduce((s, c) => s + Number(c.valor), 0);
 
   return (
     <div>
@@ -161,6 +165,7 @@ function ContasReceberPage() {
         }
       />
       <div className="space-y-3 p-8">
+        <ObraScopeBadge />
         <Card><CardContent className="p-4">
           <p className="text-xs text-muted-foreground">A receber (pendente)</p>
           <p className="text-2xl font-bold">R$ {totalPend.toFixed(2)}</p>
