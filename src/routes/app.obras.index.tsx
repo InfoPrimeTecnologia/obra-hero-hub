@@ -303,8 +303,13 @@ function ObrasPage() {
             const ativa = obraAtiva?.id === o.id;
             return (
               <Card key={o.id}>
-                <CardContent className="flex flex-wrap items-center justify-between gap-3 p-4">
-                  <div>
+                <CardContent className="flex flex-wrap items-center gap-4 p-4">
+                  <ObraThumb
+                    obra={o}
+                    uploading={uploadingFoto === o.id}
+                    onPick={(file) => uploadFoto(o.id, file)}
+                  />
+                  <div className="flex-1 min-w-[200px]">
                     <div className="flex items-center gap-2">
                       <p className="font-medium">{o.name}</p>
                       {ativa && (
