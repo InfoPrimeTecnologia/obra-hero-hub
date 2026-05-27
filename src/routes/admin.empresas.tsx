@@ -64,7 +64,7 @@ type Customer = {
   owner_user_id: string | null;
 };
 
-type Plan = { id: string; name: string; price: number; cycle: string };
+type Plan = { id: string; name: string; price: number; cycle: string; modules?: any; features?: any };
 type Subscription = {
   id: string;
   customer_id: string;
