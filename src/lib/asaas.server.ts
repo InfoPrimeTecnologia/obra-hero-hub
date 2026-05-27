@@ -3,16 +3,13 @@ const SANDBOX = "https://sandbox.asaas.com/api/v3";
 const PRODUCTION = "https://api.asaas.com/v3";
 
 /**
- * Detecta automaticamente o ambiente a partir do prefixo da API key:
- *  - $aact_prod_  → produção
- *  - $aact_hmlg_  → sandbox
- *  - qualquer outro → usa ASAAS_ENV (default sandbox)
- * Isso evita o erro comum de configurar a key de produção mas esquecer o ASAAS_ENV.
+ * Ambiente do Asaas — SOMENTE via ASAAS_ENV.
+ * Importante: todas as chaves do Asaas começam com `$aact_`, independente
+ * do ambiente. Não é possível inferir produção vs sandbox pelo prefixo.
+ * Configure o secret ASAAS_ENV como "production" para enviar dados ao
+ * painel real; qualquer outro valor cai em sandbox.
  */
 export function asaasEnv(): "production" | "sandbox" {
-  const key = process.env.ASAAS_API_KEY ?? "";
-  if (key.startsWith("$aact_prod_")) return "production";
-  if (key.startsWith("$aact_hmlg_")) return "sandbox";
   const env = (process.env.ASAAS_ENV ?? "sandbox").toLowerCase();
   return env === "production" ? "production" : "sandbox";
 }
