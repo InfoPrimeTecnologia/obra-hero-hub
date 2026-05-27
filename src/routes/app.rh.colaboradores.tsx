@@ -16,7 +16,10 @@ import { Checkbox } from "@/components/ui/checkbox";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/lib/auth-context";
 import { getCurrentCustomerId } from "@/lib/customer";
+import { useObraSelecionada } from "@/lib/obra-context";
+import { ObraScopeBadge } from "@/components/app/ObraScopeBadge";
 import { toast } from "sonner";
+
 
 export const Route = createFileRoute("/app/rh/colaboradores")({ component: Page });
 
