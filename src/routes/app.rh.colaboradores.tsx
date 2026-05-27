@@ -247,6 +247,8 @@ function Page() {
           </Dialog>
         } />
       <div className="space-y-3 p-8">
+        <ObraScopeBadge />
+
         <div className="flex flex-wrap items-center gap-3">
           <Input placeholder="Buscar..." value={q} onChange={(e) => setQ(e.target.value)} className="max-w-sm" />
           <label className="flex items-center gap-2 text-sm">
