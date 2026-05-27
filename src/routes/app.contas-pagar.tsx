@@ -16,6 +16,8 @@ import {
 } from "@/components/ui/dialog";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/lib/auth-context";
+import { useObraSelecionada } from "@/lib/obra-context";
+import { ObraScopeBadge } from "@/components/app/ObraScopeBadge";
 import { toast } from "sonner";
 
 export const Route = createFileRoute("/app/contas-pagar")({
