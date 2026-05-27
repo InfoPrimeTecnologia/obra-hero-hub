@@ -264,6 +264,81 @@ function EmpresasPage() {
     }
   };
 
+  const openAssign = (c: Customer) => {
+    setAssignCustomer(c);
+    const current = subs[c.id];
+    const defaultPlan = current ? plans.find((p) => p.id === current.plan_id) : plans[0];
+    setAssignForm({
+      plan_id: defaultPlan?.id ?? "",
+      price: defaultPlan ? String(defaultPlan.price) : "",
+      cycle: defaultPlan?.cycle ?? "monthly",
+      due_day: current?.next_due_date ? new Date(current.next_due_date).getDate() : 10,
+      activate_now: true,
+    });
+  };
+
+  const handleAssignPlan = async () => {
+    if (!assignCustomer || !assignForm.plan_id) return;
+    setAssigning(true);
+    try {
+      const today = new Date();
+      const nextDue = new Date(today);
+      nextDue.setMonth(nextDue.getMonth() + (assignForm.cycle === "yearly" ? 12 : 1));
+      const dueDay = Math.min(Math.max(assignForm.due_day || 10, 1), 28);
+
+      // Cancela assinaturas ativas anteriores
+      await supabase
+        .from("subscriptions")
+        .update({ status: "canceled", canceled_at: new Date().toISOString() })
+        .eq("customer_id", assignCustomer.id)
+        .neq("status", "canceled");
+
+      // Cria nova assinatura
+      const { data: newSub, error: subErr } = await supabase
+        .from("subscriptions")
+        .insert({
+          customer_id: assignCustomer.id,
+          plan_id: assignForm.plan_id,
+          status: "active",
+          cycle: assignForm.cycle as any,
+          price: Number(assignForm.price || 0),
+          due_day: dueDay,
+          next_due_date: nextDue.toISOString().slice(0, 10),
+        })
+        .select("id")
+        .single();
+      if (subErr) throw subErr;
+
+      // Se "ativar imediatamente", cria fatura paga (libera o gate de acesso)
+      if (assignForm.activate_now) {
+        const planName = plans.find((p) => p.id === assignForm.plan_id)?.name ?? "Plano";
+        const { error: invErr } = await supabase.from("invoices").insert({
+          customer_id: assignCustomer.id,
+          subscription_id: newSub!.id,
+          amount: Number(assignForm.price || 0),
+          status: "paid",
+          due_date: today.toISOString().slice(0, 10),
+          paid_at: new Date().toISOString(),
+          description: `Ativação manual — ${planName} (Super Admin)`,
+          payment_method: "undefined" as any,
+        });
+        if (invErr) throw invErr;
+      }
+
+      toast.success("Plano atribuído", {
+        description: assignForm.activate_now
+          ? "Funcionalidades liberadas imediatamente."
+          : "Aguardando confirmação de pagamento para liberar acesso.",
+      });
+      setAssignCustomer(null);
+      void load();
+    } catch (e: any) {
+      toast.error("Erro ao atribuir plano", { description: e?.message });
+    } finally {
+      setAssigning(false);
+    }
+  };
+
   const openDetail = async (c: Customer) => {
     setDetailCustomer(c);
     setMetrics(null);
