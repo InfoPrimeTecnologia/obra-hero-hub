@@ -450,6 +450,9 @@ function EmpresasPage() {
                             <Button size="icon" variant="ghost" onClick={() => openDetail(c)} title="Ver detalhes">
                               <Eye className="h-4 w-4" />
                             </Button>
+                            <Button size="icon" variant="ghost" onClick={() => openAssign(c)} title="Atribuir plano">
+                              <Package className="h-4 w-4" />
+                            </Button>
                             <Button size="icon" variant="ghost" onClick={() => openEdit(c)} title="Editar">
                               <Pencil className="h-4 w-4" />
                             </Button>
