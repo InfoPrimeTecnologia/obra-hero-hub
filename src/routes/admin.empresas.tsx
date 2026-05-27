@@ -122,6 +122,17 @@ function EmpresasPage() {
   const [deleting, setDeleting] = useState(false);
   const deleteCustomerFn = useServerFn(deleteCustomerAndUser);
 
+  // assign plan
+  const [assignCustomer, setAssignCustomer] = useState<Customer | null>(null);
+  const [assigning, setAssigning] = useState(false);
+  const [assignForm, setAssignForm] = useState({
+    plan_id: "",
+    price: "",
+    cycle: "monthly",
+    due_day: 10,
+    activate_now: true,
+  });
+
   // detail
   const [detailCustomer, setDetailCustomer] = useState<Customer | null>(null);
   const [metrics, setMetrics] = useState<Metrics | null>(null);
