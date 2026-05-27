@@ -162,7 +162,9 @@ function Page() {
   const obraName = (id: string) => obras.find((o) => o.id === id)?.name ?? "—";
   const filtered = items
     .filter((c) => showInativos || c.ativo)
+    .filter((c) => !obra || (obraVinculos.get(c.id)?.has(obra.id) ?? false))
     .filter((c) => !q || [c.nome, c.cpf, c.cargo, c.email].filter(Boolean).join(" ").toLowerCase().includes(q.toLowerCase()));
+
 
   return (
     <div>
