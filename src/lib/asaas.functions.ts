@@ -23,6 +23,15 @@ type AsaasSubscriptionResp = {
   nextDueDate: string;
 };
 
+function mapPaymentMethod(
+  billingType: AsaasBillingType,
+): "boleto" | "pix" | "credit_card" | "undefined" {
+  if (billingType === "BOLETO") return "boleto";
+  if (billingType === "PIX") return "pix";
+  if (billingType === "CREDIT_CARD") return "credit_card";
+  return "undefined";
+}
+
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
 async function ensureAsaasCustomer(supabase: any, customerId: string): Promise<string> {
   const { data: customer, error } = await supabase
@@ -77,6 +86,10 @@ export const createAsaasSubscription = createServerFn({ method: "POST" })
   .inputValidator((i) => SubscribeSchema.parse(i))
   .handler(async ({ data, context }) => {
     const { supabase, userId } = context;
+
+    console.log(
+      `[asaas] solicitacao de assinatura customer=${data.customerId} plan=${data.planId}`,
+    );
 
     // Authorization: must be admin or owner of this customer
     const [{ data: roles }, { data: ownedCust }] = await Promise.all([
@@ -183,7 +196,15 @@ export const createAsaasSubscription = createServerFn({ method: "POST" })
         console.log(`[asaas] payment fallback criado id=${forced.id}`);
       } catch (err) {
         console.error("[asaas] falha ao criar payment fallback:", err);
+        const msg = err instanceof Error ? err.message : String(err);
+        throw new Error(`Assinatura criada, mas a cobrança inicial falhou: ${msg}`);
       }
+    }
+
+    if (firstPayments.length === 0) {
+      throw new Error(
+        "Assinatura criada no Asaas, mas nenhuma cobrança inicial foi retornada.",
+      );
     }
 
     const rows = firstPayments.map((p) => ({
@@ -193,28 +214,32 @@ export const createAsaasSubscription = createServerFn({ method: "POST" })
       amount: Number(p.value),
       due_date: p.dueDate,
       status: "pending" as const,
-      payment_method: (data.billingType === "BOLETO"
-        ? "boleto"
-        : data.billingType === "PIX"
-          ? "pix"
-          : data.billingType === "CREDIT_CARD"
-            ? "credit_card"
-            : "undefined") as "boleto" | "pix" | "credit_card" | "undefined",
+      payment_method: mapPaymentMethod(data.billingType),
       asaas_payment_id: p.id,
       invoice_url: p.invoiceUrl ?? null,
       bank_slip_url: p.bankSlipUrl ?? null,
       payment_link: p.invoiceUrl ?? null,
     }));
-    if (rows.length > 0) {
-      const { error: invErr } = await supabase.from("invoices").insert(rows);
-      if (invErr) console.error("[asaas] erro ao inserir faturas locais:", invErr);
+
+    const { data: createdInvoices, error: invErr } = await supabase
+      .from("invoices")
+      .insert(rows)
+      .select("id, invoice_url");
+    if (invErr) {
+      console.error("[asaas] erro ao inserir faturas locais:", invErr);
+      throw new Error(`Cobrança criada no Asaas, mas falhou ao salvar no sistema: ${invErr.message}`);
     }
 
     console.log(
       `[asaas] subscription criada id=${sub.id} valor=${effectiveValue} faturas=${rows.length}`,
     );
 
-    return { subscriptionId: inserted.id, asaasId: sub.id };
+    return {
+      subscriptionId: inserted.id,
+      asaasId: sub.id,
+      invoiceCount: createdInvoices?.length ?? 0,
+      firstInvoiceUrl: createdInvoices?.[0]?.invoice_url ?? null,
+    };
   });
 
 const ChargeSchema = z.object({
