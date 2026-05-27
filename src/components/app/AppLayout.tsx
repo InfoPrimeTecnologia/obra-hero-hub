@@ -1,13 +1,15 @@
 import { Link, Outlet, useLocation, useNavigate } from "@tanstack/react-router";
-import { useState } from "react";
-import { LayoutDashboard, HardHat, LogOut, Building2, ListTree, ClipboardList, Truck, CreditCard, ShoppingCart, Wallet, Tags, Receipt, ArrowDownToLine, ArrowLeftRight, BarChart3, FileSpreadsheet, DollarSign, ChevronDown, Package, Warehouse, ArrowUpDown, ClipboardCheck, Users, UserPlus, FileBarChart2, Sparkles } from "lucide-react";
+import { useEffect, useState } from "react";
+import { LayoutDashboard, HardHat, LogOut, Building2, ListTree, ClipboardList, Truck, CreditCard, ShoppingCart, Wallet, Tags, Receipt, ArrowDownToLine, ArrowLeftRight, BarChart3, FileSpreadsheet, DollarSign, ChevronDown, Package, Warehouse, ArrowUpDown, ClipboardCheck, Users, UserPlus, FileBarChart2, Sparkles, Layers } from "lucide-react";
 import { Logo } from "@/components/Logo";
 import { useAuth } from "@/lib/auth-context";
 import { Button } from "@/components/ui/button";
 import { TopBar } from "@/components/app/TopBar";
 import { cn } from "@/lib/utils";
-import { useObraSelecionada } from "@/lib/obra-context";
+import { useObraSelecionada, type Obra } from "@/lib/obra-context";
 import { usePlanModules } from "@/lib/use-plan-modules";
+import { supabase } from "@/integrations/supabase/client";
+import { toast } from "sonner";
 
 type NavItem = {
   to: string;
@@ -27,7 +29,6 @@ type NavGroup = {
 const nav: Array<NavItem | NavGroup> = [
   { to: "/app", label: "Dashboard", icon: LayoutDashboard, exact: true },
   { to: "/app/empresas", label: "Empresas", icon: Building2 },
-  { to: "/app/obras", label: "Obras", icon: HardHat, module: "obras" },
   {
     label: "Estoque",
     icon: Package,
@@ -74,17 +75,38 @@ function isGroup(item: NavItem | NavGroup): item is NavGroup {
 
 export function AppLayout() {
   const { signOut, user } = useAuth();
-  const { obra } = useObraSelecionada();
+  const { obra, setObra } = useObraSelecionada();
   const location = useLocation();
   const navigate = useNavigate();
-  const [openGroups, setOpenGroups] = useState<Record<string, boolean>>({});
+  const [openGroups, setOpenGroups] = useState<Record<string, boolean>>({ Obras: true });
   const { has: hasModule } = usePlanModules();
+  const [obrasList, setObrasList] = useState<Obra[]>([]);
+
+  useEffect(() => {
+    if (!hasModule("obras")) return;
+    let alive = true;
+    (async () => {
+      const { data } = await supabase
+        .from("obras")
+        .select("id,name,customer_id,empresa_id,contact_name,contact_email,contact_whatsapp,address_city,address_state,status,foto_url")
+        .eq("status", "active")
+        .order("name");
+      if (alive) setObrasList((data ?? []) as Obra[]);
+    })();
+    return () => { alive = false; };
+  }, [hasModule, obra?.id]);
 
   const visibleNav = nav.filter((item) => !item.module || hasModule(item.module));
 
   const handleSignOut = async () => {
     await signOut();
     navigate({ to: "/login" });
+  };
+
+  const selecionarObra = (o: Obra) => {
+    setObra(o);
+    toast.success(`Obra ativa: ${o.name}`);
+    navigate({ to: "/app" });
   };
 
   return (
