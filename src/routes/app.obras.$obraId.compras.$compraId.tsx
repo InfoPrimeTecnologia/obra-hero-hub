@@ -489,7 +489,11 @@ function CompraDetalhePage() {
             ))}
           </CardContent>
         </Card>
+
+        {/* NOTAS FISCAIS */}
+        <CompraNotasFiscais compraId={compraId} customerId={compra.customer_id} empresarial />
       </div>
+
     </div>
   );
 }
