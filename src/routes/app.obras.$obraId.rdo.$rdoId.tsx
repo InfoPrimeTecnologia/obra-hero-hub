@@ -365,7 +365,12 @@ function RdoDetailPage() {
       });
       toast.success("RDO enviado por WhatsApp");
     } catch (e) {
-      toast.error("Falha no envio", { description: e instanceof Error ? e.message : String(e) });
+      const msg = e instanceof Error ? e.message : String(e);
+      toast.error("Falha no envio automático — abrindo WhatsApp Web", { description: msg });
+      // Fallback: open wa.me with the report text so the user can send manually
+      const num = (obra.contact_whatsapp || "").replace(/\D/g, "");
+      const url = `https://wa.me/${num}?text=${encodeURIComponent(montarRelatorio())}`;
+      window.open(url, "_blank", "noopener,noreferrer");
     } finally {
       setEnviandoWa(false);
     }
