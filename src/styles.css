@@ -65,37 +65,40 @@
   --radius: 0.875rem;
   /* Mestre 360 brand: navy #1B2C5C primary, orange #F39200 accent */
   --background: oklch(0.985 0.004 250);
-  --foreground: oklch(0.22 0.06 265);
+  --foreground: oklch(0.247 0.083 268);
   --card: oklch(1 0 0);
-  --card-foreground: oklch(0.22 0.06 265);
+  --card-foreground: oklch(0.247 0.083 268);
   --popover: oklch(1 0 0);
-  --popover-foreground: oklch(0.22 0.06 265);
-  --primary: oklch(0.31 0.09 265);
+  --popover-foreground: oklch(0.247 0.083 268);
+  /* #1B2C5C */
+  --primary: oklch(0.273 0.095 268);
   --primary-foreground: oklch(0.98 0.005 240);
   --secondary: oklch(0.965 0.008 245);
-  --secondary-foreground: oklch(0.31 0.09 265);
+  --secondary-foreground: oklch(0.273 0.095 268);
   --muted: oklch(0.965 0.008 245);
   --muted-foreground: oklch(0.52 0.025 260);
-  --accent: oklch(0.74 0.17 60);
-  --accent-foreground: oklch(0.22 0.06 265);
+  /* #F39200 */
+  --accent: oklch(0.735 0.175 62);
+  --accent-foreground: oklch(0.247 0.083 268);
   --destructive: oklch(0.58 0.22 27);
   --destructive-foreground: oklch(0.98 0.005 240);
   --border: oklch(0.93 0.008 250);
   --input: oklch(0.93 0.008 250);
-  --ring: oklch(0.31 0.09 265);
-  --chart-1: oklch(0.31 0.09 265);
-  --chart-2: oklch(0.74 0.17 60);
+  --ring: oklch(0.273 0.095 268);
+  --chart-1: oklch(0.273 0.095 268);
+  --chart-2: oklch(0.735 0.175 62);
   --chart-3: oklch(0.55 0.12 250);
   --chart-4: oklch(0.65 0.15 145);
   --chart-5: oklch(0.6 0.2 25);
-  --sidebar: oklch(0.22 0.06 265);
-  --sidebar-foreground: oklch(0.95 0.01 240);
-  --sidebar-primary: oklch(0.74 0.17 60);
-  --sidebar-primary-foreground: oklch(0.22 0.06 265);
-  --sidebar-accent: oklch(0.28 0.07 265);
+  /* Sidebar navy alinhada à logo #1B2C5C */
+  --sidebar: oklch(0.247 0.083 268);
+  --sidebar-foreground: oklch(0.96 0.01 240);
+  --sidebar-primary: oklch(0.735 0.175 62);
+  --sidebar-primary-foreground: oklch(0.18 0.06 268);
+  --sidebar-accent: oklch(0.31 0.095 268);
   --sidebar-accent-foreground: oklch(0.98 0.005 240);
-  --sidebar-border: oklch(0.3 0.07 265);
-  --sidebar-ring: oklch(0.74 0.17 60);
+  --sidebar-border: oklch(0.33 0.09 268);
+  --sidebar-ring: oklch(0.735 0.175 62);
   --gradient-brand: linear-gradient(135deg, oklch(0.31 0.09 265), oklch(0.4 0.1 265));
   --shadow-card: 0 1px 2px 0 oklch(0.22 0.06 265 / 0.04), 0 1px 3px 0 oklch(0.22 0.06 265 / 0.03);
   --shadow-elevated: 0 4px 16px -4px oklch(0.22 0.06 265 / 0.08), 0 2px 6px -2px oklch(0.22 0.06 265 / 0.04);
