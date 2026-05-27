@@ -42,7 +42,8 @@ import {
   TableRow,
 } from "@/components/ui/table";
 import { Badge } from "@/components/ui/badge";
-import { Plus, Loader2, Pencil, Trash2, Eye, Search } from "lucide-react";
+import { Plus, Loader2, Pencil, Trash2, Eye, Search, Package } from "lucide-react";
+import { Checkbox } from "@/components/ui/checkbox";
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
 
@@ -63,7 +64,7 @@ type Customer = {
   owner_user_id: string | null;
 };
 
-type Plan = { id: string; name: string; price: number; cycle: string };
+type Plan = { id: string; name: string; price: number; cycle: string; modules?: any; features?: any };
 type Subscription = {
   id: string;
   customer_id: string;
@@ -121,6 +122,17 @@ function EmpresasPage() {
   const [deleting, setDeleting] = useState(false);
   const deleteCustomerFn = useServerFn(deleteCustomerAndUser);
 
+  // assign plan
+  const [assignCustomer, setAssignCustomer] = useState<Customer | null>(null);
+  const [assigning, setAssigning] = useState(false);
+  const [assignForm, setAssignForm] = useState({
+    plan_id: "",
+    price: "",
+    cycle: "monthly",
+    due_day: 10,
+    activate_now: true,
+  });
+
   // detail
   const [detailCustomer, setDetailCustomer] = useState<Customer | null>(null);
   const [metrics, setMetrics] = useState<Metrics | null>(null);
@@ -138,7 +150,7 @@ function EmpresasPage() {
         .from("subscriptions")
         .select("id, customer_id, plan_id, status, price, cycle, next_due_date, started_at, canceled_at")
         .neq("status", "canceled"),
-      supabase.from("plans").select("id, name, price, cycle"),
+      supabase.from("plans").select("id, name, price, cycle, modules, features").eq("is_active", true).order("display_order"),
     ]);
     if (error) {
       toast.error("Erro ao carregar empresas", { description: error.message });
@@ -249,6 +261,81 @@ function EmpresasPage() {
       toast.error("Erro ao excluir", { description: e?.message });
     } finally {
       setDeleting(false);
+    }
+  };
+
+  const openAssign = (c: Customer) => {
+    setAssignCustomer(c);
+    const current = subs[c.id];
+    const defaultPlan = current ? plans.find((p) => p.id === current.plan_id) : plans[0];
+    setAssignForm({
+      plan_id: defaultPlan?.id ?? "",
+      price: defaultPlan ? String(defaultPlan.price) : "",
+      cycle: defaultPlan?.cycle ?? "monthly",
+      due_day: current?.next_due_date ? new Date(current.next_due_date).getDate() : 10,
+      activate_now: true,
+    });
+  };
+
+  const handleAssignPlan = async () => {
+    if (!assignCustomer || !assignForm.plan_id) return;
+    setAssigning(true);
+    try {
+      const today = new Date();
+      const nextDue = new Date(today);
+      nextDue.setMonth(nextDue.getMonth() + (assignForm.cycle === "yearly" ? 12 : 1));
+      const dueDay = Math.min(Math.max(assignForm.due_day || 10, 1), 28);
+
+      // Cancela assinaturas ativas anteriores
+      await supabase
+        .from("subscriptions")
+        .update({ status: "canceled", canceled_at: new Date().toISOString() })
+        .eq("customer_id", assignCustomer.id)
+        .neq("status", "canceled");
+
+      // Cria nova assinatura
+      const { data: newSub, error: subErr } = await supabase
+        .from("subscriptions")
+        .insert({
+          customer_id: assignCustomer.id,
+          plan_id: assignForm.plan_id,
+          status: "active",
+          cycle: assignForm.cycle as any,
+          price: Number(assignForm.price || 0),
+          due_day: dueDay,
+          next_due_date: nextDue.toISOString().slice(0, 10),
+        })
+        .select("id")
+        .single();
+      if (subErr) throw subErr;
+
+      // Se "ativar imediatamente", cria fatura paga (libera o gate de acesso)
+      if (assignForm.activate_now) {
+        const planName = plans.find((p) => p.id === assignForm.plan_id)?.name ?? "Plano";
+        const { error: invErr } = await supabase.from("invoices").insert({
+          customer_id: assignCustomer.id,
+          subscription_id: newSub!.id,
+          amount: Number(assignForm.price || 0),
+          status: "paid",
+          due_date: today.toISOString().slice(0, 10),
+          paid_at: new Date().toISOString(),
+          description: `Ativação manual — ${planName} (Super Admin)`,
+          payment_method: "undefined" as any,
+        });
+        if (invErr) throw invErr;
+      }
+
+      toast.success("Plano atribuído", {
+        description: assignForm.activate_now
+          ? "Funcionalidades liberadas imediatamente."
+          : "Aguardando confirmação de pagamento para liberar acesso.",
+      });
+      setAssignCustomer(null);
+      void load();
+    } catch (e: any) {
+      toast.error("Erro ao atribuir plano", { description: e?.message });
+    } finally {
+      setAssigning(false);
     }
   };
 
@@ -363,6 +450,9 @@ function EmpresasPage() {
                             <Button size="icon" variant="ghost" onClick={() => openDetail(c)} title="Ver detalhes">
                               <Eye className="h-4 w-4" />
                             </Button>
+                            <Button size="icon" variant="ghost" onClick={() => openAssign(c)} title="Atribuir plano">
+                              <Package className="h-4 w-4" />
+                            </Button>
                             <Button size="icon" variant="ghost" onClick={() => openEdit(c)} title="Editar">
                               <Pencil className="h-4 w-4" />
                             </Button>
@@ -463,6 +553,89 @@ function EmpresasPage() {
           </AlertDialogFooter>
         </AlertDialogContent>
       </AlertDialog>
+
+      {/* Assign plan dialog */}
+      <Dialog open={!!assignCustomer} onOpenChange={(o) => !o && setAssignCustomer(null)}>
+        <DialogContent className="max-w-md">
+          <DialogHeader>
+            <DialogTitle>Atribuir plano</DialogTitle>
+            <DialogDescription>
+              {assignCustomer?.company_name ?? assignCustomer?.name} — defina o plano e libere as funcionalidades.
+            </DialogDescription>
+          </DialogHeader>
+          <div className="space-y-4">
+            <div className="space-y-2">
+              <Label>Plano</Label>
+              <Select
+                value={assignForm.plan_id}
+                onValueChange={(v) => {
+                  const p = plans.find((x) => x.id === v);
+                  setAssignForm((f) => ({
+                    ...f,
+                    plan_id: v,
+                    price: p ? String(p.price) : f.price,
+                    cycle: p?.cycle ?? f.cycle,
+                  }));
+                }}
+              >
+                <SelectTrigger><SelectValue placeholder="Selecione um plano" /></SelectTrigger>
+                <SelectContent>
+                  {plans.map((p) => (
+                    <SelectItem key={p.id} value={p.id}>{p.name} · {fmtBRL(Number(p.price))}/{p.cycle === "yearly" ? "ano" : "mês"}</SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+            </div>
+            <div className="grid grid-cols-3 gap-3">
+              <div className="space-y-2 col-span-1">
+                <Label>Valor (R$)</Label>
+                <Input
+                  type="number" step="0.01" min="0"
+                  value={assignForm.price}
+                  onChange={(e) => setAssignForm({ ...assignForm, price: e.target.value })}
+                />
+              </div>
+              <div className="space-y-2 col-span-1">
+                <Label>Ciclo</Label>
+                <Select value={assignForm.cycle} onValueChange={(v) => setAssignForm({ ...assignForm, cycle: v })}>
+                  <SelectTrigger><SelectValue /></SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="monthly">Mensal</SelectItem>
+                    <SelectItem value="yearly">Anual</SelectItem>
+                  </SelectContent>
+                </Select>
+              </div>
+              <div className="space-y-2 col-span-1">
+                <Label>Dia venc.</Label>
+                <Input
+                  type="number" min="1" max="28"
+                  value={assignForm.due_day}
+                  onChange={(e) => setAssignForm({ ...assignForm, due_day: Number(e.target.value) })}
+                />
+              </div>
+            </div>
+            <label className="flex items-start gap-3 rounded-md border border-border bg-secondary/40 p-3 cursor-pointer">
+              <Checkbox
+                checked={assignForm.activate_now}
+                onCheckedChange={(v) => setAssignForm({ ...assignForm, activate_now: Boolean(v) })}
+              />
+              <div className="text-sm">
+                <div className="font-medium">Ativar imediatamente (cortesia)</div>
+                <p className="text-xs text-muted-foreground">
+                  Registra uma fatura como paga e libera o acesso ao sistema agora.
+                  Desmarque para apenas criar a assinatura e aguardar pagamento real.
+                </p>
+              </div>
+            </label>
+          </div>
+          <DialogFooter>
+            <Button variant="outline" onClick={() => setAssignCustomer(null)}>Cancelar</Button>
+            <Button onClick={handleAssignPlan} disabled={assigning || !assignForm.plan_id}>
+              {assigning ? "Salvando..." : "Atribuir plano"}
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
 
       {/* Detail dialog */}
       <Dialog open={!!detailCustomer} onOpenChange={(o) => !o && setDetailCustomer(null)}>
