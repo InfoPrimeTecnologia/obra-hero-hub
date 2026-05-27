@@ -7,6 +7,7 @@ import {
   LifeBuoy,
   Settings,
   LogOut,
+  GitBranch,
 } from "lucide-react";
 import { Logo } from "@/components/Logo";
 import { useAuth } from "@/lib/auth-context";
@@ -19,6 +20,7 @@ const nav = [
   { to: "/admin/planos", label: "Planos", icon: Package },
   { to: "/admin/faturas", label: "Faturas", icon: Receipt },
   { to: "/admin/tickets", label: "Tickets", icon: LifeBuoy },
+  { to: "/admin/changelog", label: "Versões", icon: GitBranch },
   { to: "/admin/configuracoes", label: "Configurações", icon: Settings },
 ];
 

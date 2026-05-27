@@ -39,6 +39,7 @@ import { Route as AdminPlanosRouteImport } from './routes/admin.planos'
 import { Route as AdminFaturasRouteImport } from './routes/admin.faturas'
 import { Route as AdminEmpresasRouteImport } from './routes/admin.empresas'
 import { Route as AdminConfiguracoesRouteImport } from './routes/admin.configuracoes'
+import { Route as AdminChangelogRouteImport } from './routes/admin.changelog'
 import { Route as AppObrasIndexRouteImport } from './routes/app.obras.index'
 import { Route as LovableEmailSuppressionRouteImport } from './routes/lovable/email/suppression'
 import { Route as AppRhColaboradoresRouteImport } from './routes/app.rh.colaboradores'
@@ -207,6 +208,11 @@ const AdminConfiguracoesRoute = AdminConfiguracoesRouteImport.update({
   path: '/configuracoes',
   getParentRoute: () => AdminRoute,
 } as any)
+const AdminChangelogRoute = AdminChangelogRouteImport.update({
+  id: '/changelog',
+  path: '/changelog',
+  getParentRoute: () => AdminRoute,
+} as any)
 const AppObrasIndexRoute = AppObrasIndexRouteImport.update({
   id: '/obras/',
   path: '/obras/',
@@ -302,6 +308,7 @@ export interface FileRoutesByFullPath {
   '/admin': typeof AdminRouteWithChildren
   '/app': typeof AppRouteWithChildren
   '/login': typeof LoginRoute
+  '/admin/changelog': typeof AdminChangelogRoute
   '/admin/configuracoes': typeof AdminConfiguracoesRoute
   '/admin/empresas': typeof AdminEmpresasRoute
   '/admin/faturas': typeof AdminFaturasRoute
@@ -349,6 +356,7 @@ export interface FileRoutesByFullPath {
 export interface FileRoutesByTo {
   '/': typeof IndexRoute
   '/login': typeof LoginRoute
+  '/admin/changelog': typeof AdminChangelogRoute
   '/admin/configuracoes': typeof AdminConfiguracoesRoute
   '/admin/empresas': typeof AdminEmpresasRoute
   '/admin/faturas': typeof AdminFaturasRoute
@@ -399,6 +407,7 @@ export interface FileRoutesById {
   '/admin': typeof AdminRouteWithChildren
   '/app': typeof AppRouteWithChildren
   '/login': typeof LoginRoute
+  '/admin/changelog': typeof AdminChangelogRoute
   '/admin/configuracoes': typeof AdminConfiguracoesRoute
   '/admin/empresas': typeof AdminEmpresasRoute
   '/admin/faturas': typeof AdminFaturasRoute
@@ -450,6 +459,7 @@ export interface FileRouteTypes {
     | '/admin'
     | '/app'
     | '/login'
+    | '/admin/changelog'
     | '/admin/configuracoes'
     | '/admin/empresas'
     | '/admin/faturas'
@@ -497,6 +507,7 @@ export interface FileRouteTypes {
   to:
     | '/'
     | '/login'
+    | '/admin/changelog'
     | '/admin/configuracoes'
     | '/admin/empresas'
     | '/admin/faturas'
@@ -546,6 +557,7 @@ export interface FileRouteTypes {
     | '/admin'
     | '/app'
     | '/login'
+    | '/admin/changelog'
     | '/admin/configuracoes'
     | '/admin/empresas'
     | '/admin/faturas'
@@ -820,6 +832,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AdminConfiguracoesRouteImport
       parentRoute: typeof AdminRoute
     }
+    '/admin/changelog': {
+      id: '/admin/changelog'
+      path: '/changelog'
+      fullPath: '/admin/changelog'
+      preLoaderRoute: typeof AdminChangelogRouteImport
+      parentRoute: typeof AdminRoute
+    }
     '/app/obras/': {
       id: '/app/obras/'
       path: '/obras'
@@ -943,6 +962,7 @@ declare module '@tanstack/react-router' {
 }
 
 interface AdminRouteChildren {
+  AdminChangelogRoute: typeof AdminChangelogRoute
   AdminConfiguracoesRoute: typeof AdminConfiguracoesRoute
   AdminEmpresasRoute: typeof AdminEmpresasRoute
   AdminFaturasRoute: typeof AdminFaturasRoute
@@ -952,6 +972,7 @@ interface AdminRouteChildren {
 }
 
 const AdminRouteChildren: AdminRouteChildren = {
+  AdminChangelogRoute: AdminChangelogRoute,
   AdminConfiguracoesRoute: AdminConfiguracoesRoute,
   AdminEmpresasRoute: AdminEmpresasRoute,
   AdminFaturasRoute: AdminFaturasRoute,

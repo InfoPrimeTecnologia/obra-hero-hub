@@ -2,9 +2,23 @@
 const SANDBOX = "https://sandbox.asaas.com/api/v3";
 const PRODUCTION = "https://api.asaas.com/v3";
 
-export function asaasBaseUrl(): string {
+/**
+ * Detecta automaticamente o ambiente a partir do prefixo da API key:
+ *  - $aact_prod_  → produção
+ *  - $aact_hmlg_  → sandbox
+ *  - qualquer outro → usa ASAAS_ENV (default sandbox)
+ * Isso evita o erro comum de configurar a key de produção mas esquecer o ASAAS_ENV.
+ */
+export function asaasEnv(): "production" | "sandbox" {
+  const key = process.env.ASAAS_API_KEY ?? "";
+  if (key.startsWith("$aact_prod_")) return "production";
+  if (key.startsWith("$aact_hmlg_")) return "sandbox";
   const env = (process.env.ASAAS_ENV ?? "sandbox").toLowerCase();
-  return env === "production" ? PRODUCTION : SANDBOX;
+  return env === "production" ? "production" : "sandbox";
+}
+
+export function asaasBaseUrl(): string {
+  return asaasEnv() === "production" ? PRODUCTION : SANDBOX;
 }
 
 export function asaasHeaders(): Record<string, string> {
@@ -13,7 +27,7 @@ export function asaasHeaders(): Record<string, string> {
   return {
     "Content-Type": "application/json",
     access_token: key,
-    "User-Agent": "ObraHeroHub/1.0",
+    "User-Agent": "Mestre360/1.0",
   };
 }
 
@@ -33,7 +47,12 @@ export async function asaasFetch<T = unknown>(
   } catch {
     body = { raw: text };
   }
+  // Log estruturado para facilitar diagnóstico em produção
+  console.log(
+    `[asaas] ${init.method ?? "GET"} ${path} → ${resp.status} (env=${asaasEnv()})`,
+  );
   if (!resp.ok) {
+    console.error(`[asaas] erro:`, text?.slice(0, 500));
     const msg =
       (body as { errors?: Array<{ description?: string }> })?.errors?.[0]
         ?.description ??
