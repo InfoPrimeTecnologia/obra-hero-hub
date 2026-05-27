@@ -42,8 +42,10 @@ const initial = {
 
 function Page() {
   const { user } = useAuth();
+  const { obra } = useObraSelecionada();
   const [items, setItems] = useState<Colab[]>([]);
   const [obras, setObras] = useState<Obra[]>([]);
+  const [obraVinculos, setObraVinculos] = useState<Map<string, Set<string>>>(new Map());
   const [open, setOpen] = useState(false);
   const [saving, setSaving] = useState(false);
   const [editing, setEditing] = useState<Colab | null>(null);
@@ -54,6 +56,7 @@ function Page() {
   const [detailObras, setDetailObras] = useState<string[]>([]);
   const [showInativos, setShowInativos] = useState(false);
   const [q, setQ] = useState("");
+
 
   const load = async () => {
     const { data } = await supabase.from("colaboradores").select("*").is("deleted_at", null).order("nome");
