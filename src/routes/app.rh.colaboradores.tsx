@@ -63,8 +63,17 @@ function Page() {
     setItems((data ?? []) as Colab[]);
     const { data: o } = await supabase.from("obras").select("id,name").order("name");
     setObras((o ?? []) as Obra[]);
+    const { data: vinc } = await supabase.from("colaborador_obras").select("colaborador_id,obra_id");
+    const map = new Map<string, Set<string>>();
+    (vinc ?? []).forEach((r: any) => {
+      const set = map.get(r.colaborador_id) ?? new Set<string>();
+      set.add(r.obra_id);
+      map.set(r.colaborador_id, set);
+    });
+    setObraVinculos(map);
   };
   useEffect(() => { void load(); }, []);
+
 
   const reset = () => { setForm(initial); setEditing(null); setFoto(null); setVinculadas(new Set()); };
 
