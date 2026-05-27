@@ -96,6 +96,15 @@ async function startServer() {
             SUPABASE_URL: process.env.SUPABASE_URL,
             SUPABASE_PUBLISHABLE_KEY: process.env.SUPABASE_PUBLISHABLE_KEY,
             SUPABASE_SERVICE_ROLE_KEY: process.env.SUPABASE_SERVICE_ROLE_KEY,
+            ASAAS_API_KEY: process.env.ASAAS_API_KEY,
+            ASAAS_ENV: process.env.ASAAS_ENV,
+            ASAAS_WEBHOOK_TOKEN: process.env.ASAAS_WEBHOOK_TOKEN,
+            APP_URL: process.env.APP_URL,
+            CRON_SECRET: process.env.CRON_SECRET,
+            SEND_EMAIL_HOOK_SECRET: process.env.SEND_EMAIL_HOOK_SECRET,
+            RESEND_API_KEY: process.env.RESEND_API_KEY,
+            PRIMESYNC_TOKEN: process.env.PRIMESYNC_TOKEN,
+            PRIMESYNC_URL: process.env.PRIMESYNC_URL,
           },
         });
 
