@@ -19,6 +19,8 @@ import {
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/lib/auth-context";
 import { toast } from "sonner";
+import { CompraNotasFiscais } from "@/components/app/CompraNotasFiscais";
+
 
 export const Route = createFileRoute("/app/obras/$obraId/compras/$compraId")({
   component: CompraDetalhePage,
@@ -487,7 +489,11 @@ function CompraDetalhePage() {
             ))}
           </CardContent>
         </Card>
+
+        {/* NOTAS FISCAIS */}
+        <CompraNotasFiscais compraId={compraId} customerId={compra.customer_id} empresarial />
       </div>
+
     </div>
   );
 }

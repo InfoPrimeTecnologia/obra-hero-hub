@@ -16,7 +16,10 @@ import { Checkbox } from "@/components/ui/checkbox";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/lib/auth-context";
 import { getCurrentCustomerId } from "@/lib/customer";
+import { useObraSelecionada } from "@/lib/obra-context";
+import { ObraScopeBadge } from "@/components/app/ObraScopeBadge";
 import { toast } from "sonner";
+
 
 export const Route = createFileRoute("/app/rh/colaboradores")({ component: Page });
 
@@ -39,8 +42,10 @@ const initial = {
 
 function Page() {
   const { user } = useAuth();
+  const { obra } = useObraSelecionada();
   const [items, setItems] = useState<Colab[]>([]);
   const [obras, setObras] = useState<Obra[]>([]);
+  const [obraVinculos, setObraVinculos] = useState<Map<string, Set<string>>>(new Map());
   const [open, setOpen] = useState(false);
   const [saving, setSaving] = useState(false);
   const [editing, setEditing] = useState<Colab | null>(null);
@@ -52,13 +57,23 @@ function Page() {
   const [showInativos, setShowInativos] = useState(false);
   const [q, setQ] = useState("");
 
+
   const load = async () => {
     const { data } = await supabase.from("colaboradores").select("*").is("deleted_at", null).order("nome");
     setItems((data ?? []) as Colab[]);
     const { data: o } = await supabase.from("obras").select("id,name").order("name");
     setObras((o ?? []) as Obra[]);
+    const { data: vinc } = await supabase.from("colaborador_obras").select("colaborador_id,obra_id");
+    const map = new Map<string, Set<string>>();
+    (vinc ?? []).forEach((r: any) => {
+      const set = map.get(r.colaborador_id) ?? new Set<string>();
+      set.add(r.obra_id);
+      map.set(r.colaborador_id, set);
+    });
+    setObraVinculos(map);
   };
   useEffect(() => { void load(); }, []);
+
 
   const reset = () => { setForm(initial); setEditing(null); setFoto(null); setVinculadas(new Set()); };
 
@@ -147,7 +162,9 @@ function Page() {
   const obraName = (id: string) => obras.find((o) => o.id === id)?.name ?? "—";
   const filtered = items
     .filter((c) => showInativos || c.ativo)
+    .filter((c) => !obra || (obraVinculos.get(c.id)?.has(obra.id) ?? false))
     .filter((c) => !q || [c.nome, c.cpf, c.cargo, c.email].filter(Boolean).join(" ").toLowerCase().includes(q.toLowerCase()));
+
 
   return (
     <div>
@@ -230,6 +247,8 @@ function Page() {
           </Dialog>
         } />
       <div className="space-y-3 p-8">
+        <ObraScopeBadge />
+
         <div className="flex flex-wrap items-center gap-3">
           <Input placeholder="Buscar..." value={q} onChange={(e) => setQ(e.target.value)} className="max-w-sm" />
           <label className="flex items-center gap-2 text-sm">
