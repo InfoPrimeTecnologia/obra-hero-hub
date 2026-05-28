@@ -134,21 +134,22 @@ function RdoListPage() {
                   </p>
                 </div>
                 <div className="flex gap-2">
-                  <Button size="sm" variant="outline" asChild>
-                    <Link
-                      to="/app/obras/$obraId/rdo/$rdoId"
-                      params={{ obraId, rdoId: r.id }}
-                    >
-                      <FileText className="mr-2 h-4 w-4" /> Abrir
-                    </Link>
+                  <Button
+                    size="sm"
+                    variant="outline"
+                    type="button"
+                    onClick={() => navigate({ to: "/app/obras/$obraId/rdo/$rdoId", params: { obraId, rdoId: r.id } })}
+                  >
+                    <FileText className="mr-2 h-4 w-4" /> Abrir
                   </Button>
-                  <Button size="sm" variant="outline" asChild title="Abrir RDO para enviar via WhatsApp">
-                    <Link
-                      to="/app/obras/$obraId/rdo/$rdoId"
-                      params={{ obraId, rdoId: r.id }}
-                    >
-                      <MessageCircle className="mr-2 h-4 w-4" /> WhatsApp
-                    </Link>
+                  <Button
+                    size="sm"
+                    variant="outline"
+                    type="button"
+                    title="Abrir RDO para enviar via WhatsApp"
+                    onClick={() => navigate({ to: "/app/obras/$obraId/rdo/$rdoId", params: { obraId, rdoId: r.id } })}
+                  >
+                    <MessageCircle className="mr-2 h-4 w-4" /> WhatsApp
                   </Button>
                 </div>
               </CardHeader>
