@@ -352,7 +352,7 @@ function RdoDetailPage() {
     try {
       const pdfBase64 = gerarPdfBase64();
       const fileName = `RDO-${obra.name.replace(/\s+/g, "_")}-${rdo.data}.pdf`;
-      await sendWhats({
+      const result = await sendWhats({
         data: {
           rdoId: rdo.id,
           obraId: obra.id,
@@ -363,7 +363,15 @@ function RdoDetailPage() {
           pdfBase64,
         },
       });
-      toast.success("RDO enviado por WhatsApp");
+      if (result.attachmentsFailed) {
+        toast.warning("RDO enviado, mas alguns anexos falharam", {
+          description: `${result.attachmentsSent} imagem(ns) enviada(s), ${result.attachmentsFailed} falharam.`,
+        });
+      } else if (result.attachmentsSent) {
+        toast.success("RDO e anexos enviados por WhatsApp");
+      } else {
+        toast.success("RDO enviado por WhatsApp");
+      }
     } catch (e) {
       const msg = e instanceof Error ? e.message : String(e);
       toast.error("Falha no envio automático — abrindo WhatsApp Web", { description: msg });
