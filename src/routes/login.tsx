@@ -43,7 +43,9 @@ function LoginPage() {
     try {
       const saved = localStorage.getItem(REMEMBER_KEY);
       if (saved) {
-        setLoginEmail(saved);
+        const parsed = JSON.parse(saved);
+        if (parsed.email) setLoginEmail(parsed.email);
+        if (parsed.password) setLoginPassword(parsed.password);
         setRemember(true);
       }
     } catch { /* ignore */ }
