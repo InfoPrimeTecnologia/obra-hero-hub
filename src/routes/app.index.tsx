@@ -79,8 +79,9 @@ type AlertaConta = { id: string; descricao: string; vencimento: string; valor: n
 
 function ClienteDashboard() {
   const { user } = useAuth();
-  const { obra } = useObraSelecionada();
+  const { obra, setObra } = useObraSelecionada();
   const [loading, setLoading] = useState(true);
+  const [obrasDisponiveis, setObrasDisponiveis] = useState<Obra[]>([]);
   const [kpis, setKpis] = useState<Kpis>({
     empresas: 0,
     obras: 0,
@@ -96,6 +97,20 @@ function ClienteDashboard() {
   const [obrasStatus, setObrasStatus] = useState<{ name: string; value: number }[]>([]);
   const [rdosRecentes, setRdosRecentes] = useState<RdoRecente[]>([]);
   const [alertas, setAlertas] = useState<AlertaConta[]>([]);
+
+  useEffect(() => {
+    let alive = true;
+    (async () => {
+      const { data } = await supabase
+        .from("obras")
+        .select("id,name,customer_id,empresa_id,contact_name,contact_email,contact_whatsapp,address_city,address_state,status,foto_url")
+        .eq("status", "active")
+        .order("name");
+      if (alive) setObrasDisponiveis((data ?? []) as Obra[]);
+    })();
+    return () => { alive = false; };
+  }, []);
+
 
   useEffect(() => {
     let alive = true;
