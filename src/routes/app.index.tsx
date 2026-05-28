@@ -40,10 +40,19 @@ import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Progress } from "@/components/ui/progress";
 import { Skeleton } from "@/components/ui/skeleton";
+import {
+  DropdownMenu,
+  DropdownMenuTrigger,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuLabel,
+  DropdownMenuSeparator,
+} from "@/components/ui/dropdown-menu";
 import { supabase } from "@/integrations/supabase/client";
-import { useObraSelecionada } from "@/lib/obra-context";
+import { useObraSelecionada, type Obra } from "@/lib/obra-context";
 import { useAuth } from "@/lib/auth-context";
 import { cn } from "@/lib/utils";
+
 
 export const Route = createFileRoute("/app/")({
   component: ClienteDashboard,
