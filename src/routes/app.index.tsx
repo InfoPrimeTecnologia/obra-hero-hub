@@ -14,7 +14,10 @@ import {
   Plus,
   Activity,
   CalendarClock,
+  Filter,
+  Check,
 } from "lucide-react";
+
 import {
   Area,
   AreaChart,
