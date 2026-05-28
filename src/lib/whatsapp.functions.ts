@@ -201,6 +201,7 @@ export const sendRdoWhatsApp = createServerFn({ method: "POST" })
 
         const attachmentFailures = attempts.filter((attempt) => attempt.kind === "attachment" && !attempt.ok);
         if (attachmentFailures.length) {
+          status = "partial";
           errMsg = `${attachmentFailures.length} anexo(s) não foram enviados`;
         }
         respJson = { attempts };
