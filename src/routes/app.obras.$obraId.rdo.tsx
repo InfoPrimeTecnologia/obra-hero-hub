@@ -1,4 +1,4 @@
-import { createFileRoute, Link } from "@tanstack/react-router";
+import { createFileRoute, Link, Outlet, useLocation, useNavigate } from "@tanstack/react-router";
 import { useEffect, useState } from "react";
 import { ArrowLeft, ClipboardList, Plus, FileText, MessageCircle } from "lucide-react";
 import { PageHeader } from "@/components/admin/PageHeader";
@@ -32,6 +32,8 @@ type Rdo = {
 
 function RdoListPage() {
   const { obraId } = Route.useParams();
+  const location = useLocation();
+  const navigate = useNavigate();
   const { user } = useAuth();
   const [obra, setObra] = useState<Obra | null>(null);
   const [rdos, setRdos] = useState<Rdo[]>([]);
@@ -84,9 +86,14 @@ function RdoListPage() {
     setOpen(false);
     setResponsavel("");
     if (created) {
-      window.location.href = `/app/obras/${obraId}/rdo/${created.id}`;
+      navigate({ to: "/app/obras/$obraId/rdo/$rdoId", params: { obraId, rdoId: created.id } });
     }
   };
+
+  const listPath = `/app/obras/${obraId}/rdo`;
+  if (location.pathname.replace(/\/$/, "") !== listPath) {
+    return <Outlet />;
+  }
 
   return (
     <div>
