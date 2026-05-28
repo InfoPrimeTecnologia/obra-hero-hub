@@ -1,6 +1,34 @@
 import { Link, Outlet, useLocation, useNavigate } from "@tanstack/react-router";
 import { useEffect, useState } from "react";
-import { LayoutDashboard, HardHat, LogOut, Building2, ListTree, ClipboardList, Truck, CreditCard, ShoppingCart, Wallet, Tags, Receipt, ArrowDownToLine, ArrowLeftRight, BarChart3, FileSpreadsheet, DollarSign, ChevronDown, Package, Warehouse, ArrowUpDown, ClipboardCheck, Users, UserPlus, FileBarChart2, Sparkles, Layers } from "lucide-react";
+import {
+  LayoutDashboard,
+  HardHat,
+  LogOut,
+  Building2,
+  ListTree,
+  ClipboardList,
+  Truck,
+  CreditCard,
+  ShoppingCart,
+  Wallet,
+  Tags,
+  Receipt,
+  ArrowDownToLine,
+  ArrowLeftRight,
+  BarChart3,
+  FileSpreadsheet,
+  DollarSign,
+  ChevronDown,
+  Package,
+  Warehouse,
+  ArrowUpDown,
+  ClipboardCheck,
+  Users,
+  UserPlus,
+  FileBarChart2,
+  Sparkles,
+  Layers,
+} from "lucide-react";
 import { Logo } from "@/components/Logo";
 import { useAuth } from "@/lib/auth-context";
 import { Button } from "@/components/ui/button";
@@ -8,7 +36,6 @@ import { TopBar } from "@/components/app/TopBar";
 import { cn } from "@/lib/utils";
 import { useObraSelecionada } from "@/lib/obra-context";
 import { usePlanModules } from "@/lib/use-plan-modules";
-
 
 type NavItem = {
   to: string;
@@ -27,6 +54,7 @@ type NavGroup = {
 
 const nav: Array<NavItem | NavGroup> = [
   { to: "/app", label: "Dashboard", icon: LayoutDashboard, exact: true },
+  { to: "/app/obras", label: "Obras", icon: HardHat, module: "obras" },
   { to: "/app/empresas", label: "Empresas", icon: Building2 },
   {
     label: "Estoque",
@@ -45,9 +73,7 @@ const nav: Array<NavItem | NavGroup> = [
     label: "RH",
     icon: Users,
     module: "rh",
-    children: [
-      { to: "/app/rh/colaboradores", label: "Colaboradores", icon: UserPlus },
-    ],
+    children: [{ to: "/app/rh/colaboradores", label: "Colaboradores", icon: UserPlus }],
   },
   {
     label: "Financeiro",
@@ -74,7 +100,7 @@ function isGroup(item: NavItem | NavGroup): item is NavGroup {
 
 export function AppLayout() {
   const { signOut, user } = useAuth();
-  const { obra, setObra } = useObraSelecionada();
+  const { obra } = useObraSelecionada();
   const location = useLocation();
   const navigate = useNavigate();
   const [openGroups, setOpenGroups] = useState<Record<string, boolean>>({});
@@ -87,7 +113,6 @@ export function AppLayout() {
     navigate({ to: "/login" });
   };
 
-
   return (
     <div className="flex min-h-screen bg-background">
       <aside className="sticky top-0 flex h-screen w-64 flex-col bg-sidebar text-sidebar-foreground">
@@ -96,9 +121,7 @@ export function AppLayout() {
         </div>
         {obra ? (
           <div className="border-b border-sidebar-border px-4 py-3">
-            <p className="text-xs uppercase tracking-wide text-sidebar-foreground/60">
-              Obra ativa
-            </p>
+            <p className="text-xs uppercase tracking-wide text-sidebar-foreground/60">Obra ativa</p>
             <p className="truncate text-sm font-medium">{obra.name}</p>
             <div className="mt-2 flex flex-wrap gap-2">
               <Link
@@ -126,49 +149,27 @@ export function AppLayout() {
           </div>
         ) : null}
         <nav className="flex-1 space-y-1 overflow-y-auto p-3">
-          {hasModule("obras") && (
-            <Link
-              to="/app/obras"
-              className={cn(
-                "flex w-full items-center gap-3 rounded-md px-3 py-2.5 text-sm font-medium transition-colors",
-                location.pathname.startsWith("/app/obras")
-                  ? "bg-sidebar-primary text-sidebar-primary-foreground"
-                  : "text-sidebar-foreground/80 hover:bg-sidebar-accent hover:text-sidebar-accent-foreground"
-              )}
-            >
-              <HardHat className="h-4 w-4" />
-              <span className="flex-1 text-left">Obras</span>
-            </Link>
-          )}
-
           {visibleNav.map((item) => {
             if (isGroup(item)) {
-              const groupActive = item.children.some((c) =>
-                location.pathname.startsWith(c.to)
-              );
+              const groupActive = item.children.some((c) => location.pathname.startsWith(c.to));
               const open = openGroups[item.label] ?? groupActive;
               const Icon = item.icon;
               return (
                 <div key={item.label}>
                   <button
                     type="button"
-                    onClick={() =>
-                      setOpenGroups((prev) => ({ ...prev, [item.label]: !open }))
-                    }
+                    onClick={() => setOpenGroups((prev) => ({ ...prev, [item.label]: !open }))}
                     className={cn(
                       "flex w-full items-center gap-3 rounded-md px-3 py-2.5 text-sm font-medium transition-colors",
                       groupActive
                         ? "text-sidebar-foreground"
-                        : "text-sidebar-foreground/80 hover:bg-sidebar-accent hover:text-sidebar-accent-foreground"
+                        : "text-sidebar-foreground/80 hover:bg-sidebar-accent hover:text-sidebar-accent-foreground",
                     )}
                   >
                     <Icon className="h-4 w-4" />
                     <span className="flex-1 text-left">{item.label}</span>
                     <ChevronDown
-                      className={cn(
-                        "h-4 w-4 transition-transform",
-                        open ? "rotate-180" : ""
-                      )}
+                      className={cn("h-4 w-4 transition-transform", open ? "rotate-180" : "")}
                     />
                   </button>
                   {open ? (
@@ -184,7 +185,7 @@ export function AppLayout() {
                               "flex items-center gap-3 rounded-md px-3 py-2 text-sm transition-colors",
                               childActive
                                 ? "bg-sidebar-primary text-sidebar-primary-foreground"
-                                : "text-sidebar-foreground/70 hover:bg-sidebar-accent hover:text-sidebar-accent-foreground"
+                                : "text-sidebar-foreground/70 hover:bg-sidebar-accent hover:text-sidebar-accent-foreground",
                             )}
                           >
                             <ChildIcon className="h-4 w-4" />
@@ -210,7 +211,7 @@ export function AppLayout() {
                   "flex items-center gap-3 rounded-md px-3 py-2.5 text-sm font-medium transition-colors",
                   active
                     ? "bg-sidebar-primary text-sidebar-primary-foreground"
-                    : "text-sidebar-foreground/80 hover:bg-sidebar-accent hover:text-sidebar-accent-foreground"
+                    : "text-sidebar-foreground/80 hover:bg-sidebar-accent hover:text-sidebar-accent-foreground",
                 )}
               >
                 <Icon className="h-4 w-4" />
@@ -220,9 +221,7 @@ export function AppLayout() {
           })}
         </nav>
         <div className="border-t border-sidebar-border p-3">
-          <div className="mb-2 truncate px-3 text-xs text-sidebar-foreground/60">
-            {user?.email}
-          </div>
+          <div className="mb-2 truncate px-3 text-xs text-sidebar-foreground/60">{user?.email}</div>
           <Button
             variant="ghost"
             onClick={handleSignOut}
