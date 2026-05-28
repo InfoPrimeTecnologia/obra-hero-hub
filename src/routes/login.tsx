@@ -13,7 +13,7 @@ import { useAuth } from "@/lib/auth-context";
 import { toast } from "sonner";
 import { resendConfirmation, requestMagicLink, signupWithEmail } from "@/lib/auth-email.functions";
 
-const REMEMBER_KEY = "mestre360.remember_email";
+const REMEMBER_KEY = "mestre360.remember";
 
 export const Route = createFileRoute("/login")({
   component: LoginPage,
@@ -43,7 +43,9 @@ function LoginPage() {
     try {
       const saved = localStorage.getItem(REMEMBER_KEY);
       if (saved) {
-        setLoginEmail(saved);
+        const parsed = JSON.parse(saved);
+        if (parsed.email) setLoginEmail(parsed.email);
+        if (parsed.password) setLoginPassword(parsed.password);
         setRemember(true);
       }
     } catch { /* ignore */ }
@@ -124,7 +126,7 @@ function LoginPage() {
       toast.error("Falha no login", { description: error.message });
     } else {
       try {
-        if (remember) localStorage.setItem(REMEMBER_KEY, loginEmail);
+        if (remember) localStorage.setItem(REMEMBER_KEY, JSON.stringify({ email: loginEmail, password: loginPassword }));
         else localStorage.removeItem(REMEMBER_KEY);
       } catch { /* ignore */ }
       toast.success("Bem-vindo de volta!");
@@ -236,7 +238,7 @@ function LoginPage() {
                         onCheckedChange={(v) => setRemember(v === true)}
                       />
                       <Label htmlFor="remember-me" className="cursor-pointer text-sm font-normal">
-                        Lembrar meu e-mail neste dispositivo
+                        Lembrar meu e-mail e senha neste dispositivo
                       </Label>
                     </div>
                     <Button type="submit" className="w-full" disabled={loading}>
