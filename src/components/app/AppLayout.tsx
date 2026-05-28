@@ -78,23 +78,8 @@ export function AppLayout() {
   const { obra, setObra } = useObraSelecionada();
   const location = useLocation();
   const navigate = useNavigate();
-  const [openGroups, setOpenGroups] = useState<Record<string, boolean>>({ Obras: true });
+  const [openGroups, setOpenGroups] = useState<Record<string, boolean>>({});
   const { has: hasModule } = usePlanModules();
-  const [obrasList, setObrasList] = useState<Obra[]>([]);
-
-  useEffect(() => {
-    if (!hasModule("obras")) return;
-    let alive = true;
-    (async () => {
-      const { data } = await supabase
-        .from("obras")
-        .select("id,name,customer_id,empresa_id,contact_name,contact_email,contact_whatsapp,address_city,address_state,status,foto_url")
-        .eq("status", "active")
-        .order("name");
-      if (alive) setObrasList((data ?? []) as Obra[]);
-    })();
-    return () => { alive = false; };
-  }, [hasModule, obra?.id]);
 
   const visibleNav = nav.filter((item) => !item.module || hasModule(item.module));
 
@@ -103,11 +88,6 @@ export function AppLayout() {
     navigate({ to: "/login" });
   };
 
-  const selecionarObra = (o: Obra) => {
-    setObra(o);
-    toast.success(`Obra ativa: ${o.name}`);
-    navigate({ to: "/app" });
-  };
 
   return (
     <div className="flex min-h-screen bg-background">
