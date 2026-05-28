@@ -13,7 +13,7 @@ import { useAuth } from "@/lib/auth-context";
 import { toast } from "sonner";
 import { resendConfirmation, requestMagicLink, signupWithEmail } from "@/lib/auth-email.functions";
 
-const REMEMBER_KEY = "mestre360.remember_email";
+const REMEMBER_KEY = "mestre360.remember";
 
 export const Route = createFileRoute("/login")({
   component: LoginPage,
