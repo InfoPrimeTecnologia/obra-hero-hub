@@ -290,11 +290,41 @@ function ClienteDashboard() {
                     Obra ativa: <span className="font-medium text-sidebar-foreground">{obra.name}</span>
                   </>
                 ) : (
-                  "Selecione uma obra para ações rápidas no menu lateral."
+                  "Use o filtro ao lado para ver métricas de uma obra específica."
                 )}
               </p>
             </div>
             <div className="flex flex-wrap gap-2">
+              <DropdownMenu>
+                <DropdownMenuTrigger asChild>
+                  <Button variant="secondary" className="gap-2">
+                    <Filter className="h-4 w-4" />
+                    {obra ? obra.name : "Filtrar obra"}
+                  </Button>
+                </DropdownMenuTrigger>
+                <DropdownMenuContent align="end" className="w-64">
+                  <DropdownMenuLabel>Filtrar dashboard por obra</DropdownMenuLabel>
+                  <DropdownMenuSeparator />
+                  <DropdownMenuItem onClick={() => setObra(null)}>
+                    {!obra && <Check className="h-4 w-4" />}
+                    <span className={cn(obra ? "ml-6" : "")}>Todas as obras</span>
+                  </DropdownMenuItem>
+                  <DropdownMenuSeparator />
+                  {obrasDisponiveis.length === 0 ? (
+                    <DropdownMenuItem disabled>Nenhuma obra ativa</DropdownMenuItem>
+                  ) : (
+                    obrasDisponiveis.map((o) => {
+                      const ativa = obra?.id === o.id;
+                      return (
+                        <DropdownMenuItem key={o.id} onClick={() => setObra(o)}>
+                          {ativa && <Check className="h-4 w-4" />}
+                          <span className={cn("truncate", !ativa ? "ml-6" : "")}>{o.name}</span>
+                        </DropdownMenuItem>
+                      );
+                    })
+                  )}
+                </DropdownMenuContent>
+              </DropdownMenu>
               <Button asChild variant="secondary" className="gap-2">
                 <Link to="/app/obras">
                   <HardHat className="h-4 w-4" /> Obras
@@ -308,6 +338,7 @@ function ClienteDashboard() {
                 </Button>
               ) : null}
             </div>
+
           </div>
         </div>
 
