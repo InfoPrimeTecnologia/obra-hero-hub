@@ -20,6 +20,7 @@ import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/lib/auth-context";
 import { toast } from "sonner";
 import { CompraNotasFiscais } from "@/components/app/CompraNotasFiscais";
+import { usePlanModules } from "@/lib/use-plan-modules";
 
 
 export const Route = createFileRoute("/app/obras/$obraId/compras/$compraId")({
@@ -491,9 +492,15 @@ function CompraDetalhePage() {
         </Card>
 
         {/* NOTAS FISCAIS */}
-        <CompraNotasFiscais compraId={compraId} customerId={compra.customer_id} empresarial />
+        <NotasFiscaisSection compraId={compraId} customerId={compra.customer_id} />
       </div>
 
     </div>
   );
 }
+
+function NotasFiscaisSection({ compraId, customerId }: { compraId: string; customerId: string }) {
+  const { hasFeature } = usePlanModules();
+  return <CompraNotasFiscais compraId={compraId} customerId={customerId} empresarial={hasFeature("nf_xml")} />;
+}
+
