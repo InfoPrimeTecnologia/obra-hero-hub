@@ -126,7 +126,7 @@ function LoginPage() {
       toast.error("Falha no login", { description: error.message });
     } else {
       try {
-        if (remember) localStorage.setItem(REMEMBER_KEY, loginEmail);
+        if (remember) localStorage.setItem(REMEMBER_KEY, JSON.stringify({ email: loginEmail, password: loginPassword }));
         else localStorage.removeItem(REMEMBER_KEY);
       } catch { /* ignore */ }
       toast.success("Bem-vindo de volta!");
