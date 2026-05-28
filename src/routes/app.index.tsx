@@ -14,7 +14,10 @@ import {
   Plus,
   Activity,
   CalendarClock,
+  Filter,
+  Check,
 } from "lucide-react";
+
 import {
   Area,
   AreaChart,
@@ -37,10 +40,19 @@ import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Progress } from "@/components/ui/progress";
 import { Skeleton } from "@/components/ui/skeleton";
+import {
+  DropdownMenu,
+  DropdownMenuTrigger,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuLabel,
+  DropdownMenuSeparator,
+} from "@/components/ui/dropdown-menu";
 import { supabase } from "@/integrations/supabase/client";
-import { useObraSelecionada } from "@/lib/obra-context";
+import { useObraSelecionada, type Obra } from "@/lib/obra-context";
 import { useAuth } from "@/lib/auth-context";
 import { cn } from "@/lib/utils";
+
 
 export const Route = createFileRoute("/app/")({
   component: ClienteDashboard,
@@ -67,8 +79,9 @@ type AlertaConta = { id: string; descricao: string; vencimento: string; valor: n
 
 function ClienteDashboard() {
   const { user } = useAuth();
-  const { obra } = useObraSelecionada();
+  const { obra, setObra } = useObraSelecionada();
   const [loading, setLoading] = useState(true);
+  const [obrasDisponiveis, setObrasDisponiveis] = useState<Obra[]>([]);
   const [kpis, setKpis] = useState<Kpis>({
     empresas: 0,
     obras: 0,
@@ -84,6 +97,20 @@ function ClienteDashboard() {
   const [obrasStatus, setObrasStatus] = useState<{ name: string; value: number }[]>([]);
   const [rdosRecentes, setRdosRecentes] = useState<RdoRecente[]>([]);
   const [alertas, setAlertas] = useState<AlertaConta[]>([]);
+
+  useEffect(() => {
+    let alive = true;
+    (async () => {
+      const { data } = await supabase
+        .from("obras")
+        .select("id,name,customer_id,empresa_id,contact_name,contact_email,contact_whatsapp,address_city,address_state,status,foto_url")
+        .eq("status", "active")
+        .order("name");
+      if (alive) setObrasDisponiveis((data ?? []) as Obra[]);
+    })();
+    return () => { alive = false; };
+  }, []);
+
 
   useEffect(() => {
     let alive = true;
@@ -263,11 +290,41 @@ function ClienteDashboard() {
                     Obra ativa: <span className="font-medium text-sidebar-foreground">{obra.name}</span>
                   </>
                 ) : (
-                  "Selecione uma obra para ações rápidas no menu lateral."
+                  "Use o filtro ao lado para ver métricas de uma obra específica."
                 )}
               </p>
             </div>
             <div className="flex flex-wrap gap-2">
+              <DropdownMenu>
+                <DropdownMenuTrigger asChild>
+                  <Button variant="secondary" className="gap-2">
+                    <Filter className="h-4 w-4" />
+                    {obra ? obra.name : "Filtrar obra"}
+                  </Button>
+                </DropdownMenuTrigger>
+                <DropdownMenuContent align="end" className="w-64">
+                  <DropdownMenuLabel>Filtrar dashboard por obra</DropdownMenuLabel>
+                  <DropdownMenuSeparator />
+                  <DropdownMenuItem onClick={() => setObra(null)}>
+                    {!obra && <Check className="h-4 w-4" />}
+                    <span className={cn(obra ? "ml-6" : "")}>Todas as obras</span>
+                  </DropdownMenuItem>
+                  <DropdownMenuSeparator />
+                  {obrasDisponiveis.length === 0 ? (
+                    <DropdownMenuItem disabled>Nenhuma obra ativa</DropdownMenuItem>
+                  ) : (
+                    obrasDisponiveis.map((o) => {
+                      const ativa = obra?.id === o.id;
+                      return (
+                        <DropdownMenuItem key={o.id} onClick={() => setObra(o)}>
+                          {ativa && <Check className="h-4 w-4" />}
+                          <span className={cn("truncate", !ativa ? "ml-6" : "")}>{o.name}</span>
+                        </DropdownMenuItem>
+                      );
+                    })
+                  )}
+                </DropdownMenuContent>
+              </DropdownMenu>
               <Button asChild variant="secondary" className="gap-2">
                 <Link to="/app/obras">
                   <HardHat className="h-4 w-4" /> Obras
@@ -281,6 +338,7 @@ function ClienteDashboard() {
                 </Button>
               ) : null}
             </div>
+
           </div>
         </div>
 
