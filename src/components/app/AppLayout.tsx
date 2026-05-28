@@ -27,6 +27,7 @@ type NavGroup = {
 
 const nav: Array<NavItem | NavGroup> = [
   { to: "/app", label: "Dashboard", icon: LayoutDashboard, exact: true },
+  { to: "/app/obras", label: "Obras", icon: HardHat, module: "obras" },
   { to: "/app/empresas", label: "Empresas", icon: Building2 },
   {
     label: "Estoque",
@@ -74,7 +75,7 @@ function isGroup(item: NavItem | NavGroup): item is NavGroup {
 
 export function AppLayout() {
   const { signOut, user } = useAuth();
-  const { obra, setObra } = useObraSelecionada();
+  const { obra } = useObraSelecionada();
   const location = useLocation();
   const navigate = useNavigate();
   const [openGroups, setOpenGroups] = useState<Record<string, boolean>>({});
@@ -126,21 +127,6 @@ export function AppLayout() {
           </div>
         ) : null}
         <nav className="flex-1 space-y-1 overflow-y-auto p-3">
-          {hasModule("obras") && (
-            <Link
-              to="/app/obras"
-              className={cn(
-                "flex w-full items-center gap-3 rounded-md px-3 py-2.5 text-sm font-medium transition-colors",
-                location.pathname.startsWith("/app/obras")
-                  ? "bg-sidebar-primary text-sidebar-primary-foreground"
-                  : "text-sidebar-foreground/80 hover:bg-sidebar-accent hover:text-sidebar-accent-foreground"
-              )}
-            >
-              <HardHat className="h-4 w-4" />
-              <span className="flex-1 text-left">Obras</span>
-            </Link>
-          )}
-
           {visibleNav.map((item) => {
             if (isGroup(item)) {
               const groupActive = item.children.some((c) =>
