@@ -498,3 +498,9 @@ function CompraDetalhePage() {
     </div>
   );
 }
+
+function NotasFiscaisSection({ compraId, customerId }: { compraId: string; customerId: string }) {
+  const { hasFeature } = usePlanModules();
+  return <CompraNotasFiscais compraId={compraId} customerId={customerId} empresarial={hasFeature("nf_xml")} />;
+}
+
