@@ -6,10 +6,9 @@ import { useAuth } from "@/lib/auth-context";
 import { Button } from "@/components/ui/button";
 import { TopBar } from "@/components/app/TopBar";
 import { cn } from "@/lib/utils";
-import { useObraSelecionada, type Obra } from "@/lib/obra-context";
+import { useObraSelecionada } from "@/lib/obra-context";
 import { usePlanModules } from "@/lib/use-plan-modules";
-import { supabase } from "@/integrations/supabase/client";
-import { toast } from "sonner";
+
 
 type NavItem = {
   to: string;
