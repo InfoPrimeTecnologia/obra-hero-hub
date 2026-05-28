@@ -238,7 +238,7 @@ function LoginPage() {
                         onCheckedChange={(v) => setRemember(v === true)}
                       />
                       <Label htmlFor="remember-me" className="cursor-pointer text-sm font-normal">
-                        Lembrar meu e-mail neste dispositivo
+                        Lembrar meu e-mail e senha neste dispositivo
                       </Label>
                     </div>
                     <Button type="submit" className="w-full" disabled={loading}>
