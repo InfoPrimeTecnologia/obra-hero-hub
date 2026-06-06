@@ -51,6 +51,9 @@ function ComprasPage() {
   const [cartoes, setCartoes] = useState<Cartao[]>([]);
   const [open, setOpen] = useState(false);
   const [saving, setSaving] = useState(false);
+  const [novoFornOpen, setNovoFornOpen] = useState(false);
+  const [savingForn, setSavingForn] = useState(false);
+  const [novoForn, setNovoForn] = useState({ nome: "", cpf_cnpj: "", telefone: "", email: "" });
   const [form, setForm] = useState({
     fornecedor_id: "",
     descricao: "",
