@@ -3,7 +3,7 @@ import crypto from 'crypto';
 import { supabaseAdmin } from '@/integrations/supabase/client.server';
 
 const FROM = 'Mestre 360 <noreply@mestre360.com.br>';
-const RESEND_API_URL = 'https://api.resend.com';
+const RESEND_GATEWAY_URL = 'https://connector-gateway.lovable.dev/resend';
 
 export type TokenType = 'signup' | 'recovery' | 'magic_link';
 
@@ -73,13 +73,16 @@ export async function isOnCooldown(email: string, type: TokenType) {
 
 export async function sendEmail(args: { to: string; subject: string; html: string }) {
   const RESEND_API_KEY = process.env.RESEND_API_KEY;
+  const LOVABLE_API_KEY = process.env.LOVABLE_API_KEY;
   if (!RESEND_API_KEY) throw new Error('RESEND_API_KEY is not configured');
+  if (!LOVABLE_API_KEY) throw new Error('LOVABLE_API_KEY is not configured');
 
-  const res = await fetch(`${RESEND_API_URL}/emails`, {
+  const res = await fetch(`${RESEND_GATEWAY_URL}/emails`, {
     method: 'POST',
     headers: {
       'Content-Type': 'application/json',
-      Authorization: `Bearer ${RESEND_API_KEY}`,
+      Authorization: `Bearer ${LOVABLE_API_KEY}`,
+      'X-Connection-Api-Key': RESEND_API_KEY,
     },
     body: JSON.stringify({
       from: FROM,
