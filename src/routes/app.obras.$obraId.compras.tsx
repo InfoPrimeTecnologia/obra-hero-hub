@@ -102,6 +102,30 @@ function ComprasPage() {
     navigate({ to: "/app/obras/$obraId/compras/$compraId", params: { obraId, compraId: data!.id } });
   };
 
+  const cadastrarFornecedor = async (e: FormEvent) => {
+    e.preventDefault();
+    if (!novoForn.nome.trim()) return toast.error("Informe o nome do fornecedor");
+    setSavingForn(true);
+    const { data: customer } = await supabase
+      .from("customers").select("id").eq("owner_user_id", user!.id).maybeSingle();
+    if (!customer) { setSavingForn(false); return toast.error("Conta não identificada"); }
+    const { data, error } = await supabase.from("fornecedores").insert({
+      customer_id: customer.id,
+      created_by: user!.id,
+      nome: novoForn.nome.trim(),
+      cpf_cnpj: novoForn.cpf_cnpj || null,
+      telefone: novoForn.telefone || null,
+      email: novoForn.email || null,
+    }).select("id,nome").single();
+    setSavingForn(false);
+    if (error) return toast.error("Erro", { description: error.message });
+    toast.success("Fornecedor cadastrado");
+    setFornecedores((prev) => [...prev, data as Fornecedor].sort((a, b) => a.nome.localeCompare(b.nome)));
+    setForm((f) => ({ ...f, fornecedor_id: data!.id }));
+    setNovoForn({ nome: "", cpf_cnpj: "", telefone: "", email: "" });
+    setNovoFornOpen(false);
+  };
+
   return (
     <div>
       <PageHeader
