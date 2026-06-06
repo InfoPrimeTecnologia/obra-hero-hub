@@ -1,6 +1,6 @@
 import { createFileRoute, Link, useNavigate } from "@tanstack/react-router";
 import { useEffect, useState, type FormEvent } from "react";
-import { Plus, ArrowLeft, ShoppingCart, Eye } from "lucide-react";
+import { Plus, ArrowLeft, ShoppingCart, Eye, UserPlus } from "lucide-react";
 import { PageHeader } from "@/components/admin/PageHeader";
 import { Card, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
@@ -51,6 +51,9 @@ function ComprasPage() {
   const [cartoes, setCartoes] = useState<Cartao[]>([]);
   const [open, setOpen] = useState(false);
   const [saving, setSaving] = useState(false);
+  const [novoFornOpen, setNovoFornOpen] = useState(false);
+  const [savingForn, setSavingForn] = useState(false);
+  const [novoForn, setNovoForn] = useState({ nome: "", cpf_cnpj: "", telefone: "", email: "" });
   const [form, setForm] = useState({
     fornecedor_id: "",
     descricao: "",
@@ -99,6 +102,30 @@ function ComprasPage() {
     navigate({ to: "/app/obras/$obraId/compras/$compraId", params: { obraId, compraId: data!.id } });
   };
 
+  const cadastrarFornecedor = async (e: FormEvent) => {
+    e.preventDefault();
+    if (!novoForn.nome.trim()) return toast.error("Informe o nome do fornecedor");
+    setSavingForn(true);
+    const { data: customer } = await supabase
+      .from("customers").select("id").eq("owner_user_id", user!.id).maybeSingle();
+    if (!customer) { setSavingForn(false); return toast.error("Conta não identificada"); }
+    const { data, error } = await supabase.from("fornecedores").insert({
+      customer_id: customer.id,
+      created_by: user!.id,
+      nome: novoForn.nome.trim(),
+      cpf_cnpj: novoForn.cpf_cnpj || null,
+      telefone: novoForn.telefone || null,
+      email: novoForn.email || null,
+    }).select("id,nome").single();
+    setSavingForn(false);
+    if (error) return toast.error("Erro", { description: error.message });
+    toast.success("Fornecedor cadastrado");
+    setFornecedores((prev) => [...prev, data as Fornecedor].sort((a, b) => a.nome.localeCompare(b.nome)));
+    setForm((f) => ({ ...f, fornecedor_id: data!.id }));
+    setNovoForn({ nome: "", cpf_cnpj: "", telefone: "", email: "" });
+    setNovoFornOpen(false);
+  };
+
   return (
     <div>
       <PageHeader
@@ -117,10 +144,15 @@ function ComprasPage() {
                 <DialogHeader><DialogTitle>Nova compra</DialogTitle></DialogHeader>
                 <form onSubmit={criar} className="space-y-3">
                   <div className="space-y-2"><Label>Fornecedor</Label>
-                    <Select value={form.fornecedor_id} onValueChange={(v) => setForm({ ...form, fornecedor_id: v })}>
-                      <SelectTrigger><SelectValue placeholder="Selecione (opcional)" /></SelectTrigger>
-                      <SelectContent>{fornecedores.map((f) => <SelectItem key={f.id} value={f.id}>{f.nome}</SelectItem>)}</SelectContent>
-                    </Select>
+                    <div className="flex gap-2">
+                      <Select value={form.fornecedor_id} onValueChange={(v) => setForm({ ...form, fornecedor_id: v })}>
+                        <SelectTrigger className="flex-1"><SelectValue placeholder={fornecedores.length ? "Selecione (opcional)" : "Nenhum cadastrado"} /></SelectTrigger>
+                        <SelectContent>{fornecedores.map((f) => <SelectItem key={f.id} value={f.id}>{f.nome}</SelectItem>)}</SelectContent>
+                      </Select>
+                      <Button type="button" variant="outline" size="sm" onClick={() => setNovoFornOpen(true)}>
+                        <UserPlus className="mr-2 h-4 w-4" /> Novo
+                      </Button>
+                    </div>
                   </div>
                   <div className="space-y-2"><Label>Descrição</Label>
                     <Textarea rows={2} value={form.descricao} onChange={(e) => setForm({ ...form, descricao: e.target.value })} /></div>
@@ -155,6 +187,30 @@ function ComprasPage() {
                         onChange={(e) => setForm({ ...form, data_primeira_parcela: e.target.value })} /></div>
                   </div>
                   <DialogFooter><Button type="submit" disabled={saving}>{saving ? "Salvando..." : "Criar"}</Button></DialogFooter>
+                </form>
+              </DialogContent>
+            </Dialog>
+            <Dialog open={novoFornOpen} onOpenChange={setNovoFornOpen}>
+              <DialogContent>
+                <DialogHeader><DialogTitle>Cadastrar fornecedor</DialogTitle></DialogHeader>
+                <form onSubmit={cadastrarFornecedor} className="space-y-3">
+                  <div className="space-y-2"><Label>Nome *</Label>
+                    <Input required value={novoForn.nome}
+                      onChange={(e) => setNovoForn({ ...novoForn, nome: e.target.value })} /></div>
+                  <div className="grid grid-cols-2 gap-3">
+                    <div className="space-y-2"><Label>CPF/CNPJ</Label>
+                      <Input value={novoForn.cpf_cnpj}
+                        onChange={(e) => setNovoForn({ ...novoForn, cpf_cnpj: e.target.value })} /></div>
+                    <div className="space-y-2"><Label>Telefone</Label>
+                      <Input value={novoForn.telefone}
+                        onChange={(e) => setNovoForn({ ...novoForn, telefone: e.target.value })} /></div>
+                  </div>
+                  <div className="space-y-2"><Label>E-mail</Label>
+                    <Input type="email" value={novoForn.email}
+                      onChange={(e) => setNovoForn({ ...novoForn, email: e.target.value })} /></div>
+                  <DialogFooter>
+                    <Button type="submit" disabled={savingForn}>{savingForn ? "Salvando..." : "Salvar"}</Button>
+                  </DialogFooter>
                 </form>
               </DialogContent>
             </Dialog>
