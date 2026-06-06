@@ -190,6 +190,30 @@ function ComprasPage() {
                 </form>
               </DialogContent>
             </Dialog>
+            <Dialog open={novoFornOpen} onOpenChange={setNovoFornOpen}>
+              <DialogContent>
+                <DialogHeader><DialogTitle>Cadastrar fornecedor</DialogTitle></DialogHeader>
+                <form onSubmit={cadastrarFornecedor} className="space-y-3">
+                  <div className="space-y-2"><Label>Nome *</Label>
+                    <Input required value={novoForn.nome}
+                      onChange={(e) => setNovoForn({ ...novoForn, nome: e.target.value })} /></div>
+                  <div className="grid grid-cols-2 gap-3">
+                    <div className="space-y-2"><Label>CPF/CNPJ</Label>
+                      <Input value={novoForn.cpf_cnpj}
+                        onChange={(e) => setNovoForn({ ...novoForn, cpf_cnpj: e.target.value })} /></div>
+                    <div className="space-y-2"><Label>Telefone</Label>
+                      <Input value={novoForn.telefone}
+                        onChange={(e) => setNovoForn({ ...novoForn, telefone: e.target.value })} /></div>
+                  </div>
+                  <div className="space-y-2"><Label>E-mail</Label>
+                    <Input type="email" value={novoForn.email}
+                      onChange={(e) => setNovoForn({ ...novoForn, email: e.target.value })} /></div>
+                  <DialogFooter>
+                    <Button type="submit" disabled={savingForn}>{savingForn ? "Salvando..." : "Salvar"}</Button>
+                  </DialogFooter>
+                </form>
+              </DialogContent>
+            </Dialog>
           </div>
         }
       />
