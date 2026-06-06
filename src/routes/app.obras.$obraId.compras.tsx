@@ -144,10 +144,15 @@ function ComprasPage() {
                 <DialogHeader><DialogTitle>Nova compra</DialogTitle></DialogHeader>
                 <form onSubmit={criar} className="space-y-3">
                   <div className="space-y-2"><Label>Fornecedor</Label>
-                    <Select value={form.fornecedor_id} onValueChange={(v) => setForm({ ...form, fornecedor_id: v })}>
-                      <SelectTrigger><SelectValue placeholder="Selecione (opcional)" /></SelectTrigger>
-                      <SelectContent>{fornecedores.map((f) => <SelectItem key={f.id} value={f.id}>{f.nome}</SelectItem>)}</SelectContent>
-                    </Select>
+                    <div className="flex gap-2">
+                      <Select value={form.fornecedor_id} onValueChange={(v) => setForm({ ...form, fornecedor_id: v })}>
+                        <SelectTrigger className="flex-1"><SelectValue placeholder={fornecedores.length ? "Selecione (opcional)" : "Nenhum cadastrado"} /></SelectTrigger>
+                        <SelectContent>{fornecedores.map((f) => <SelectItem key={f.id} value={f.id}>{f.nome}</SelectItem>)}</SelectContent>
+                      </Select>
+                      <Button type="button" variant="outline" size="sm" onClick={() => setNovoFornOpen(true)}>
+                        <UserPlus className="mr-2 h-4 w-4" /> Novo
+                      </Button>
+                    </div>
                   </div>
                   <div className="space-y-2"><Label>Descrição</Label>
                     <Textarea rows={2} value={form.descricao} onChange={(e) => setForm({ ...form, descricao: e.target.value })} /></div>
