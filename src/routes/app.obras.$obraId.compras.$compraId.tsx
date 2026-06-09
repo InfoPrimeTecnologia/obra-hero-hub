@@ -435,7 +435,13 @@ function CompraDetalhePage() {
                   </p>
                 </div>
                 <div className="flex items-center gap-2">
-                  <Badge variant={p.status === "pago" ? "default" : "secondary"}>{p.status}</Badge>
+                  {(() => {
+                    const hoje = new Date().toISOString().slice(0, 10);
+                    const atrasada = p.status !== "pago" && p.vencimento < hoje;
+                    const label = p.status === "pago" ? "Paga" : atrasada ? "Atrasada" : "A pagar";
+                    const variant = p.status === "pago" ? "default" : atrasada ? "destructive" : "secondary";
+                    return <Badge variant={variant as "default" | "destructive" | "secondary"}>{label}</Badge>;
+                  })()}
                   <span className="text-sm font-semibold">R$ {Number(p.valor).toFixed(2)}</span>
                   <Button variant="outline" size="sm" onClick={() => togglePagamento(p)}>
                     {p.status === "pago" ? "Estornar" : "Marcar pago"}
