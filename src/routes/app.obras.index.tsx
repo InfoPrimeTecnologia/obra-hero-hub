@@ -120,8 +120,11 @@ function ObrasPage() {
   const uploadFoto = async (obraId: string, file: File) => {
     setUploadingFoto(obraId);
     try {
+      const obra = obras.find((o) => o.id === obraId);
+      const customer_id = obra?.customer_id;
+      if (!customer_id) throw new Error("Conta não identificada");
       const ext = file.name.split(".").pop() ?? "jpg";
-      const path = `${obraId}/${Date.now()}.${ext}`;
+      const path = `${customer_id}/${obraId}/${Date.now()}.${ext}`;
       const { error: upErr } = await supabase.storage.from("obra-fotos").upload(path, file, { upsert: true });
       if (upErr) throw upErr;
       const { data: pub } = supabase.storage.from("obra-fotos").getPublicUrl(path);
@@ -133,6 +136,7 @@ function ObrasPage() {
       toast.error("Erro ao enviar foto", { description: e?.message });
     } finally {
       setUploadingFoto(null);
+
     }
   };
 
