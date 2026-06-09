@@ -86,6 +86,10 @@ function CompraDetalhePage() {
     etapa_id: "", subetapa_id: "",
   });
 
+  const [novoSubOpen, setNovoSubOpen] = useState(false);
+  const [novoSubNome, setNovoSubNome] = useState("");
+  const [savingSub, setSavingSub] = useState(false);
+
   const [openReceb, setOpenReceb] = useState(false);
   const [recebForm, setRecebForm] = useState({
     data: new Date().toISOString().slice(0, 10),
@@ -99,6 +103,7 @@ function CompraDetalhePage() {
     observacoes: "",
     quantidades: {} as Record<string, string>,
   });
+
 
   const carregar = async () => {
     const [{ data: c }, { data: is }, { data: ps }, { data: es }, { data: subs }, { data: rs }, { data: ms }] = await Promise.all([
@@ -143,13 +148,16 @@ function CompraDetalhePage() {
   const salvarItem = async (e: FormEvent) => {
     e.preventDefault();
     if (!compra) return;
+    if (!itemForm.etapa_id || !itemForm.subetapa_id) {
+      return toast.error("Selecione a etapa e a subetapa do item");
+    }
     const qtd = Number(itemForm.quantidade) || 0;
     const vu = Number(itemForm.valor_unitario) || 0;
     const payload = {
       descricao: itemForm.descricao, unidade: itemForm.unidade || null,
       quantidade: qtd, valor_unitario: vu, valor_total: qtd * vu,
-      etapa_id: itemForm.etapa_id || null,
-      subetapa_id: itemForm.subetapa_id || null,
+      etapa_id: itemForm.etapa_id,
+      subetapa_id: itemForm.subetapa_id,
     };
     if (editingItem) {
       const { error } = await supabase.from("compra_itens").update(payload).eq("id", editingItem.id);
@@ -163,6 +171,24 @@ function CompraDetalhePage() {
     await recalcularTotalCompra();
     resetItemForm(); setOpenItem(false); toast.success("Item salvo"); void carregar();
   };
+
+  const criarSubetapaInline = async () => {
+    if (!compra || !itemForm.etapa_id) return toast.error("Selecione uma etapa primeiro");
+    if (!novoSubNome.trim()) return toast.error("Informe o nome da subetapa");
+    setSavingSub(true);
+    const ordem = subetapas.filter((s) => s.etapa_id === itemForm.etapa_id).length + 1;
+    const { data, error } = await supabase.from("orcamento_subetapas").insert({
+      customer_id: compra.customer_id, etapa_id: itemForm.etapa_id,
+      nome: novoSubNome.trim(), ordem,
+    }).select("id,etapa_id,nome").single();
+    setSavingSub(false);
+    if (error) return toast.error("Erro", { description: error.message });
+    setSubetapas((prev) => [...prev, data as Subetapa]);
+    setItemForm((f) => ({ ...f, subetapa_id: data!.id }));
+    setNovoSubNome(""); setNovoSubOpen(false);
+    toast.success("Subetapa criada");
+  };
+
   const excluirItem = async (id: string) => {
     const { error } = await supabase.from("compra_itens").delete().eq("id", id);
     if (error) return toast.error("Erro", { description: error.message });
@@ -320,15 +346,20 @@ function CompraDetalhePage() {
                       <Input type="number" step="0.01" required value={itemForm.valor_unitario} onChange={(e) => setItemForm({ ...itemForm, valor_unitario: e.target.value })} /></div>
                   </div>
                   <div className="grid grid-cols-2 gap-3">
-                    <div className="space-y-2"><Label>Etapa</Label>
+                    <div className="space-y-2"><Label>Etapa *</Label>
                       <Select value={itemForm.etapa_id} onValueChange={(v) => setItemForm({ ...itemForm, etapa_id: v, subetapa_id: "" })}>
-                        <SelectTrigger><SelectValue placeholder="Sem etapa" /></SelectTrigger>
+                        <SelectTrigger><SelectValue placeholder="Selecione" /></SelectTrigger>
                         <SelectContent>{etapas.map((e) => <SelectItem key={e.id} value={e.id}>{e.nome}</SelectItem>)}</SelectContent>
                       </Select>
                     </div>
-                    <div className="space-y-2"><Label>Subetapa</Label>
+                    <div className="space-y-2">
+                      <div className="flex items-center justify-between">
+                        <Label>Subetapa *</Label>
+                        <button type="button" className="text-xs text-primary hover:underline disabled:opacity-50"
+                          disabled={!itemForm.etapa_id} onClick={() => setNovoSubOpen(true)}>+ nova</button>
+                      </div>
                       <Select value={itemForm.subetapa_id} onValueChange={(v) => setItemForm({ ...itemForm, subetapa_id: v })} disabled={!itemForm.etapa_id}>
-                        <SelectTrigger><SelectValue placeholder="—" /></SelectTrigger>
+                        <SelectTrigger><SelectValue placeholder={itemForm.etapa_id ? "Selecione" : "Escolha a etapa"} /></SelectTrigger>
                         <SelectContent>{subsDoForm.map((s) => <SelectItem key={s.id} value={s.id}>{s.nome}</SelectItem>)}</SelectContent>
                       </Select>
                     </div>
@@ -337,6 +368,25 @@ function CompraDetalhePage() {
                 </form>
               </DialogContent>
             </Dialog>
+            <Dialog open={novoSubOpen} onOpenChange={(v) => { setNovoSubOpen(v); if (!v) setNovoSubNome(""); }}>
+              <DialogContent>
+                <DialogHeader><DialogTitle>Nova subetapa</DialogTitle></DialogHeader>
+                <div className="space-y-3">
+                  <div className="space-y-2">
+                    <Label>Nome *</Label>
+                    <Input autoFocus value={novoSubNome} onChange={(e) => setNovoSubNome(e.target.value)}
+                      onKeyDown={(e) => { if (e.key === "Enter") { e.preventDefault(); void criarSubetapaInline(); } }} />
+                    <p className="text-xs text-muted-foreground">
+                      Será criada dentro da etapa selecionada e ficará disponível no orçamento.
+                    </p>
+                  </div>
+                  <DialogFooter>
+                    <Button onClick={criarSubetapaInline} disabled={savingSub}>{savingSub ? "Salvando..." : "Criar"}</Button>
+                  </DialogFooter>
+                </div>
+              </DialogContent>
+            </Dialog>
+
           </CardHeader>
           <CardContent className="space-y-2">
             {itens.length === 0 ? (
