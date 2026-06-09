@@ -81,6 +81,7 @@ const nav: Array<NavItem | NavGroup> = [
     module: "financeiro",
     children: [
       { to: "/app/cartoes", label: "Cartões", icon: CreditCard },
+      { to: "/app/faturas-cartao", label: "Faturas de cartão", icon: Receipt },
       { to: "/app/contas-bancarias", label: "Contas bancárias", icon: Wallet },
       { to: "/app/categorias", label: "Categorias", icon: Tags },
       { to: "/app/contas-pagar", label: "Contas a pagar", icon: Receipt },
