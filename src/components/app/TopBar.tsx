@@ -40,6 +40,7 @@ const SEARCH_ITEMS: NavItem[] = [
   { to: "/app/fornecedores", label: "Fornecedores" },
   { to: "/app/rh/colaboradores", label: "Colaboradores" },
   { to: "/app/cartoes", label: "Cartões" },
+  { to: "/app/faturas-cartao", label: "Faturas de cartão" },
   { to: "/app/contas-bancarias", label: "Contas bancárias" },
   { to: "/app/categorias", label: "Categorias" },
   { to: "/app/contas-pagar", label: "Contas a pagar" },
