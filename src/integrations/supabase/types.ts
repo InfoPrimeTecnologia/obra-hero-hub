@@ -2700,6 +2700,18 @@ export type Database = {
       [_ in never]: never
     }
     Functions: {
+      calcular_competencia_fatura: {
+        Args: {
+          p_data_compra: string
+          p_dia_fechamento: number
+          p_dia_vencimento: number
+        }
+        Returns: {
+          competencia: string
+          dt_fechamento: string
+          dt_vencimento: string
+        }[]
+      }
       current_user_customer_id: { Args: never; Returns: string }
       delete_email: {
         Args: { message_id: number; queue_name: string }
