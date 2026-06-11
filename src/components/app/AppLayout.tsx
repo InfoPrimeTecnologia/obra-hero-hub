@@ -114,7 +114,10 @@ export function AppLayout() {
   const [openGroups, setOpenGroups] = useState<Record<string, boolean>>({});
   const { has: hasModule, hasFeature } = usePlanModules();
 
-  const visibleNav = nav.filter((item) => !item.module || hasModule(item.module));
+  const visibleNav = [
+    ...nav.filter((item) => !item.module || hasModule(item.module)),
+    ...(hasFeature("ai_assistant") ? [aiCreditsNav] : []),
+  ];
 
   useEffect(() => {
     if (!user?.id) return;
