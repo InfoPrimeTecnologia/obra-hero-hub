@@ -1,5 +1,6 @@
 import { Link, Outlet, useLocation, useNavigate } from "@tanstack/react-router";
 import { useEffect, useState } from "react";
+import { startOnboardingTour } from "@/lib/onboarding-tour";
 import {
   LayoutDashboard,
   HardHat,
