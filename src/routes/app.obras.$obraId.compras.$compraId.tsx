@@ -306,6 +306,28 @@ function CompraDetalhePage() {
     toast.success(`Medição #${numero} registrada (R$ ${total.toFixed(2)})`); void carregar();
   };
 
+  const desfazerMedicao = async (med: Medicao) => {
+    if (!compra) return;
+    if (!confirm(`Desfazer medição #${med.numero}? Os itens serão revertidos.`)) return;
+    // buscar itens da medição
+    const { data: linhas, error: e1 } = await supabase
+      .from("medicao_itens").select("*").eq("medicao_id", med.id);
+    if (e1) return toast.error("Erro", { description: e1.message });
+    // reverter qtd_medida em cada compra_item
+    for (const l of linhas ?? []) {
+      const it = itens.find((i) => i.id === l.compra_item_id);
+      if (!it) continue;
+      const novaQtd = Math.max(0, Number(it.qtd_medida) - Number(l.quantidade));
+      await supabase.from("compra_itens").update({ qtd_medida: novaQtd }).eq("id", it.id);
+    }
+    // deletar itens da medição e a medição
+    await supabase.from("medicao_itens").delete().eq("medicao_id", med.id);
+    const { error: e2 } = await supabase.from("medicoes").delete().eq("id", med.id);
+    if (e2) return toast.error("Erro", { description: e2.message });
+    toast.success(`Medição #${med.numero} desfeita`);
+    void carregar();
+  };
+
   if (!compra) return <div className="p-8 text-sm text-muted-foreground">Carregando...</div>;
 
   const subsDoForm = subetapas.filter((s) => s.etapa_id === itemForm.etapa_id);
