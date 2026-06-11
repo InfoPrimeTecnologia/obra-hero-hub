@@ -149,6 +149,26 @@ function FornecedoresPage() {
                   <Input value={form.endereco} onChange={(e) => setForm({ ...form, endereco: e.target.value })} /></div>
                 <div className="space-y-2"><Label>Observações</Label>
                   <Textarea rows={2} value={form.observacoes} onChange={(e) => setForm({ ...form, observacoes: e.target.value })} /></div>
+
+                <div className="rounded-md border bg-muted/30 p-3 space-y-3">
+                  <p className="text-sm font-medium">Chave Pix (opcional)</p>
+                  <div className="grid grid-cols-2 gap-3">
+                    <div className="space-y-2"><Label>Tipo</Label>
+                      <Select value={form.pix_tipo || "none"} onValueChange={(v) => setForm({ ...form, pix_tipo: v === "none" ? "" : (v as PixTipo) })}>
+                        <SelectTrigger><SelectValue placeholder="—" /></SelectTrigger>
+                        <SelectContent>
+                          <SelectItem value="none">—</SelectItem>
+                          {(Object.keys(PIX_LABELS) as PixTipo[]).map((k) => (
+                            <SelectItem key={k} value={k}>{PIX_LABELS[k]}</SelectItem>
+                          ))}
+                        </SelectContent>
+                      </Select>
+                    </div>
+                    <div className="space-y-2"><Label>Chave</Label>
+                      <Input value={form.pix_chave} onChange={(e) => setForm({ ...form, pix_chave: e.target.value })} placeholder="Será exibida mascarada" /></div>
+                  </div>
+                </div>
+
                 <DialogFooter><Button type="submit" disabled={saving}>{saving ? "Salvando..." : "Salvar"}</Button></DialogFooter>
               </form>
             </DialogContent>
