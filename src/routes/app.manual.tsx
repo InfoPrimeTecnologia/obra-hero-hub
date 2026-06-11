@@ -243,7 +243,6 @@ function ManualPage() {
       <PageHeader
         title="Manual da plataforma"
         description="Aprenda a usar cada módulo do Mestre 360 e configure tudo na ordem certa."
-        icon={BookOpen}
       />
 
       <div className="grid gap-4 md:grid-cols-3">
