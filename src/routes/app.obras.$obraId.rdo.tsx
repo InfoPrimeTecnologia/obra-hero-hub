@@ -198,6 +198,15 @@ function RdoListPage() {
                     size="sm"
                     variant="outline"
                     type="button"
+                    onClick={() => duplicar(r)}
+                    title="Duplicar este RDO para uma nova data"
+                  >
+                    <Copy className="mr-2 h-4 w-4" /> Duplicar
+                  </Button>
+                  <Button
+                    size="sm"
+                    variant="outline"
+                    type="button"
                     title="Abrir RDO para enviar via WhatsApp"
                     onClick={() => navigate({ to: "/app/obras/$obraId/rdo/$rdoId", params: { obraId, rdoId: r.id } })}
                   >
