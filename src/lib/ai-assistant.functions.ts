@@ -491,6 +491,9 @@ export const aiChat = createServerFn({ method: "POST" })
       throw new Error("Recurso disponível apenas no plano Empresarial");
     }
 
+    // Cobra créditos antes de invocar o modelo
+    await chargeCredits(supabase, customerId, userId, "chat_message", "Mensagem ao assistente");
+
     const messages: ChatMessage[] = [
       { role: "system", content: SYSTEM_PROMPT },
       ...data.messages,
