@@ -220,3 +220,29 @@ function FornecedoresPage() {
     </div>
   );
 }
+
+function PixDisplay({ tipo, chave }: { tipo: PixTipo; chave: string }) {
+  const [revealed, setRevealed] = useState(false);
+  return (
+    <div className="mt-1 flex items-center gap-2 text-xs">
+      <span className="text-muted-foreground">Pix ({PIX_LABELS[tipo]}):</span>
+      <span className="font-mono">{revealed ? chave : maskPix(tipo, chave)}</span>
+      <button
+        type="button"
+        className="text-muted-foreground hover:text-foreground"
+        onClick={() => setRevealed((v) => !v)}
+        title={revealed ? "Ocultar" : "Revelar"}
+      >
+        {revealed ? <EyeOff className="h-3.5 w-3.5" /> : <Eye className="h-3.5 w-3.5" />}
+      </button>
+      <button
+        type="button"
+        className="text-muted-foreground hover:text-foreground"
+        onClick={() => { void navigator.clipboard.writeText(chave); toast.success("Copiado"); }}
+        title="Copiar"
+      >
+        <Copy className="h-3.5 w-3.5" />
+      </button>
+    </div>
+  );
+}
