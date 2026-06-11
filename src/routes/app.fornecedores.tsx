@@ -70,6 +70,7 @@ function FornecedoresPage() {
       nome: f.nome, cpf_cnpj: f.cpf_cnpj ?? "", email: f.email ?? "",
       telefone: f.telefone ?? "", contato: f.contato ?? "",
       endereco: f.endereco ?? "", observacoes: f.observacoes ?? "",
+      pix_tipo: (f.pix_tipo ?? "") as "" | PixTipo, pix_chave: f.pix_chave ?? "",
     });
     setOpen(true);
   };
