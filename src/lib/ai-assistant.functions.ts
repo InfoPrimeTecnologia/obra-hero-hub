@@ -628,6 +628,10 @@ export const aiTranscribe = createServerFn({ method: "POST" })
       throw new Error("Recurso disponível apenas no plano Empresarial");
     }
 
+    await chargeCredits(supabase, customerId, userId, "transcribe_audio", "Transcrição de áudio");
+
+
+
     const bin = Uint8Array.from(atob(data.audioBase64), (c) => c.charCodeAt(0));
     const ext = data.mime.includes("mp4") ? "m4a" : data.mime.includes("ogg") ? "ogg" : "webm";
     const form = new FormData();
