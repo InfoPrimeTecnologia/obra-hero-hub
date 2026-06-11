@@ -248,6 +248,7 @@ export function AppLayout() {
         <TopBar />
         <Outlet />
       </main>
+      {hasFeature("ai_assistant") ? <AIAssistant /> : null}
     </div>
   );
 }
