@@ -173,24 +173,52 @@ export function TopBar() {
         <kbd className="pointer-events-none absolute right-3 top-1/2 hidden -translate-y-1/2 items-center gap-1 rounded-md border border-border/60 bg-muted px-2 py-0.5 text-[11px] font-medium text-muted-foreground sm:inline-flex">
           ⌘ K
         </kbd>
-        {open && results.length > 0 ? (
-          <div className="absolute left-0 right-0 top-12 z-40 overflow-hidden rounded-xl border border-border/60 bg-popover shadow-[var(--shadow-elevated)]">
-            {results.map((r) => (
-              <button
-                key={r.to}
-                type="button"
-                onMouseDown={(e) => {
-                  e.preventDefault();
-                  navigate({ to: r.to });
-                  setQuery("");
-                  setOpen(false);
-                }}
-                className="flex w-full items-center gap-2 px-4 py-2 text-left text-sm hover:bg-accent/10"
-              >
-                <Search className="h-3 w-3 text-muted-foreground" />
-                {r.label}
-              </button>
-            ))}
+        {open && hasResults ? (
+          <div className="absolute left-0 right-0 top-12 z-40 max-h-96 overflow-y-auto rounded-xl border border-border/60 bg-popover shadow-[var(--shadow-elevated)]">
+            {navResults.length > 0 && (
+              <div>
+                <div className="px-4 pt-2 pb-1 text-[10px] uppercase tracking-wide text-muted-foreground">Navegação</div>
+                {navResults.map((r) => (
+                  <button
+                    key={`nav-${r.to}`}
+                    type="button"
+                    onMouseDown={(e) => {
+                      e.preventDefault();
+                      navigate({ to: r.to });
+                      setQuery(""); setOpen(false);
+                    }}
+                    className="flex w-full items-center gap-2 px-4 py-2 text-left text-sm hover:bg-accent/10"
+                  >
+                    <Search className="h-3 w-3 text-muted-foreground" />
+                    {r.label}
+                  </button>
+                ))}
+              </div>
+            )}
+            {(["Obras", "Compras", "Fornecedores", "Colaboradores"] as const).map((group) => {
+              const items = dynResults.filter((r) => r.group === group);
+              if (items.length === 0) return null;
+              return (
+                <div key={group}>
+                  <div className="px-4 pt-2 pb-1 text-[10px] uppercase tracking-wide text-muted-foreground">{group}</div>
+                  {items.map((r, idx) => (
+                    <button
+                      key={`${group}-${idx}`}
+                      type="button"
+                      onMouseDown={(e) => {
+                        e.preventDefault();
+                        navigate({ to: r.to as any, params: r.params as any });
+                        setQuery(""); setOpen(false);
+                      }}
+                      className="flex w-full items-center gap-2 px-4 py-2 text-left text-sm hover:bg-accent/10"
+                    >
+                      <Search className="h-3 w-3 text-muted-foreground" />
+                      {r.label}
+                    </button>
+                  ))}
+                </div>
+              );
+            })}
           </div>
         ) : null}
       </div>
