@@ -137,6 +137,7 @@ function AssinaturaPage() {
   const [plans, setPlans] = useState<Plan[]>([]);
   const [subscription, setSubscription] = useState<Subscription | null>(null);
   const [invoices, setInvoices] = useState<Invoice[]>([]);
+  const [recargas, setRecargas] = useState<CreditTx[]>([]);
   const [billingType, setBillingType] = useState<BillingType>("UNDEFINED");
   const [billingPeriod, setBillingPeriod] = useState<"monthly" | "semiannual" | "annual">("monthly");
 
