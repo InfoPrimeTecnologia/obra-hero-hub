@@ -86,6 +86,8 @@ function FornecedoresPage() {
       contato: form.contato || null,
       endereco: form.endereco || null,
       observacoes: form.observacoes || null,
+      pix_tipo: form.pix_tipo || null,
+      pix_chave: form.pix_chave || null,
     };
     if (editing) {
       const { error } = await supabase.from("fornecedores").update(payload).eq("id", editing.id);
