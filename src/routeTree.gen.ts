@@ -28,6 +28,7 @@ import { Route as AppFornecedoresRouteImport } from './routes/app.fornecedores'
 import { Route as AppFluxoCaixaRouteImport } from './routes/app.fluxo-caixa'
 import { Route as AppFaturasCartaoRouteImport } from './routes/app.faturas-cartao'
 import { Route as AppEmpresasRouteImport } from './routes/app.empresas'
+import { Route as AppCreditosRouteImport } from './routes/app.creditos'
 import { Route as AppContasReceberRouteImport } from './routes/app.contas-receber'
 import { Route as AppContasPagarRouteImport } from './routes/app.contas-pagar'
 import { Route as AppContasBancariasRouteImport } from './routes/app.contas-bancarias'
@@ -154,6 +155,11 @@ const AppFaturasCartaoRoute = AppFaturasCartaoRouteImport.update({
 const AppEmpresasRoute = AppEmpresasRouteImport.update({
   id: '/empresas',
   path: '/empresas',
+  getParentRoute: () => AppRoute,
+} as any)
+const AppCreditosRoute = AppCreditosRouteImport.update({
+  id: '/creditos',
+  path: '/creditos',
   getParentRoute: () => AppRoute,
 } as any)
 const AppContasReceberRoute = AppContasReceberRouteImport.update({
@@ -340,6 +346,7 @@ export interface FileRoutesByFullPath {
   '/app/contas-bancarias': typeof AppContasBancariasRoute
   '/app/contas-pagar': typeof AppContasPagarRoute
   '/app/contas-receber': typeof AppContasReceberRoute
+  '/app/creditos': typeof AppCreditosRoute
   '/app/empresas': typeof AppEmpresasRoute
   '/app/faturas-cartao': typeof AppFaturasCartaoRoute
   '/app/fluxo-caixa': typeof AppFluxoCaixaRoute
@@ -391,6 +398,7 @@ export interface FileRoutesByTo {
   '/app/contas-bancarias': typeof AppContasBancariasRoute
   '/app/contas-pagar': typeof AppContasPagarRoute
   '/app/contas-receber': typeof AppContasReceberRoute
+  '/app/creditos': typeof AppCreditosRoute
   '/app/empresas': typeof AppEmpresasRoute
   '/app/faturas-cartao': typeof AppFaturasCartaoRoute
   '/app/fluxo-caixa': typeof AppFluxoCaixaRoute
@@ -445,6 +453,7 @@ export interface FileRoutesById {
   '/app/contas-bancarias': typeof AppContasBancariasRoute
   '/app/contas-pagar': typeof AppContasPagarRoute
   '/app/contas-receber': typeof AppContasReceberRoute
+  '/app/creditos': typeof AppCreditosRoute
   '/app/empresas': typeof AppEmpresasRoute
   '/app/faturas-cartao': typeof AppFaturasCartaoRoute
   '/app/fluxo-caixa': typeof AppFluxoCaixaRoute
@@ -500,6 +509,7 @@ export interface FileRouteTypes {
     | '/app/contas-bancarias'
     | '/app/contas-pagar'
     | '/app/contas-receber'
+    | '/app/creditos'
     | '/app/empresas'
     | '/app/faturas-cartao'
     | '/app/fluxo-caixa'
@@ -551,6 +561,7 @@ export interface FileRouteTypes {
     | '/app/contas-bancarias'
     | '/app/contas-pagar'
     | '/app/contas-receber'
+    | '/app/creditos'
     | '/app/empresas'
     | '/app/faturas-cartao'
     | '/app/fluxo-caixa'
@@ -604,6 +615,7 @@ export interface FileRouteTypes {
     | '/app/contas-bancarias'
     | '/app/contas-pagar'
     | '/app/contas-receber'
+    | '/app/creditos'
     | '/app/empresas'
     | '/app/faturas-cartao'
     | '/app/fluxo-caixa'
@@ -789,6 +801,13 @@ declare module '@tanstack/react-router' {
       path: '/empresas'
       fullPath: '/app/empresas'
       preLoaderRoute: typeof AppEmpresasRouteImport
+      parentRoute: typeof AppRoute
+    }
+    '/app/creditos': {
+      id: '/app/creditos'
+      path: '/creditos'
+      fullPath: '/app/creditos'
+      preLoaderRoute: typeof AppCreditosRouteImport
       parentRoute: typeof AppRoute
     }
     '/app/contas-receber': {
@@ -1073,6 +1092,7 @@ interface AppRouteChildren {
   AppContasBancariasRoute: typeof AppContasBancariasRoute
   AppContasPagarRoute: typeof AppContasPagarRoute
   AppContasReceberRoute: typeof AppContasReceberRoute
+  AppCreditosRoute: typeof AppCreditosRoute
   AppEmpresasRoute: typeof AppEmpresasRoute
   AppFaturasCartaoRoute: typeof AppFaturasCartaoRoute
   AppFluxoCaixaRoute: typeof AppFluxoCaixaRoute
@@ -1104,6 +1124,7 @@ const AppRouteChildren: AppRouteChildren = {
   AppContasBancariasRoute: AppContasBancariasRoute,
   AppContasPagarRoute: AppContasPagarRoute,
   AppContasReceberRoute: AppContasReceberRoute,
+  AppCreditosRoute: AppCreditosRoute,
   AppEmpresasRoute: AppEmpresasRoute,
   AppFaturasCartaoRoute: AppFaturasCartaoRoute,
   AppFluxoCaixaRoute: AppFluxoCaixaRoute,
