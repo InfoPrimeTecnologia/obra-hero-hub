@@ -13,6 +13,8 @@ import {
   XCircle,
   Sparkles,
   Package,
+  Coins,
+  FileCheck2,
 } from "lucide-react";
 import { PageHeader } from "@/components/admin/PageHeader";
 import { Card, CardContent } from "@/components/ui/card";
