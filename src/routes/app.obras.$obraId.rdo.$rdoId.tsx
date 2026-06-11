@@ -517,10 +517,13 @@ function RdoDetailPage() {
 
         {/* Equipes */}
         <Card>
-          <CardHeader>
+          <CardHeader className="flex flex-row items-center justify-between space-y-0">
             <CardTitle className="flex items-center gap-2 text-base">
               <Users className="h-4 w-4" /> Equipe ({equipes.length})
             </CardTitle>
+            <Button variant="outline" size="sm" onClick={repetirEquipeUltimoRdo}>
+              <Repeat className="mr-2 h-4 w-4" /> Repetir do último RDO
+            </Button>
           </CardHeader>
           <CardContent className="space-y-3">
             <div className="grid grid-cols-1 gap-2 md:grid-cols-5">
