@@ -935,6 +935,158 @@ export type Database = {
           },
         ]
       }
+      credit_action_costs: {
+        Row: {
+          action_key: string
+          ativo: boolean
+          created_at: string
+          custo: number
+          descricao: string
+          id: string
+          updated_at: string
+        }
+        Insert: {
+          action_key: string
+          ativo?: boolean
+          created_at?: string
+          custo: number
+          descricao: string
+          id?: string
+          updated_at?: string
+        }
+        Update: {
+          action_key?: string
+          ativo?: boolean
+          created_at?: string
+          custo?: number
+          descricao?: string
+          id?: string
+          updated_at?: string
+        }
+        Relationships: []
+      }
+      credit_packages: {
+        Row: {
+          ativo: boolean
+          created_at: string
+          creditos: number
+          destaque: boolean
+          id: string
+          nome: string
+          ordem: number
+          updated_at: string
+          valor_brl: number
+        }
+        Insert: {
+          ativo?: boolean
+          created_at?: string
+          creditos: number
+          destaque?: boolean
+          id?: string
+          nome: string
+          ordem?: number
+          updated_at?: string
+          valor_brl: number
+        }
+        Update: {
+          ativo?: boolean
+          created_at?: string
+          creditos?: number
+          destaque?: boolean
+          id?: string
+          nome?: string
+          ordem?: number
+          updated_at?: string
+          valor_brl?: number
+        }
+        Relationships: []
+      }
+      credit_transactions: {
+        Row: {
+          action_key: string | null
+          created_at: string
+          customer_id: string
+          delta: number
+          descricao: string | null
+          id: string
+          invoice_id: string | null
+          saldo_apos: number
+          tipo: Database["public"]["Enums"]["credit_tx_type"]
+          user_id: string | null
+        }
+        Insert: {
+          action_key?: string | null
+          created_at?: string
+          customer_id: string
+          delta: number
+          descricao?: string | null
+          id?: string
+          invoice_id?: string | null
+          saldo_apos: number
+          tipo: Database["public"]["Enums"]["credit_tx_type"]
+          user_id?: string | null
+        }
+        Update: {
+          action_key?: string | null
+          created_at?: string
+          customer_id?: string
+          delta?: number
+          descricao?: string | null
+          id?: string
+          invoice_id?: string | null
+          saldo_apos?: number
+          tipo?: Database["public"]["Enums"]["credit_tx_type"]
+          user_id?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "credit_transactions_customer_id_fkey"
+            columns: ["customer_id"]
+            isOneToOne: false
+            referencedRelation: "customers"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "credit_transactions_invoice_id_fkey"
+            columns: ["invoice_id"]
+            isOneToOne: false
+            referencedRelation: "invoices"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      customer_credits: {
+        Row: {
+          created_at: string
+          customer_id: string
+          id: string
+          saldo: number
+          updated_at: string
+        }
+        Insert: {
+          created_at?: string
+          customer_id: string
+          id?: string
+          saldo?: number
+          updated_at?: string
+        }
+        Update: {
+          created_at?: string
+          customer_id?: string
+          id?: string
+          saldo?: number
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "customer_credits_customer_id_fkey"
+            columns: ["customer_id"]
+            isOneToOne: true
+            referencedRelation: "customers"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       customers: {
         Row: {
           address_city: string | null
@@ -2792,6 +2944,7 @@ export type Database = {
         | "invoice_reminder"
         | "invoice_overdue"
         | "manual"
+      credit_tx_type: "recarga" | "consumo" | "ajuste" | "estorno"
       customer_status: "active" | "inactive" | "overdue" | "canceled"
       invoice_status: "pending" | "paid" | "overdue" | "canceled" | "refunded"
       payment_method:
@@ -2946,6 +3099,7 @@ export const Constants = {
         "invoice_overdue",
         "manual",
       ],
+      credit_tx_type: ["recarga", "consumo", "ajuste", "estorno"],
       customer_status: ["active", "inactive", "overdue", "canceled"],
       invoice_status: ["pending", "paid", "overdue", "canceled", "refunded"],
       payment_method: ["boleto", "credit_card", "pix", "transfer", "undefined"],
