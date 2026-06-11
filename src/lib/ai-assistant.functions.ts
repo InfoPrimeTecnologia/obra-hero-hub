@@ -1,5 +1,37 @@
 import { createServerFn } from "@tanstack/react-start";
 import { requireSupabaseAuth } from "@/integrations/supabase/auth-middleware";
+import { applyCreditDelta, getActionCost, getBalance } from "./credits.functions";
+
+async function chargeCredits(
+  supabase: any,
+  customerId: string,
+  userId: string,
+  actionKey: string,
+  descricao: string,
+): Promise<{ charged: number; saldo: number }> {
+  const cost = await getActionCost(supabase, actionKey);
+  if (cost <= 0) return { charged: 0, saldo: await getBalance(supabase, customerId) };
+  const balance = await getBalance(supabase, customerId);
+  if (balance < cost) {
+    const err: any = new Error(
+      `Créditos insuficientes. Necessário: ${cost}, disponível: ${balance}. Acesse /app/creditos para recarregar.`,
+    );
+    err.code = "INSUFFICIENT_CREDITS";
+    err.needed = cost;
+    err.balance = balance;
+    throw err;
+  }
+  const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
+  const res = await applyCreditDelta(supabaseAdmin, {
+    customerId,
+    delta: -cost,
+    tipo: "consumo",
+    actionKey,
+    descricao,
+    userId,
+  });
+  return { charged: cost, saldo: res.saldo };
+}
 
 const OPENAI_URL = "https://api.openai.com/v1";
 const MODEL = "gpt-4o-mini";
