@@ -11,6 +11,7 @@ import {
   Image as ImageIcon,
   Mail,
   MessageCircle,
+  Repeat,
 } from "lucide-react";
 import { PageHeader } from "@/components/admin/PageHeader";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
@@ -195,6 +196,30 @@ function RdoDetailPage() {
 
   const delEquipe = async (id: string) => {
     await supabase.from("rdo_equipes").delete().eq("id", id);
+    void carregar();
+  };
+
+  const repetirEquipeUltimoRdo = async () => {
+    if (!rdo) return;
+    const { data: anterior } = await supabase
+      .from("rdos")
+      .select("id")
+      .eq("obra_id", obraId)
+      .lt("data", rdo.data)
+      .order("data", { ascending: false })
+      .limit(1)
+      .maybeSingle();
+    if (!anterior) return toast.error("Nenhum RDO anterior encontrado");
+    const { data: eq } = await supabase
+      .from("rdo_equipes")
+      .select("empreiteiro,funcao,quantidade,horas")
+      .eq("rdo_id", anterior.id);
+    if (!eq?.length) return toast.error("RDO anterior não tem equipe cadastrada");
+    const { error } = await supabase
+      .from("rdo_equipes")
+      .insert(eq.map((r) => ({ ...r, rdo_id: rdo.id, customer_id: rdo.customer_id })));
+    if (error) return toast.error("Erro ao repetir equipe", { description: error.message });
+    toast.success(`${eq.length} integrante(s) replicados do último RDO`);
     void carregar();
   };
 
