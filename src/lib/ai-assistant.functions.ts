@@ -588,7 +588,32 @@ export const aiExecuteAction = createServerFn({ method: "POST" })
     if (!MUTATING_TOOLS.has(data.tool)) {
       throw new Error("Ferramenta não permitida");
     }
-    return await executeTool(supabase, customerId, userId, data.tool, data.args);
+    // Cobra créditos da ação específica antes de executar
+    const charge = await chargeCredits(
+      supabase,
+      customerId,
+      userId,
+      data.tool,
+      `Ação IA: ${data.tool}`,
+    );
+    try {
+      const result = await executeTool(supabase, customerId, userId, data.tool, data.args);
+      return { ...result, credits: charge };
+    } catch (e) {
+      // Estorna em caso de falha
+      if (charge.charged > 0) {
+        const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
+        await applyCreditDelta(supabaseAdmin, {
+          customerId,
+          delta: charge.charged,
+          tipo: "estorno",
+          actionKey: data.tool,
+          descricao: `Estorno por falha em ${data.tool}`,
+          userId,
+        });
+      }
+      throw e;
+    }
   });
 
 export const aiTranscribe = createServerFn({ method: "POST" })
