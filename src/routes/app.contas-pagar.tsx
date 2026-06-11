@@ -297,6 +297,7 @@ function ContasPagarPage() {
                 <div className="flex items-center gap-3">
                   <span className="font-semibold">R$ {Number(c.valor).toFixed(2)}</span>
                   <Badge variant={statusColor(c.status) as any}>{c.status}</Badge>
+                  {c.estornado && <Badge variant="outline" title={c.motivo_estorno ?? undefined}>estornada</Badge>}
                   {c.status === "pendente" && (
                     <>
                       <Button size="sm" onClick={() => { setPaying(c); setPagto({ ...pagto, valor_pago: String(c.valor) }); }}>
@@ -306,6 +307,11 @@ function ContasPagarPage() {
                         <XCircle className="h-4 w-4" />
                       </Button>
                     </>
+                  )}
+                  {c.status === "pago" && !c.estornado && (
+                    <Button size="sm" variant="outline" onClick={() => setEstornando(c)}>
+                      <Undo2 className="mr-1 h-4 w-4" /> Estornar
+                    </Button>
                   )}
                 </div>
               </CardContent>
