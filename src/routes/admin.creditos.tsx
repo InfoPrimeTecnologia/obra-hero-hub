@@ -43,7 +43,6 @@ function AdminCreditosPage() {
   return (
     <div className="space-y-6 p-6">
       <PageHeader
-        icon={Coins}
         title="Créditos"
         description="Gerencie pacotes de recarga, custos por ação e ajustes manuais."
       />

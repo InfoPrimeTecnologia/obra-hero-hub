@@ -41,6 +41,7 @@ import { Route as AdminTicketsRouteImport } from './routes/admin.tickets'
 import { Route as AdminPlanosRouteImport } from './routes/admin.planos'
 import { Route as AdminFaturasRouteImport } from './routes/admin.faturas'
 import { Route as AdminEmpresasRouteImport } from './routes/admin.empresas'
+import { Route as AdminCreditosRouteImport } from './routes/admin.creditos'
 import { Route as AdminConfiguracoesRouteImport } from './routes/admin.configuracoes'
 import { Route as AdminChangelogRouteImport } from './routes/admin.changelog'
 import { Route as AppObrasIndexRouteImport } from './routes/app.obras.index'
@@ -222,6 +223,11 @@ const AdminEmpresasRoute = AdminEmpresasRouteImport.update({
   path: '/empresas',
   getParentRoute: () => AdminRoute,
 } as any)
+const AdminCreditosRoute = AdminCreditosRouteImport.update({
+  id: '/creditos',
+  path: '/creditos',
+  getParentRoute: () => AdminRoute,
+} as any)
 const AdminConfiguracoesRoute = AdminConfiguracoesRouteImport.update({
   id: '/configuracoes',
   path: '/configuracoes',
@@ -334,6 +340,7 @@ export interface FileRoutesByFullPath {
   '/login': typeof LoginRoute
   '/admin/changelog': typeof AdminChangelogRoute
   '/admin/configuracoes': typeof AdminConfiguracoesRoute
+  '/admin/creditos': typeof AdminCreditosRoute
   '/admin/empresas': typeof AdminEmpresasRoute
   '/admin/faturas': typeof AdminFaturasRoute
   '/admin/planos': typeof AdminPlanosRoute
@@ -386,6 +393,7 @@ export interface FileRoutesByTo {
   '/login': typeof LoginRoute
   '/admin/changelog': typeof AdminChangelogRoute
   '/admin/configuracoes': typeof AdminConfiguracoesRoute
+  '/admin/creditos': typeof AdminCreditosRoute
   '/admin/empresas': typeof AdminEmpresasRoute
   '/admin/faturas': typeof AdminFaturasRoute
   '/admin/planos': typeof AdminPlanosRoute
@@ -441,6 +449,7 @@ export interface FileRoutesById {
   '/login': typeof LoginRoute
   '/admin/changelog': typeof AdminChangelogRoute
   '/admin/configuracoes': typeof AdminConfiguracoesRoute
+  '/admin/creditos': typeof AdminCreditosRoute
   '/admin/empresas': typeof AdminEmpresasRoute
   '/admin/faturas': typeof AdminFaturasRoute
   '/admin/planos': typeof AdminPlanosRoute
@@ -497,6 +506,7 @@ export interface FileRouteTypes {
     | '/login'
     | '/admin/changelog'
     | '/admin/configuracoes'
+    | '/admin/creditos'
     | '/admin/empresas'
     | '/admin/faturas'
     | '/admin/planos'
@@ -549,6 +559,7 @@ export interface FileRouteTypes {
     | '/login'
     | '/admin/changelog'
     | '/admin/configuracoes'
+    | '/admin/creditos'
     | '/admin/empresas'
     | '/admin/faturas'
     | '/admin/planos'
@@ -603,6 +614,7 @@ export interface FileRouteTypes {
     | '/login'
     | '/admin/changelog'
     | '/admin/configuracoes'
+    | '/admin/creditos'
     | '/admin/empresas'
     | '/admin/faturas'
     | '/admin/planos'
@@ -894,6 +906,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AdminEmpresasRouteImport
       parentRoute: typeof AdminRoute
     }
+    '/admin/creditos': {
+      id: '/admin/creditos'
+      path: '/creditos'
+      fullPath: '/admin/creditos'
+      preLoaderRoute: typeof AdminCreditosRouteImport
+      parentRoute: typeof AdminRoute
+    }
     '/admin/configuracoes': {
       id: '/admin/configuracoes'
       path: '/configuracoes'
@@ -1040,6 +1059,7 @@ declare module '@tanstack/react-router' {
 interface AdminRouteChildren {
   AdminChangelogRoute: typeof AdminChangelogRoute
   AdminConfiguracoesRoute: typeof AdminConfiguracoesRoute
+  AdminCreditosRoute: typeof AdminCreditosRoute
   AdminEmpresasRoute: typeof AdminEmpresasRoute
   AdminFaturasRoute: typeof AdminFaturasRoute
   AdminPlanosRoute: typeof AdminPlanosRoute
@@ -1050,6 +1070,7 @@ interface AdminRouteChildren {
 const AdminRouteChildren: AdminRouteChildren = {
   AdminChangelogRoute: AdminChangelogRoute,
   AdminConfiguracoesRoute: AdminConfiguracoesRoute,
+  AdminCreditosRoute: AdminCreditosRoute,
   AdminEmpresasRoute: AdminEmpresasRoute,
   AdminFaturasRoute: AdminFaturasRoute,
   AdminPlanosRoute: AdminPlanosRoute,
