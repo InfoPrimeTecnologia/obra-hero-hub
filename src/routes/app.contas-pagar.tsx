@@ -261,12 +261,17 @@ function ContasPagarPage() {
           </CardContent></Card>
         </div>
 
-        <div className="flex gap-2">
-          {(["pendente", "vencido", "pago", "todos"] as const).map((f) => (
-            <Button key={f} size="sm" variant={filtro === f ? "default" : "outline"} onClick={() => setFiltro(f)}>
-              {f}
-            </Button>
-          ))}
+        <div className="flex flex-wrap items-center justify-between gap-2">
+          <div className="flex gap-2">
+            {(["pendente", "vencido", "pago", "todos"] as const).map((f) => (
+              <Button key={f} size="sm" variant={filtro === f ? "default" : "outline"} onClick={() => setFiltro(f)}>
+                {f}
+              </Button>
+            ))}
+          </div>
+          <Button size="sm" variant="outline" onClick={exportarCsv}>
+            <Download className="mr-1 h-4 w-4" /> CSV
+          </Button>
         </div>
 
         {filtrados.length === 0 ? (
