@@ -162,6 +162,8 @@ export function AIAssistant() {
       toast.success(`${okCount}/${results.length} ação(ões) concluída(s)`);
     } catch (e: any) {
       toast.error("Erro", { description: e.message });
+    } finally {
+      refreshCredits();
     }
   }
 
