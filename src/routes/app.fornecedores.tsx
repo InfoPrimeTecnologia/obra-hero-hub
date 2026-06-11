@@ -1,12 +1,15 @@
 import { createFileRoute } from "@tanstack/react-router";
 import { useEffect, useState, type FormEvent } from "react";
-import { Plus, Truck, Pencil, Trash2 } from "lucide-react";
+import { Plus, Truck, Pencil, Trash2, Eye, EyeOff, Copy } from "lucide-react";
 import { PageHeader } from "@/components/admin/PageHeader";
 import { Card, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
+import {
+  Select, SelectContent, SelectItem, SelectTrigger, SelectValue,
+} from "@/components/ui/select";
 import {
   Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger, DialogFooter,
 } from "@/components/ui/dialog";
@@ -18,6 +21,7 @@ import {
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/lib/auth-context";
 import { toast } from "sonner";
+import { maskPix, PIX_LABELS, type PixTipo } from "@/lib/pix-mask";
 
 export const Route = createFileRoute("/app/fornecedores")({
   component: FornecedoresPage,
@@ -32,10 +36,13 @@ type Fornecedor = {
   contato: string | null;
   endereco: string | null;
   observacoes: string | null;
+  pix_tipo: PixTipo | null;
+  pix_chave: string | null;
 };
 
 const initial = {
   nome: "", cpf_cnpj: "", email: "", telefone: "", contato: "", endereco: "", observacoes: "",
+  pix_tipo: "" as "" | PixTipo, pix_chave: "",
 };
 
 function FornecedoresPage() {
@@ -63,6 +70,7 @@ function FornecedoresPage() {
       nome: f.nome, cpf_cnpj: f.cpf_cnpj ?? "", email: f.email ?? "",
       telefone: f.telefone ?? "", contato: f.contato ?? "",
       endereco: f.endereco ?? "", observacoes: f.observacoes ?? "",
+      pix_tipo: (f.pix_tipo ?? "") as "" | PixTipo, pix_chave: f.pix_chave ?? "",
     });
     setOpen(true);
   };
@@ -78,6 +86,8 @@ function FornecedoresPage() {
       contato: form.contato || null,
       endereco: form.endereco || null,
       observacoes: form.observacoes || null,
+      pix_tipo: form.pix_tipo || null,
+      pix_chave: form.pix_chave || null,
     };
     if (editing) {
       const { error } = await supabase.from("fornecedores").update(payload).eq("id", editing.id);
@@ -139,6 +149,26 @@ function FornecedoresPage() {
                   <Input value={form.endereco} onChange={(e) => setForm({ ...form, endereco: e.target.value })} /></div>
                 <div className="space-y-2"><Label>Observações</Label>
                   <Textarea rows={2} value={form.observacoes} onChange={(e) => setForm({ ...form, observacoes: e.target.value })} /></div>
+
+                <div className="rounded-md border bg-muted/30 p-3 space-y-3">
+                  <p className="text-sm font-medium">Chave Pix (opcional)</p>
+                  <div className="grid grid-cols-2 gap-3">
+                    <div className="space-y-2"><Label>Tipo</Label>
+                      <Select value={form.pix_tipo || "none"} onValueChange={(v) => setForm({ ...form, pix_tipo: v === "none" ? "" : (v as PixTipo) })}>
+                        <SelectTrigger><SelectValue placeholder="—" /></SelectTrigger>
+                        <SelectContent>
+                          <SelectItem value="none">—</SelectItem>
+                          {(Object.keys(PIX_LABELS) as PixTipo[]).map((k) => (
+                            <SelectItem key={k} value={k}>{PIX_LABELS[k]}</SelectItem>
+                          ))}
+                        </SelectContent>
+                      </Select>
+                    </div>
+                    <div className="space-y-2"><Label>Chave</Label>
+                      <Input value={form.pix_chave} onChange={(e) => setForm({ ...form, pix_chave: e.target.value })} placeholder="Será exibida mascarada" /></div>
+                  </div>
+                </div>
+
                 <DialogFooter><Button type="submit" disabled={saving}>{saving ? "Salvando..." : "Salvar"}</Button></DialogFooter>
               </form>
             </DialogContent>
@@ -160,6 +190,7 @@ function FornecedoresPage() {
                   <p className="text-xs text-muted-foreground">
                     {[f.cpf_cnpj, f.telefone, f.email].filter(Boolean).join(" · ") || "—"}
                   </p>
+                  {f.pix_tipo && f.pix_chave && <PixDisplay tipo={f.pix_tipo} chave={f.pix_chave} />}
                 </div>
               </div>
               <div className="flex gap-2">
@@ -186,6 +217,32 @@ function FornecedoresPage() {
           </Card>
         ))}
       </div>
+    </div>
+  );
+}
+
+function PixDisplay({ tipo, chave }: { tipo: PixTipo; chave: string }) {
+  const [revealed, setRevealed] = useState(false);
+  return (
+    <div className="mt-1 flex items-center gap-2 text-xs">
+      <span className="text-muted-foreground">Pix ({PIX_LABELS[tipo]}):</span>
+      <span className="font-mono">{revealed ? chave : maskPix(tipo, chave)}</span>
+      <button
+        type="button"
+        className="text-muted-foreground hover:text-foreground"
+        onClick={() => setRevealed((v) => !v)}
+        title={revealed ? "Ocultar" : "Revelar"}
+      >
+        {revealed ? <EyeOff className="h-3.5 w-3.5" /> : <Eye className="h-3.5 w-3.5" />}
+      </button>
+      <button
+        type="button"
+        className="text-muted-foreground hover:text-foreground"
+        onClick={() => { void navigator.clipboard.writeText(chave); toast.success("Copiado"); }}
+        title="Copiar"
+      >
+        <Copy className="h-3.5 w-3.5" />
+      </button>
     </div>
   );
 }

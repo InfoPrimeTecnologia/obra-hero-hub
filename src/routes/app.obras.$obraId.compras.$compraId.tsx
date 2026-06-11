@@ -1,7 +1,7 @@
 import { createFileRoute, Link } from "@tanstack/react-router";
 import { useEffect, useMemo, useState, type FormEvent } from "react";
 import {
-  Plus, ArrowLeft, Trash2, Package, CheckCircle2, Ruler, Pencil,
+  Plus, ArrowLeft, Trash2, Package, CheckCircle2, Ruler, Pencil, Undo2,
 } from "lucide-react";
 import { PageHeader } from "@/components/admin/PageHeader";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
@@ -306,6 +306,28 @@ function CompraDetalhePage() {
     toast.success(`Medição #${numero} registrada (R$ ${total.toFixed(2)})`); void carregar();
   };
 
+  const desfazerMedicao = async (med: Medicao) => {
+    if (!compra) return;
+    if (!confirm(`Desfazer medição #${med.numero}? Os itens serão revertidos.`)) return;
+    // buscar itens da medição
+    const { data: linhas, error: e1 } = await supabase
+      .from("medicao_itens").select("*").eq("medicao_id", med.id);
+    if (e1) return toast.error("Erro", { description: e1.message });
+    // reverter qtd_medida em cada compra_item
+    for (const l of linhas ?? []) {
+      const it = itens.find((i) => i.id === l.compra_item_id);
+      if (!it) continue;
+      const novaQtd = Math.max(0, Number(it.qtd_medida) - Number(l.quantidade));
+      await supabase.from("compra_itens").update({ qtd_medida: novaQtd }).eq("id", it.id);
+    }
+    // deletar itens da medição e a medição
+    await supabase.from("medicao_itens").delete().eq("medicao_id", med.id);
+    const { error: e2 } = await supabase.from("medicoes").delete().eq("id", med.id);
+    if (e2) return toast.error("Erro", { description: e2.message });
+    toast.success(`Medição #${med.numero} desfeita`);
+    void carregar();
+  };
+
   if (!compra) return <div className="p-8 text-sm text-muted-foreground">Carregando...</div>;
 
   const subsDoForm = subetapas.filter((s) => s.etapa_id === itemForm.etapa_id);
@@ -541,7 +563,12 @@ function CompraDetalhePage() {
                   <p className="text-sm font-medium">Medição #{m.numero} · {new Date(m.data).toLocaleDateString("pt-BR")}</p>
                   {m.observacoes && <p className="text-xs text-muted-foreground">{m.observacoes}</p>}
                 </div>
-                <span className="text-sm font-semibold">R$ {Number(m.valor_total).toFixed(2)}</span>
+                <div className="flex items-center gap-2">
+                  <span className="text-sm font-semibold">R$ {Number(m.valor_total).toFixed(2)}</span>
+                  <Button variant="ghost" size="sm" onClick={() => desfazerMedicao(m)} title="Desfazer medição">
+                    <Undo2 className="h-4 w-4" />
+                  </Button>
+                </div>
               </div>
             ))}
           </CardContent>
