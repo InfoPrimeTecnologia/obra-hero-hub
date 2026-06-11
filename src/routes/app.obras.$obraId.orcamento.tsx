@@ -387,9 +387,27 @@ function OrcamentoPage() {
             const subsDaEtapa = subs.filter((s) => s.etapa_id === et.id);
             const total = totalPorEtapa.get(et.id) ?? 0;
             return (
-              <Card key={et.id}>
+              <Card
+                key={et.id}
+                className={dragOverId === et.id ? "ring-2 ring-primary" : ""}
+                onDragOver={(e) => { e.preventDefault(); setDragOverId(et.id); }}
+                onDragLeave={() => setDragOverId((cur) => (cur === et.id ? null : cur))}
+                onDrop={() => onDropOn(et.id)}
+              >
                 <CardContent className="p-0">
                   <div className="flex flex-wrap items-center gap-3 p-4">
+                    <button
+                      type="button"
+                      draggable
+                      onDragStart={() => { dragId.current = et.id; }}
+                      onDragEnd={() => { dragId.current = null; setDragOverId(null); }}
+                      className="cursor-grab rounded p-1 text-muted-foreground hover:bg-muted active:cursor-grabbing disabled:opacity-50"
+                      aria-label="Arrastar para reordenar"
+                      title="Arrastar para reordenar"
+                      disabled={saving}
+                    >
+                      <GripVertical className="h-4 w-4" />
+                    </button>
                     <button
                       type="button"
                       onClick={() => toggleExpand(et.id)}
