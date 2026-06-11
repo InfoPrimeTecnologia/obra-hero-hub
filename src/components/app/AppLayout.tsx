@@ -31,6 +31,7 @@ import {
   Layers,
   BookOpen,
 } from "lucide-react";
+import { AIAssistant } from "@/components/app/AIAssistant";
 import { Logo } from "@/components/Logo";
 import { useAuth } from "@/lib/auth-context";
 import { Button } from "@/components/ui/button";
@@ -108,7 +109,7 @@ export function AppLayout() {
   const location = useLocation();
   const navigate = useNavigate();
   const [openGroups, setOpenGroups] = useState<Record<string, boolean>>({});
-  const { has: hasModule } = usePlanModules();
+  const { has: hasModule, hasFeature } = usePlanModules();
 
   const visibleNav = nav.filter((item) => !item.module || hasModule(item.module));
 
@@ -247,6 +248,7 @@ export function AppLayout() {
         <TopBar />
         <Outlet />
       </main>
+      {hasFeature("ai_assistant") ? <AIAssistant /> : null}
     </div>
   );
 }
