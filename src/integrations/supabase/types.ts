@@ -758,9 +758,14 @@ export type Database = {
           customer_id: string
           descricao: string
           empresa_id: string | null
+          estornado: boolean
+          estornado_em: string | null
+          estornado_por: string | null
+          estorno_token: string | null
           fatura_cartao_id: string | null
           fornecedor_id: string | null
           id: string
+          motivo_estorno: string | null
           obra_id: string | null
           observacoes: string | null
           origem: string
@@ -781,9 +786,14 @@ export type Database = {
           customer_id: string
           descricao: string
           empresa_id?: string | null
+          estornado?: boolean
+          estornado_em?: string | null
+          estornado_por?: string | null
+          estorno_token?: string | null
           fatura_cartao_id?: string | null
           fornecedor_id?: string | null
           id?: string
+          motivo_estorno?: string | null
           obra_id?: string | null
           observacoes?: string | null
           origem?: string
@@ -804,9 +814,14 @@ export type Database = {
           customer_id?: string
           descricao?: string
           empresa_id?: string | null
+          estornado?: boolean
+          estornado_em?: string | null
+          estornado_por?: string | null
+          estorno_token?: string | null
           fatura_cartao_id?: string | null
           fornecedor_id?: string | null
           id?: string
+          motivo_estorno?: string | null
           obra_id?: string | null
           observacoes?: string | null
           origem?: string
@@ -836,8 +851,13 @@ export type Database = {
           customer_id: string
           descricao: string
           empresa_id: string | null
+          estornado: boolean
+          estornado_em: string | null
+          estornado_por: string | null
+          estorno_token: string | null
           id: string
           medicao_obra_id: string | null
+          motivo_estorno: string | null
           obra_id: string | null
           observacoes: string | null
           origem: string
@@ -856,8 +876,13 @@ export type Database = {
           customer_id: string
           descricao: string
           empresa_id?: string | null
+          estornado?: boolean
+          estornado_em?: string | null
+          estornado_por?: string | null
+          estorno_token?: string | null
           id?: string
           medicao_obra_id?: string | null
+          motivo_estorno?: string | null
           obra_id?: string | null
           observacoes?: string | null
           origem?: string
@@ -876,8 +901,13 @@ export type Database = {
           customer_id?: string
           descricao?: string
           empresa_id?: string | null
+          estornado?: boolean
+          estornado_em?: string | null
+          estornado_por?: string | null
+          estorno_token?: string | null
           id?: string
           medicao_obra_id?: string | null
+          motivo_estorno?: string | null
           obra_id?: string | null
           observacoes?: string | null
           origem?: string
