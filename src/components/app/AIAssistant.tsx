@@ -1,7 +1,10 @@
 import { useEffect, useRef, useState } from "react";
-import { Sparkles, Send, Mic, Square, Loader2, X, Check, XCircle } from "lucide-react";
+import { Sparkles, Send, Mic, Square, Loader2, X, Check, XCircle, Coins } from "lucide-react";
+import { Link } from "@tanstack/react-router";
 import { useServerFn } from "@tanstack/react-start";
+import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { aiChat, aiExecuteAction, aiTranscribe } from "@/lib/ai-assistant.functions";
+import { getMyCredits } from "@/lib/credits.functions";
 import { Button } from "@/components/ui/button";
 import { Textarea } from "@/components/ui/textarea";
 import { Card } from "@/components/ui/card";
