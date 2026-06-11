@@ -304,6 +304,46 @@ function OrcamentoPage() {
     void carregar();
   };
 
+  // ---------- Reorder (drag-and-drop) ----------
+  const dragId = useRef<string | null>(null);
+  const [dragOverId, setDragOverId] = useState<string | null>(null);
+  const [saving, setSaving] = useState(false);
+
+  const persistOrdem = async (lista: Etapa[]) => {
+    setSaving(true);
+    // Two-pass to evitar colidir com unique(obra_id, ordem) durante atualizações
+    for (let i = 0; i < lista.length; i++) {
+      await supabase
+        .from("orcamento_etapas")
+        .update({ ordem: -1000 - i })
+        .eq("id", lista[i].id);
+    }
+    for (let i = 0; i < lista.length; i++) {
+      await supabase
+        .from("orcamento_etapas")
+        .update({ ordem: i })
+        .eq("id", lista[i].id);
+    }
+    setSaving(false);
+    toast.success("Ordem atualizada");
+    void carregar();
+  };
+
+  const onDropOn = (targetId: string) => {
+    const sourceId = dragId.current;
+    dragId.current = null;
+    setDragOverId(null);
+    if (!sourceId || sourceId === targetId) return;
+    const lista = [...etapas].sort((a, b) => a.ordem - b.ordem);
+    const from = lista.findIndex((e) => e.id === sourceId);
+    const to = lista.findIndex((e) => e.id === targetId);
+    if (from < 0 || to < 0) return;
+    const [moved] = lista.splice(from, 1);
+    lista.splice(to, 0, moved);
+    setEtapas(lista.map((e, i) => ({ ...e, ordem: i })));
+    void persistOrdem(lista);
+  };
+
   return (
     <div>
       <PageHeader
