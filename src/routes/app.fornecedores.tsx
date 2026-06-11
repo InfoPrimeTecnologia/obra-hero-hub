@@ -190,6 +190,7 @@ function FornecedoresPage() {
                   <p className="text-xs text-muted-foreground">
                     {[f.cpf_cnpj, f.telefone, f.email].filter(Boolean).join(" · ") || "—"}
                   </p>
+                  {f.pix_tipo && f.pix_chave && <PixDisplay tipo={f.pix_tipo} chave={f.pix_chave} />}
                 </div>
               </div>
               <div className="flex gap-2">
