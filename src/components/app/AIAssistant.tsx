@@ -137,6 +137,7 @@ export function AIAssistant() {
       setMessages((m) => [...m, { role: "assistant", content: `❌ ${e.message}` }]);
     } finally {
       setBusy(false);
+      refreshCredits();
     }
   }
 
