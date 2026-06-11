@@ -30,6 +30,7 @@ type CP = {
   status: string; pago_em: string | null; valor_pago: number | null;
   origem: string; conta_bancaria_id: string | null; categoria_id: string | null;
   fornecedor_id: string | null; obra_id: string | null;
+  estornado?: boolean; estorno_token?: string | null; motivo_estorno?: string | null;
 };
 
 const statusColor = (s: string) =>
