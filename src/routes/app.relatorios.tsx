@@ -37,6 +37,7 @@ import { Skeleton } from "@/components/ui/skeleton";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/lib/auth-context";
 import { usePlanModules } from "@/lib/use-plan-modules";
+import { downloadCsv } from "@/lib/csv-export";
 
 export const Route = createFileRoute("/app/relatorios")({
   component: RelatoriosPage,
