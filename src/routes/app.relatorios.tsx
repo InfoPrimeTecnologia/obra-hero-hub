@@ -533,6 +533,15 @@ function RelatoriosPage() {
     XLSX.writeFile(wb, `${current.id}_${from}_${to}.xlsx`);
   };
 
+  const exportCSV = () => {
+    if (!current) return;
+    const headers = current.columns.map((c) => c.label);
+    const data = rows.map((r) =>
+      current.columns.map((c) => (c.format ? c.format(r) : ((r as any)[c.key as string] ?? ""))),
+    );
+    downloadCsv(`${current.id}_${from}_${to}`, data, headers);
+  };
+
   const exportPDF = () => {
     if (!current) return;
     const doc = new jsPDF({ orientation: "landscape", unit: "pt", format: "a4" });
