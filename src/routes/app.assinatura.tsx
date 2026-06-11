@@ -13,6 +13,8 @@ import {
   XCircle,
   Sparkles,
   Package,
+  Coins,
+  FileCheck2,
 } from "lucide-react";
 import { PageHeader } from "@/components/admin/PageHeader";
 import { Card, CardContent } from "@/components/ui/card";
@@ -70,6 +72,16 @@ type Invoice = {
   bank_slip_url: string | null;
 };
 
+type CreditTx = {
+  id: string;
+  tipo: "recarga" | "consumo" | "ajuste" | "estorno";
+  delta: number;
+  saldo_apos: number;
+  descricao: string | null;
+  invoice_id: string | null;
+  created_at: string;
+};
+
 type BillingType = "UNDEFINED" | "BOLETO" | "PIX" | "CREDIT_CARD";
 
 const cycleLabel: Record<string, string> = {
@@ -125,6 +137,7 @@ function AssinaturaPage() {
   const [plans, setPlans] = useState<Plan[]>([]);
   const [subscription, setSubscription] = useState<Subscription | null>(null);
   const [invoices, setInvoices] = useState<Invoice[]>([]);
+  const [recargas, setRecargas] = useState<CreditTx[]>([]);
   const [billingType, setBillingType] = useState<BillingType>("UNDEFINED");
   const [billingPeriod, setBillingPeriod] = useState<"monthly" | "semiannual" | "annual">("monthly");
 
@@ -158,8 +171,17 @@ function AssinaturaPage() {
           .select("id,description,amount,status,due_date,paid_at,invoice_url,bank_slip_url")
           .eq("customer_id", custId)
           .order("due_date", { ascending: false })
-          .limit(20);
+          .limit(50);
         setInvoices((invData as Invoice[]) ?? []);
+
+        const { data: txData } = await supabase
+          .from("credit_transactions")
+          .select("id,tipo,delta,saldo_apos,descricao,invoice_id,created_at")
+          .eq("customer_id", custId)
+          .eq("tipo", "recarga")
+          .order("created_at", { ascending: false })
+          .limit(50);
+        setRecargas((txData as CreditTx[]) ?? []);
       }
     } catch (e) {
       const msg = e instanceof Error ? e.message : String(e);
@@ -362,6 +384,25 @@ function AssinaturaPage() {
                     )}
                   </TabsTrigger>
                   <TabsTrigger
+                    value="paid"
+                    className="group relative gap-2 rounded-none border-b-2 border-transparent bg-transparent px-4 py-3 text-sm font-semibold text-muted-foreground data-[state=active]:border-primary data-[state=active]:bg-transparent data-[state=active]:text-primary data-[state=active]:shadow-none"
+                  >
+                    <FileCheck2 className="h-4 w-4" />
+                    Faturas pagas
+                  </TabsTrigger>
+                  <TabsTrigger
+                    value="recargas"
+                    className="group relative gap-2 rounded-none border-b-2 border-transparent bg-transparent px-4 py-3 text-sm font-semibold text-muted-foreground data-[state=active]:border-primary data-[state=active]:bg-transparent data-[state=active]:text-primary data-[state=active]:shadow-none"
+                  >
+                    <Coins className="h-4 w-4" />
+                    Recargas
+                    {recargas.length > 0 && (
+                      <span className="ml-1 inline-flex h-5 min-w-5 items-center justify-center rounded-full bg-primary/10 px-1.5 text-[11px] font-bold text-primary group-data-[state=active]:bg-primary/15">
+                        {recargas.length}
+                      </span>
+                    )}
+                  </TabsTrigger>
+                  <TabsTrigger
                     value="plans"
                     className="group relative gap-2 rounded-none border-b-2 border-transparent bg-transparent px-4 py-3 text-sm font-semibold text-muted-foreground data-[state=active]:border-primary data-[state=active]:bg-transparent data-[state=active]:text-primary data-[state=active]:shadow-none"
                   >
@@ -457,6 +498,147 @@ function AssinaturaPage() {
                       </tbody>
                     </table>
                   </div>
+                )}
+              </TabsContent>
+
+              <TabsContent value="paid" className="m-0">
+                {(() => {
+                  const paid = invoices.filter((i) => i.status === "paid");
+                  const total = paid.reduce((s, i) => s + Number(i.amount), 0);
+                  if (paid.length === 0) {
+                    return (
+                      <div className="flex flex-col items-center justify-center px-6 py-16 text-center">
+                        <FileCheck2 className="mb-3 h-10 w-10 text-muted-foreground/40" />
+                        <p className="text-sm text-muted-foreground">Nenhuma fatura paga ainda.</p>
+                      </div>
+                    );
+                  }
+                  return (
+                    <>
+                      <div className="flex items-center justify-between border-b border-border/40 px-6 py-4">
+                        <div>
+                          <p className="text-xs font-semibold uppercase tracking-wider text-muted-foreground">
+                            Total pago
+                          </p>
+                          <p className="mt-0.5 text-2xl font-bold text-emerald-600 dark:text-emerald-400">
+                            {formatCurrency(total)}
+                          </p>
+                        </div>
+                        <span className="text-xs text-muted-foreground">
+                          {paid.length} fatura{paid.length === 1 ? "" : "s"}
+                        </span>
+                      </div>
+                      <div className="overflow-x-auto">
+                        <table className="w-full text-sm">
+                          <thead>
+                            <tr className="text-left text-[11px] font-bold uppercase tracking-wider text-muted-foreground">
+                              <th className="px-6 py-4">Descrição</th>
+                              <th className="px-6 py-4">Vencimento</th>
+                              <th className="px-6 py-4">Paga em</th>
+                              <th className="px-6 py-4">Valor</th>
+                              <th className="px-6 py-4 text-right">Comprovante</th>
+                            </tr>
+                          </thead>
+                          <tbody>
+                            {paid.map((inv) => (
+                              <tr
+                                key={inv.id}
+                                className="border-t border-border/40 transition-colors hover:bg-muted/30"
+                              >
+                                <td className="px-6 py-4 font-semibold">{inv.description ?? "—"}</td>
+                                <td className="whitespace-nowrap px-6 py-4 text-muted-foreground">
+                                  {formatDate(inv.due_date)}
+                                </td>
+                                <td className="whitespace-nowrap px-6 py-4 text-muted-foreground">
+                                  {formatDate(inv.paid_at)}
+                                </td>
+                                <td className="whitespace-nowrap px-6 py-4 font-bold text-emerald-600 dark:text-emerald-400">
+                                  {formatCurrency(Number(inv.amount))}
+                                </td>
+                                <td className="px-6 py-4 text-right">
+                                  {inv.invoice_url ? (
+                                    <Button
+                                      asChild
+                                      size="sm"
+                                      variant="ghost"
+                                      className="h-8 gap-1.5 text-primary hover:text-primary"
+                                    >
+                                      <a href={inv.invoice_url} target="_blank" rel="noreferrer">
+                                        <ExternalLink className="h-3.5 w-3.5" />
+                                        Ver
+                                      </a>
+                                    </Button>
+                                  ) : (
+                                    <span className="text-xs text-muted-foreground">—</span>
+                                  )}
+                                </td>
+                              </tr>
+                            ))}
+                          </tbody>
+                        </table>
+                      </div>
+                    </>
+                  );
+                })()}
+              </TabsContent>
+
+              <TabsContent value="recargas" className="m-0">
+                {recargas.length === 0 ? (
+                  <div className="flex flex-col items-center justify-center px-6 py-16 text-center">
+                    <Coins className="mb-3 h-10 w-10 text-muted-foreground/40" />
+                    <p className="text-sm text-muted-foreground">
+                      Nenhuma recarga de créditos realizada.
+                    </p>
+                  </div>
+                ) : (
+                  <>
+                    <div className="flex items-center justify-between border-b border-border/40 px-6 py-4">
+                      <div>
+                        <p className="text-xs font-semibold uppercase tracking-wider text-muted-foreground">
+                          Total de créditos recarregados
+                        </p>
+                        <p className="mt-0.5 text-2xl font-bold text-primary">
+                          {recargas.reduce((s, r) => s + r.delta, 0)}
+                        </p>
+                      </div>
+                      <span className="text-xs text-muted-foreground">
+                        {recargas.length} recarga{recargas.length === 1 ? "" : "s"}
+                      </span>
+                    </div>
+                    <div className="overflow-x-auto">
+                      <table className="w-full text-sm">
+                        <thead>
+                          <tr className="text-left text-[11px] font-bold uppercase tracking-wider text-muted-foreground">
+                            <th className="px-6 py-4">Data</th>
+                            <th className="px-6 py-4">Descrição</th>
+                            <th className="px-6 py-4 text-right">Créditos</th>
+                            <th className="px-6 py-4 text-right">Saldo após</th>
+                          </tr>
+                        </thead>
+                        <tbody>
+                          {recargas.map((tx) => (
+                            <tr
+                              key={tx.id}
+                              className="border-t border-border/40 transition-colors hover:bg-muted/30"
+                            >
+                              <td className="whitespace-nowrap px-6 py-4 text-muted-foreground">
+                                {new Date(tx.created_at).toLocaleString("pt-BR")}
+                              </td>
+                              <td className="px-6 py-4 font-semibold">
+                                {tx.descricao ?? "Recarga de créditos"}
+                              </td>
+                              <td className="whitespace-nowrap px-6 py-4 text-right font-bold text-emerald-600 dark:text-emerald-400">
+                                +{tx.delta}
+                              </td>
+                              <td className="whitespace-nowrap px-6 py-4 text-right font-semibold">
+                                {tx.saldo_apos}
+                              </td>
+                            </tr>
+                          ))}
+                        </tbody>
+                      </table>
+                    </div>
+                  </>
                 )}
               </TabsContent>
 
