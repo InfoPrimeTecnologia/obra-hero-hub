@@ -29,6 +29,7 @@ import {
   FileBarChart2,
   Sparkles,
   Layers,
+  BookOpen,
 } from "lucide-react";
 import { Logo } from "@/components/Logo";
 import { useAuth } from "@/lib/auth-context";
