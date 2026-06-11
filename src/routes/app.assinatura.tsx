@@ -171,8 +171,17 @@ function AssinaturaPage() {
           .select("id,description,amount,status,due_date,paid_at,invoice_url,bank_slip_url")
           .eq("customer_id", custId)
           .order("due_date", { ascending: false })
-          .limit(20);
+          .limit(50);
         setInvoices((invData as Invoice[]) ?? []);
+
+        const { data: txData } = await supabase
+          .from("credit_transactions")
+          .select("id,tipo,delta,saldo_apos,descricao,invoice_id,created_at")
+          .eq("customer_id", custId)
+          .eq("tipo", "recarga")
+          .order("created_at", { ascending: false })
+          .limit(50);
+        setRecargas((txData as CreditTx[]) ?? []);
       }
     } catch (e) {
       const msg = e instanceof Error ? e.message : String(e);
