@@ -1,6 +1,7 @@
 import { createFileRoute } from "@tanstack/react-router";
 import { useEffect, useState, type FormEvent } from "react";
-import { Plus, Receipt, CheckCircle2, XCircle } from "lucide-react";
+import { Plus, Receipt, CheckCircle2, XCircle, Undo2, Download } from "lucide-react";
+import { downloadCsv, fmtNum, fmtDate } from "@/lib/csv-export";
 import { PageHeader } from "@/components/admin/PageHeader";
 import { Card, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
@@ -29,6 +30,7 @@ type CP = {
   status: string; pago_em: string | null; valor_pago: number | null;
   origem: string; conta_bancaria_id: string | null; categoria_id: string | null;
   fornecedor_id: string | null; obra_id: string | null;
+  estornado?: boolean; estorno_token?: string | null; motivo_estorno?: string | null;
 };
 
 const statusColor = (s: string) =>
@@ -111,6 +113,68 @@ function ContasPagarPage() {
     const { error } = await supabase.from("contas_pagar").update({ status: "cancelado" }).eq("id", id);
     if (error) return toast.error("Erro", { description: error.message });
     toast.success("Cancelada"); void carregar();
+  };
+
+  const [estornando, setEstornando] = useState<CP | null>(null);
+  const [motivoEstorno, setMotivoEstorno] = useState("");
+
+  const estornarBaixa = async () => {
+    if (!estornando) return;
+    if (!motivoEstorno.trim()) return toast.error("Informe o motivo");
+    const token = crypto.randomUUID();
+    // 1. reverter lançamento + saldo
+    const { data: lancs } = await supabase.from("lancamentos").select("*")
+      .eq("conta_pagar_id", estornando.id).eq("estornado", false);
+    if (lancs) {
+      for (const l of lancs) {
+        await supabase.from("lancamentos").update({ estornado: true, estorno_token: token }).eq("id", l.id);
+        await supabase.from("lancamentos").insert({
+          customer_id: l.customer_id,
+          conta_bancaria_id: l.conta_bancaria_id,
+          tipo: "entrada", // reverso de saída
+          valor: l.valor,
+          data: new Date().toISOString().slice(0, 10),
+          descricao: `ESTORNO: ${l.descricao} - ${motivoEstorno}`,
+          estorno_token: token,
+          created_by: user!.id,
+        });
+        const { data: c } = await supabase.from("contas_bancarias").select("saldo_atual").eq("id", l.conta_bancaria_id).maybeSingle();
+        if (c) {
+          await supabase.from("contas_bancarias").update({ saldo_atual: Number(c.saldo_atual) + Number(l.valor) }).eq("id", l.conta_bancaria_id);
+        }
+      }
+    }
+    // 2. marcar conta a pagar como estornada e voltar a pendente
+    const { error } = await supabase.from("contas_pagar").update({
+      status: "pendente",
+      pago_em: null,
+      valor_pago: 0,
+      conta_bancaria_id: null,
+      estornado: true,
+      estorno_token: token,
+      estornado_em: new Date().toISOString(),
+      estornado_por: user!.id,
+      motivo_estorno: motivoEstorno,
+    } as any).eq("id", estornando.id);
+    if (error) return toast.error("Erro", { description: error.message });
+    toast.success(`Pagamento estornado (token: ${token.slice(0, 8)}…)`);
+    setEstornando(null); setMotivoEstorno(""); void carregar();
+  };
+
+  const exportarCsv = () => {
+    const headers = ["Descrição", "Vencimento", "Valor", "Status", "Origem", "Pago em", "Valor pago", "Estornada"];
+    const rows = filtrados.map(c => [
+      c.descricao,
+      fmtDate(c.vencimento),
+      fmtNum(Number(c.valor)),
+      c.status,
+      c.origem,
+      fmtDate(c.pago_em),
+      c.valor_pago ? fmtNum(Number(c.valor_pago)) : "",
+      c.estornado ? "sim" : "",
+    ]);
+    downloadCsv(`contas-pagar-${new Date().toISOString().slice(0, 10)}`, rows, headers);
+    toast.success("CSV exportado");
   };
 
   const hoje = new Date().toISOString().slice(0, 10);
@@ -197,12 +261,17 @@ function ContasPagarPage() {
           </CardContent></Card>
         </div>
 
-        <div className="flex gap-2">
-          {(["pendente", "vencido", "pago", "todos"] as const).map((f) => (
-            <Button key={f} size="sm" variant={filtro === f ? "default" : "outline"} onClick={() => setFiltro(f)}>
-              {f}
-            </Button>
-          ))}
+        <div className="flex flex-wrap items-center justify-between gap-2">
+          <div className="flex gap-2">
+            {(["pendente", "vencido", "pago", "todos"] as const).map((f) => (
+              <Button key={f} size="sm" variant={filtro === f ? "default" : "outline"} onClick={() => setFiltro(f)}>
+                {f}
+              </Button>
+            ))}
+          </div>
+          <Button size="sm" variant="outline" onClick={exportarCsv}>
+            <Download className="mr-1 h-4 w-4" /> CSV
+          </Button>
         </div>
 
         {filtrados.length === 0 ? (
@@ -228,6 +297,7 @@ function ContasPagarPage() {
                 <div className="flex items-center gap-3">
                   <span className="font-semibold">R$ {Number(c.valor).toFixed(2)}</span>
                   <Badge variant={statusColor(c.status) as any}>{c.status}</Badge>
+                  {c.estornado && <Badge variant="outline" title={c.motivo_estorno ?? undefined}>estornada</Badge>}
                   {c.status === "pendente" && (
                     <>
                       <Button size="sm" onClick={() => { setPaying(c); setPagto({ ...pagto, valor_pago: String(c.valor) }); }}>
@@ -237,6 +307,11 @@ function ContasPagarPage() {
                         <XCircle className="h-4 w-4" />
                       </Button>
                     </>
+                  )}
+                  {c.status === "pago" && !c.estornado && (
+                    <Button size="sm" variant="outline" onClick={() => setEstornando(c)}>
+                      <Undo2 className="mr-1 h-4 w-4" /> Estornar
+                    </Button>
                   )}
                 </div>
               </CardContent>
@@ -264,6 +339,20 @@ function ContasPagarPage() {
               </div>
             </div>
             <DialogFooter><Button onClick={baixar}>Confirmar</Button></DialogFooter>
+          </DialogContent>
+        </Dialog>
+
+        <Dialog open={!!estornando} onOpenChange={(v) => { if (!v) { setEstornando(null); setMotivoEstorno(""); } }}>
+          <DialogContent>
+            <DialogHeader><DialogTitle>Estornar pagamento</DialogTitle></DialogHeader>
+            <div className="space-y-3">
+              <p className="text-sm text-muted-foreground">
+                Reverte o lançamento bancário e devolve a conta ao status pendente. A operação fica registrada com token de auditoria.
+              </p>
+              <div className="space-y-2"><Label>Motivo *</Label>
+                <Textarea required value={motivoEstorno} onChange={(e) => setMotivoEstorno(e.target.value)} /></div>
+            </div>
+            <DialogFooter><Button variant="destructive" onClick={estornarBaixa}>Confirmar estorno</Button></DialogFooter>
           </DialogContent>
         </Dialog>
       </div>

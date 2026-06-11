@@ -37,6 +37,7 @@ import { Skeleton } from "@/components/ui/skeleton";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/lib/auth-context";
 import { usePlanModules } from "@/lib/use-plan-modules";
+import { downloadCsv } from "@/lib/csv-export";
 
 export const Route = createFileRoute("/app/relatorios")({
   component: RelatoriosPage,
@@ -533,6 +534,15 @@ function RelatoriosPage() {
     XLSX.writeFile(wb, `${current.id}_${from}_${to}.xlsx`);
   };
 
+  const exportCSV = () => {
+    if (!current) return;
+    const headers = current.columns.map((c) => c.label);
+    const data = rows.map((r) =>
+      current.columns.map((c) => (c.format ? c.format(r) : ((r as any)[c.key as string] ?? ""))),
+    );
+    downloadCsv(`${current.id}_${from}_${to}`, data, headers);
+  };
+
   const exportPDF = () => {
     if (!current) return;
     const doc = new jsPDF({ orientation: "landscape", unit: "pt", format: "a4" });
@@ -597,6 +607,9 @@ function RelatoriosPage() {
             <Input id="to" type="date" value={to} onChange={(e) => setTo(e.target.value)} />
           </div>
           <div className="ml-auto flex gap-2">
+            <Button variant="outline" onClick={exportCSV} disabled={!rows.length}>
+              <Download className="mr-2 h-4 w-4" /> CSV
+            </Button>
             <Button variant="outline" onClick={exportXLSX} disabled={!rows.length}>
               <FileSpreadsheet className="mr-2 h-4 w-4" /> Excel
             </Button>
