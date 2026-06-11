@@ -1,6 +1,6 @@
 import { createFileRoute, Link, Outlet, useLocation, useNavigate } from "@tanstack/react-router";
 import { useEffect, useState } from "react";
-import { ArrowLeft, ClipboardList, Plus, FileText, MessageCircle } from "lucide-react";
+import { ArrowLeft, ClipboardList, Plus, FileText, MessageCircle, Copy } from "lucide-react";
 import { PageHeader } from "@/components/admin/PageHeader";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
@@ -90,6 +90,58 @@ function RdoListPage() {
     }
   };
 
+  const duplicar = async (origem: Rdo) => {
+    if (!obra) return;
+    const novaData = window.prompt(
+      "Data do novo RDO (AAAA-MM-DD):",
+      new Date().toISOString().slice(0, 10),
+    );
+    if (!novaData) return;
+    const { data: criado, error } = await supabase
+      .from("rdos")
+      .insert({
+        obra_id: obra.id,
+        customer_id: obra.customer_id,
+        data: novaData,
+        condicao: origem.condicao,
+        responsavel: origem.responsavel,
+        observacoes: origem.observacoes,
+        created_by: user!.id,
+      })
+      .select("id")
+      .maybeSingle();
+    if (error || !criado) {
+      toast.error("Erro ao duplicar RDO", { description: error?.message });
+      return;
+    }
+    // copia equipes, atividades e ocorrências (sem anexos)
+    const [{ data: eq }, { data: at }, { data: oc }] = await Promise.all([
+      supabase.from("rdo_equipes").select("empreiteiro,funcao,quantidade,horas").eq("rdo_id", origem.id),
+      supabase
+        .from("rdo_atividades")
+        .select("etapa_id,subetapa_id,descricao,percentual")
+        .eq("rdo_id", origem.id),
+      supabase.from("rdo_ocorrencias").select("tipo,descricao").eq("rdo_id", origem.id),
+    ]);
+    if (eq?.length) {
+      await supabase
+        .from("rdo_equipes")
+        .insert(eq.map((r) => ({ ...r, rdo_id: criado.id, customer_id: obra.customer_id })));
+    }
+    if (at?.length) {
+      await supabase
+        .from("rdo_atividades")
+        .insert(at.map((r) => ({ ...r, rdo_id: criado.id, customer_id: obra.customer_id })));
+    }
+    if (oc?.length) {
+      await supabase
+        .from("rdo_ocorrencias")
+        .insert(oc.map((r) => ({ ...r, rdo_id: criado.id, customer_id: obra.customer_id })));
+    }
+    toast.success("RDO duplicado");
+    navigate({ to: "/app/obras/$obraId/rdo/$rdoId", params: { obraId, rdoId: criado.id } });
+  };
+
   const listPath = `/app/obras/${obraId}/rdo`;
   if (location.pathname.replace(/\/$/, "") !== listPath) {
     return <Outlet />;
@@ -141,6 +193,15 @@ function RdoListPage() {
                     onClick={() => navigate({ to: "/app/obras/$obraId/rdo/$rdoId", params: { obraId, rdoId: r.id } })}
                   >
                     <FileText className="mr-2 h-4 w-4" /> Abrir
+                  </Button>
+                  <Button
+                    size="sm"
+                    variant="outline"
+                    type="button"
+                    onClick={() => duplicar(r)}
+                    title="Duplicar este RDO para uma nova data"
+                  >
+                    <Copy className="mr-2 h-4 w-4" /> Duplicar
                   </Button>
                   <Button
                     size="sm"

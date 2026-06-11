@@ -315,6 +315,11 @@ function OrcamentoPage() {
                 <ArrowLeft className="mr-2 h-4 w-4" /> Voltar
               </Link>
             </Button>
+            <Button variant="outline" asChild>
+              <Link to="/app/obras/$obraId/gantt" params={{ obraId }}>
+                <Calendar className="mr-2 h-4 w-4" /> Gantt
+              </Link>
+            </Button>
             <Button onClick={abrirEtapaNova}>
               <Plus className="mr-2 h-4 w-4" /> Nova etapa
             </Button>

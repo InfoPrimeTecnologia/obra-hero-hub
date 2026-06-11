@@ -55,6 +55,7 @@ import { Route as LovableEmailTransactionalPreviewRouteImport } from './routes/l
 import { Route as LovableEmailQueueProcessRouteImport } from './routes/lovable/email/queue/process'
 import { Route as AppObrasObraIdRdoRouteImport } from './routes/app.obras.$obraId.rdo'
 import { Route as AppObrasObraIdOrcamentoRouteImport } from './routes/app.obras.$obraId.orcamento'
+import { Route as AppObrasObraIdGanttRouteImport } from './routes/app.obras.$obraId.gantt'
 import { Route as AppObrasObraIdComprasRouteImport } from './routes/app.obras.$obraId.compras'
 import { Route as AppObrasObraIdRdoRdoIdRouteImport } from './routes/app.obras.$obraId.rdo.$rdoId'
 import { Route as AppObrasObraIdComprasCompraIdRouteImport } from './routes/app.obras.$obraId.compras.$compraId'
@@ -292,6 +293,11 @@ const AppObrasObraIdOrcamentoRoute = AppObrasObraIdOrcamentoRouteImport.update({
   path: '/obras/$obraId/orcamento',
   getParentRoute: () => AppRoute,
 } as any)
+const AppObrasObraIdGanttRoute = AppObrasObraIdGanttRouteImport.update({
+  id: '/obras/$obraId/gantt',
+  path: '/obras/$obraId/gantt',
+  getParentRoute: () => AppRoute,
+} as any)
 const AppObrasObraIdComprasRoute = AppObrasObraIdComprasRouteImport.update({
   id: '/obras/$obraId/compras',
   path: '/obras/$obraId/compras',
@@ -352,6 +358,7 @@ export interface FileRoutesByFullPath {
   '/lovable/email/suppression': typeof LovableEmailSuppressionRoute
   '/app/obras/': typeof AppObrasIndexRoute
   '/app/obras/$obraId/compras': typeof AppObrasObraIdComprasRouteWithChildren
+  '/app/obras/$obraId/gantt': typeof AppObrasObraIdGanttRoute
   '/app/obras/$obraId/orcamento': typeof AppObrasObraIdOrcamentoRoute
   '/app/obras/$obraId/rdo': typeof AppObrasObraIdRdoRouteWithChildren
   '/lovable/email/queue/process': typeof LovableEmailQueueProcessRoute
@@ -401,6 +408,7 @@ export interface FileRoutesByTo {
   '/lovable/email/suppression': typeof LovableEmailSuppressionRoute
   '/app/obras': typeof AppObrasIndexRoute
   '/app/obras/$obraId/compras': typeof AppObrasObraIdComprasRouteWithChildren
+  '/app/obras/$obraId/gantt': typeof AppObrasObraIdGanttRoute
   '/app/obras/$obraId/orcamento': typeof AppObrasObraIdOrcamentoRoute
   '/app/obras/$obraId/rdo': typeof AppObrasObraIdRdoRouteWithChildren
   '/lovable/email/queue/process': typeof LovableEmailQueueProcessRoute
@@ -453,6 +461,7 @@ export interface FileRoutesById {
   '/lovable/email/suppression': typeof LovableEmailSuppressionRoute
   '/app/obras/': typeof AppObrasIndexRoute
   '/app/obras/$obraId/compras': typeof AppObrasObraIdComprasRouteWithChildren
+  '/app/obras/$obraId/gantt': typeof AppObrasObraIdGanttRoute
   '/app/obras/$obraId/orcamento': typeof AppObrasObraIdOrcamentoRoute
   '/app/obras/$obraId/rdo': typeof AppObrasObraIdRdoRouteWithChildren
   '/lovable/email/queue/process': typeof LovableEmailQueueProcessRoute
@@ -506,6 +515,7 @@ export interface FileRouteTypes {
     | '/lovable/email/suppression'
     | '/app/obras/'
     | '/app/obras/$obraId/compras'
+    | '/app/obras/$obraId/gantt'
     | '/app/obras/$obraId/orcamento'
     | '/app/obras/$obraId/rdo'
     | '/lovable/email/queue/process'
@@ -555,6 +565,7 @@ export interface FileRouteTypes {
     | '/lovable/email/suppression'
     | '/app/obras'
     | '/app/obras/$obraId/compras'
+    | '/app/obras/$obraId/gantt'
     | '/app/obras/$obraId/orcamento'
     | '/app/obras/$obraId/rdo'
     | '/lovable/email/queue/process'
@@ -606,6 +617,7 @@ export interface FileRouteTypes {
     | '/lovable/email/suppression'
     | '/app/obras/'
     | '/app/obras/$obraId/compras'
+    | '/app/obras/$obraId/gantt'
     | '/app/obras/$obraId/orcamento'
     | '/app/obras/$obraId/rdo'
     | '/lovable/email/queue/process'
@@ -956,6 +968,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AppObrasObraIdOrcamentoRouteImport
       parentRoute: typeof AppRoute
     }
+    '/app/obras/$obraId/gantt': {
+      id: '/app/obras/$obraId/gantt'
+      path: '/obras/$obraId/gantt'
+      fullPath: '/app/obras/$obraId/gantt'
+      preLoaderRoute: typeof AppObrasObraIdGanttRouteImport
+      parentRoute: typeof AppRoute
+    }
     '/app/obras/$obraId/compras': {
       id: '/app/obras/$obraId/compras'
       path: '/obras/$obraId/compras'
@@ -1051,6 +1070,7 @@ interface AppRouteChildren {
   AppRhColaboradoresRoute: typeof AppRhColaboradoresRoute
   AppObrasIndexRoute: typeof AppObrasIndexRoute
   AppObrasObraIdComprasRoute: typeof AppObrasObraIdComprasRouteWithChildren
+  AppObrasObraIdGanttRoute: typeof AppObrasObraIdGanttRoute
   AppObrasObraIdOrcamentoRoute: typeof AppObrasObraIdOrcamentoRoute
   AppObrasObraIdRdoRoute: typeof AppObrasObraIdRdoRouteWithChildren
 }
@@ -1080,6 +1100,7 @@ const AppRouteChildren: AppRouteChildren = {
   AppRhColaboradoresRoute: AppRhColaboradoresRoute,
   AppObrasIndexRoute: AppObrasIndexRoute,
   AppObrasObraIdComprasRoute: AppObrasObraIdComprasRouteWithChildren,
+  AppObrasObraIdGanttRoute: AppObrasObraIdGanttRoute,
   AppObrasObraIdOrcamentoRoute: AppObrasObraIdOrcamentoRoute,
   AppObrasObraIdRdoRoute: AppObrasObraIdRdoRouteWithChildren,
 }
