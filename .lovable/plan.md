@@ -1,76 +1,112 @@
-## Versão 1.0.5 — Escopo amplo
+# Sistema de Créditos para Assistente IA
 
-Vou dividir em blocos. Confirme se quer tudo de uma vez ou priorizar.
+## Visão geral
 
-### 1. Login — "Lembrar de mim"
-- Checkbox em `src/routes/login.tsx`.
-- Quando marcado: salva email em `localStorage` (`mestre360.remember_email`) e mantém sessão persistente (padrão atual do Supabase).
-- Quando desmarcado: limpa email salvo; sessão expira no fechamento do navegador (`signOut` em `beforeunload` se não-lembrar — opcional).
-- Pré-preenche o email no próximo acesso.
+Hoje o Assistente IA é liberado por plano (Empresarial). Vamos adicionar uma camada de **créditos consumíveis**: cada interação com o assistente desconta um número de créditos que varia conforme a complexidade da ação. O usuário pode recarregar créditos comprando pacotes definidos pelo admin (pagamento via Asaas, que já está integrado).
 
-### 2. Dashboard por Obra
-- Sidebar: item **Obras** vira accordion com submenu listando obras ativas do cliente (já existem em `obras`).
-- Ao clicar em uma obra: define `ObraSelecionada` (já existe `obra-context.tsx`) e navega para `/app` (dashboard).
-- Dashboard (`src/routes/app.index.tsx`) detecta `obra` do contexto:
-  - Se obra selecionada → métricas filtradas por `obra_id` (contas pagar/receber, compras, colaboradores, estoque) + nome + **foto da obra** em destaque.
-  - Se nenhuma → métricas gerais (comportamento atual).
-- Botão "Limpar filtro" para voltar à visão geral.
+## Banco de dados (novas tabelas)
 
-### 3. Foto da obra
-- Migration: adicionar coluna `foto_url text` em `obras`.
-- Bucket de storage: reutilizar `obra-fotos` (já existe, privado) → torná-lo público OU gerar URL assinada. Vou tornar público para simplificar exibição.
-- Em `app.obras.index.tsx` (cadastro/edição de obra): upload de foto.
-- Exibida no dashboard quando obra está filtrada.
+1. **`credit_packages`** (admin define os pacotes de recarga)
+   - `nome` (ex.: "Pacote Bronze")
+   - `valor_brl` (preço em reais)
+   - `creditos` (quantidade de créditos)
+   - `ativo`, `ordem`, `destaque`
+   - RLS: leitura para `authenticated`; escrita só admin
 
-### 4. Orçamento — Etapas e Subetapas
-- Já existem tabelas `orcamento_etapas` e `orcamento_subetapas`. Confirmar UI em `app.obras.$obraId.orcamento.tsx`:
-  - CRUD de etapas (nome, ordem, datas previstas).
-  - Dentro de cada etapa, CRUD de subetapas (nome, tipo, valor orçado).
-  - Visual hierárquico (accordion).
+2. **`credit_action_costs`** (admin define custo por ação)
+   - `action_key` (ex.: `chat_message`, `create_compra`, `transcribe_audio`)
+   - `descricao`, `custo` (int), `ativo`
+   - Seed com defaults (ver tabela abaixo)
+   - RLS: leitura `authenticated`; escrita só admin
 
-### 5. Compras vinculadas à subetapa
-- Em `app.obras.$obraId.compras.tsx` (form de compra/itens): cada item de compra **deve** ter `subetapa_id` obrigatório (campo já existe em `compra_itens`).
-- Validação: bloquear salvar compra se algum item sem subetapa.
-- Listagem agrupa por etapa/subetapa.
+3. **`customer_credits`** (saldo atual por empresa)
+   - `customer_id` UNIQUE, `saldo` int, `updated_at`
+   - RLS: leitura para membros do customer
 
-### 6. Nota fiscal anexa à compra (individual)
-- Migration: coluna `nf_url text`, `nf_numero text`, `nf_chave text` em `compras` (ou nova tabela `compra_notas_fiscais` se múltiplas NFs por compra). Vou usar nova tabela `compra_notas_fiscais` (anexo por compra, suporta múltiplas).
-- Bucket novo: `notas-fiscais` (privado, URLs assinadas).
-- UI de upload no detalhe da compra.
+4. **`credit_transactions`** (extrato/histórico)
+   - `customer_id`, `tipo` (`recarga` | `consumo` | `ajuste` | `estorno`)
+   - `delta` (positivo = entra, negativo = sai)
+   - `saldo_apos`, `action_key`, `descricao`
+   - `invoice_id` (FK quando recarga), `user_id` (quem consumiu)
+   - RLS: leitura para membros do customer; insert via server fn
 
-### 7. Leitor de NF-e (plano Empresarial)
-- Upload de XML da NF-e → parser identifica itens (descrição, qtd, valor) e sugere preenchimento de `compra_itens`.
-- Server function `parseNfeXml` (`src/lib/nfe.functions.ts`) — parse puro de XML, sem chamadas externas.
-- Gating por plano: usa `use-plan-modules.ts` → bloquear se plano ≠ "Empresarial". Mostrar upsell.
+## Custos default (tabela `credit_action_costs`)
 
-### 8. RH — Colaboradores por obra
-- Já existe `colaborador_obras` (vínculo N:N). Garantir UI em `app.rh.colaboradores.tsx`:
-  - No cadastro de colaborador, selecionar uma ou mais obras (datas início/fim opcionais).
-  - Lista filtrável por obra (usa `ObraSelecionada` quando ativa).
+| Ação | Custo | Justificativa |
+|---|---|---|
+| `chat_message` | 1 | Resposta simples do GPT-4o-mini |
+| `transcribe_audio` | 2 | Whisper, custo extra de áudio |
+| `list_obras` (leitura) | 0 | Não cobra leituras auxiliares |
+| `create_etapa` | 2 | Mutação leve |
+| `create_subetapa` | 2 | Mutação leve |
+| `create_rdo` | 5 | Cria registro composto |
+| `create_compra` | 8 | Toca financeiro/estoque |
+| `create_conta_pagar` | 5 | Lançamento financeiro |
+| `create_conta_receber` | 5 | Lançamento financeiro |
 
-### 9. Financeiro por obra
-- `contas_pagar`, `contas_receber`, `lancamentos`, `compras` já têm `obra_id`.
-- Quando `ObraSelecionada` ativa, todas as telas de financeiro (`contas-pagar`, `contas-receber`, `fluxo-caixa`, `relatorios`) filtram por `obra_id`.
-- Quando nenhuma → visão geral consolidada.
-- Adicionar badge "Filtrado por obra: X" no topo das páginas quando aplicável.
+Editáveis pelo admin.
 
-### 10. Versionamento
-- Inserir release **v1.0.5** em `app_releases` com lista completa.
+## Server functions (novo `credits.functions.ts`)
 
----
+- `getMyCredits()` → saldo atual + últimos 20 lançamentos
+- `listCreditPackages()` → pacotes ativos ordenados
+- `createCreditRecharge({ packageId })` → cria fatura Asaas (cobra `valor_brl`); ao webhook confirmar pagamento, credita `creditos` no saldo
+- `consumeCredits({ actionKey, descricao })` → server-side helper, usado pelo assistente; lança erro `INSUFFICIENT_CREDITS` se saldo < custo
+- Admin: `adminUpsertPackage`, `adminUpsertActionCost`, `adminAdjustCredits` (com motivo)
 
-### Detalhes técnicos
-- Migrations necessárias:
-  - `ALTER TABLE obras ADD COLUMN foto_url text;`
-  - `CREATE TABLE compra_notas_fiscais (id, customer_id, compra_id, numero, chave, arquivo_url, valor, emitida_em, created_at)` + GRANTs + RLS.
-  - Storage: tornar `obra-fotos` público; criar bucket `notas-fiscais` privado.
-- Componente `ObraScopeBadge` para exibir filtro ativo.
-- Hook `useObraScopeFilter()` para aplicar `.eq('obra_id', obra.id)` quando ativa.
+## Integração no Assistente IA
 
-### Risco / escopo
-Esse pacote é grande — provavelmente 2–3 turnos de implementação para fazer bem feito. Sugiro priorizar:
-- **Fase A (essa rodada)**: 1 (lembrar login), 2 (submenu obras + dashboard filtrado), 3 (foto da obra), 9 (financeiro por obra usando contexto existente). Já entrega visualmente o "dashboard por obra".
-- **Fase B (próxima)**: 4, 5, 6 (orçamento + vínculo + NF anexa).
-- **Fase C**: 7 (leitor NF-e empresarial), 8 (RH refinado).
+Em `ai-assistant.functions.ts`:
+- `aiChat`: antes de chamar OpenAI, cobra `chat_message`
+- `aiTranscribe`: cobra `transcribe_audio`
+- `aiExecuteAction`: ao confirmar, cobra o custo da `tool` específica (`create_compra`, etc.)
+- Se saldo insuficiente, retorna `{ type: 'no_credits', needed, balance }` para a UI mostrar CTA "Recarregar"
 
-Confirme: **toca tudo de uma vez** ou **vai por fases A → B → C**?
+## Webhook Asaas
+
+Em `api/public/asaas-webhook.ts`, ao processar `PAYMENT_RECEIVED`/`PAYMENT_CONFIRMED` de uma fatura do tipo "recarga de créditos":
+- Identificar pelo `external_reference` (`credit_recharge:<package_id>:<customer_id>`)
+- Inserir transação `recarga` + atualizar `customer_credits.saldo`
+- Idempotente (não credita 2x para a mesma `invoice_id`)
+
+## UI
+
+### Usuário
+- **`/app/creditos`** (nova rota):
+  - Card grande: "Saldo atual: X créditos"
+  - Grid dos pacotes (admin define), botão "Recarregar" → abre fatura Asaas
+  - Tabela de extrato (últimas 50 transações)
+- **`AIAssistant`**: badge mostrando saldo no header; banner "Sem créditos" com link para `/app/creditos` quando vazio
+- **`TopBar`**: pill clicável com saldo (só plano Empresarial)
+
+### Admin
+- **`/admin/creditos`** (nova rota):
+  - Aba "Pacotes de recarga": CRUD (nome, valor R$, créditos, ativo, destaque)
+  - Aba "Custos por ação": tabela editável (action_key, descrição, custo)
+  - Aba "Ajustes manuais": buscar empresa, somar/subtrair créditos com motivo (audit)
+
+## Sem mudança de comportamento para quem não usa o assistente
+
+O sistema de créditos só importa para empresas no plano Empresarial (gate atual permanece). Empresas que não acessam o assistente nunca veem a página de créditos.
+
+## Arquivos previstos
+
+**Migração**: 1 arquivo SQL (4 tabelas + grants + RLS + seed dos pacotes/custos default)
+
+**Novos**:
+- `src/lib/credits.functions.ts`
+- `src/routes/app.creditos.tsx`
+- `src/routes/admin.creditos.tsx`
+- `src/components/app/CreditBalanceBadge.tsx`
+
+**Editados**:
+- `src/lib/ai-assistant.functions.ts` (cobrar créditos)
+- `src/components/app/AIAssistant.tsx` (mostrar saldo + erro "sem créditos")
+- `src/components/app/TopBar.tsx` (pill de saldo)
+- `src/components/admin/AdminLayout.tsx` (menu "Créditos")
+- `src/routes/api/public/asaas-webhook.ts` (creditar recarga)
+- `src/routeTree.gen.ts`
+
+## Confirmação
+
+Confirma os custos default da tabela acima? Posso ajustar antes de implementar, ou seguir com esses valores e você edita depois pelo admin (que é justamente para isso).

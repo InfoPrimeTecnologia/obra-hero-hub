@@ -30,6 +30,7 @@ import {
   Sparkles,
   Layers,
   BookOpen,
+  Coins,
 } from "lucide-react";
 import { AIAssistant } from "@/components/app/AIAssistant";
 import { Logo } from "@/components/Logo";
@@ -99,6 +100,8 @@ const nav: Array<NavItem | NavGroup> = [
   { to: "/app/assinatura", label: "Assinatura", icon: Sparkles },
 ];
 
+const aiCreditsNav: NavItem = { to: "/app/creditos", label: "Créditos IA", icon: Coins };
+
 function isGroup(item: NavItem | NavGroup): item is NavGroup {
   return (item as NavGroup).children !== undefined;
 }
@@ -111,7 +114,10 @@ export function AppLayout() {
   const [openGroups, setOpenGroups] = useState<Record<string, boolean>>({});
   const { has: hasModule, hasFeature } = usePlanModules();
 
-  const visibleNav = nav.filter((item) => !item.module || hasModule(item.module));
+  const visibleNav = [
+    ...nav.filter((item) => !item.module || hasModule(item.module)),
+    ...(hasFeature("ai_assistant") ? [aiCreditsNav] : []),
+  ];
 
   useEffect(() => {
     if (!user?.id) return;

@@ -1,5 +1,37 @@
 import { createServerFn } from "@tanstack/react-start";
 import { requireSupabaseAuth } from "@/integrations/supabase/auth-middleware";
+import { applyCreditDelta, getActionCost, getBalance } from "./credits.functions";
+
+async function chargeCredits(
+  supabase: any,
+  customerId: string,
+  userId: string,
+  actionKey: string,
+  descricao: string,
+): Promise<{ charged: number; saldo: number }> {
+  const cost = await getActionCost(supabase, actionKey);
+  if (cost <= 0) return { charged: 0, saldo: await getBalance(supabase, customerId) };
+  const balance = await getBalance(supabase, customerId);
+  if (balance < cost) {
+    const err: any = new Error(
+      `Créditos insuficientes. Necessário: ${cost}, disponível: ${balance}. Acesse /app/creditos para recarregar.`,
+    );
+    err.code = "INSUFFICIENT_CREDITS";
+    err.needed = cost;
+    err.balance = balance;
+    throw err;
+  }
+  const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
+  const res = await applyCreditDelta(supabaseAdmin, {
+    customerId,
+    delta: -cost,
+    tipo: "consumo",
+    actionKey,
+    descricao,
+    userId,
+  });
+  return { charged: cost, saldo: res.saldo };
+}
 
 const OPENAI_URL = "https://api.openai.com/v1";
 const MODEL = "gpt-4o-mini";
@@ -459,6 +491,9 @@ export const aiChat = createServerFn({ method: "POST" })
       throw new Error("Recurso disponível apenas no plano Empresarial");
     }
 
+    // Cobra créditos antes de invocar o modelo
+    await chargeCredits(supabase, customerId, userId, "chat_message", "Mensagem ao assistente");
+
     const messages: ChatMessage[] = [
       { role: "system", content: SYSTEM_PROMPT },
       ...data.messages,
@@ -553,7 +588,32 @@ export const aiExecuteAction = createServerFn({ method: "POST" })
     if (!MUTATING_TOOLS.has(data.tool)) {
       throw new Error("Ferramenta não permitida");
     }
-    return await executeTool(supabase, customerId, userId, data.tool, data.args);
+    // Cobra créditos da ação específica antes de executar
+    const charge = await chargeCredits(
+      supabase,
+      customerId,
+      userId,
+      data.tool,
+      `Ação IA: ${data.tool}`,
+    );
+    try {
+      const result = await executeTool(supabase, customerId, userId, data.tool, data.args);
+      return { ...result, credits: charge };
+    } catch (e) {
+      // Estorna em caso de falha
+      if (charge.charged > 0) {
+        const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
+        await applyCreditDelta(supabaseAdmin, {
+          customerId,
+          delta: charge.charged,
+          tipo: "estorno",
+          actionKey: data.tool,
+          descricao: `Estorno por falha em ${data.tool}`,
+          userId,
+        });
+      }
+      throw e;
+    }
   });
 
 export const aiTranscribe = createServerFn({ method: "POST" })
@@ -567,6 +627,10 @@ export const aiTranscribe = createServerFn({ method: "POST" })
     if (!(await isEmpresarial(supabase, customerId))) {
       throw new Error("Recurso disponível apenas no plano Empresarial");
     }
+
+    await chargeCredits(supabase, customerId, userId, "transcribe_audio", "Transcrição de áudio");
+
+
 
     const bin = Uint8Array.from(atob(data.audioBase64), (c) => c.charCodeAt(0));
     const ext = data.mime.includes("mp4") ? "m4a" : data.mime.includes("ogg") ? "ogg" : "webm";

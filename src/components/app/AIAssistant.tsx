@@ -1,7 +1,10 @@
 import { useEffect, useRef, useState } from "react";
-import { Sparkles, Send, Mic, Square, Loader2, X, Check, XCircle } from "lucide-react";
+import { Sparkles, Send, Mic, Square, Loader2, X, Check, XCircle, Coins } from "lucide-react";
+import { Link } from "@tanstack/react-router";
 import { useServerFn } from "@tanstack/react-start";
+import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { aiChat, aiExecuteAction, aiTranscribe } from "@/lib/ai-assistant.functions";
+import { getMyCredits } from "@/lib/credits.functions";
 import { Button } from "@/components/ui/button";
 import { Textarea } from "@/components/ui/textarea";
 import { Card } from "@/components/ui/card";
@@ -63,6 +66,18 @@ export function AIAssistant() {
   const chat = useServerFn(aiChat);
   const execAction = useServerFn(aiExecuteAction);
   const transcribe = useServerFn(aiTranscribe);
+  const getCredits = useServerFn(getMyCredits);
+  const qc = useQueryClient();
+  const credits = useQuery({
+    queryKey: ["my-credits"],
+    queryFn: () => getCredits(),
+    enabled: open,
+    staleTime: 15_000,
+  });
+  const saldo = credits.data?.saldo ?? 0;
+  function refreshCredits() {
+    qc.invalidateQueries({ queryKey: ["my-credits"] });
+  }
 
   useEffect(() => {
     scrollRef.current?.scrollTo({ top: scrollRef.current.scrollHeight, behavior: "smooth" });
@@ -122,6 +137,7 @@ export function AIAssistant() {
       setMessages((m) => [...m, { role: "assistant", content: `❌ ${e.message}` }]);
     } finally {
       setBusy(false);
+      refreshCredits();
     }
   }
 
@@ -146,6 +162,8 @@ export function AIAssistant() {
       toast.success(`${okCount}/${results.length} ação(ões) concluída(s)`);
     } catch (e: any) {
       toast.error("Erro", { description: e.message });
+    } finally {
+      refreshCredits();
     }
   }
 
@@ -220,10 +238,37 @@ export function AIAssistant() {
               <p className="text-sm font-semibold">Assistente Mestre360</p>
               <Badge variant="secondary" className="text-xs">IA</Badge>
             </div>
-            <button onClick={() => setOpen(false)} className="text-muted-foreground hover:text-foreground">
-              <X className="h-4 w-4" />
-            </button>
+            <div className="flex items-center gap-2">
+              <Link
+                to="/app/creditos"
+                className={cn(
+                  "inline-flex items-center gap-1 rounded-full border px-2 py-0.5 text-xs font-medium transition-colors",
+                  saldo < 5
+                    ? "border-destructive/30 bg-destructive/5 text-destructive hover:bg-destructive/10"
+                    : "border-primary/20 bg-primary/5 text-primary hover:bg-primary/10",
+                )}
+                title="Créditos disponíveis"
+              >
+                <Coins className="h-3 w-3" />
+                {saldo}
+              </Link>
+              <button onClick={() => setOpen(false)} className="text-muted-foreground hover:text-foreground">
+                <X className="h-4 w-4" />
+              </button>
+            </div>
           </div>
+
+          {saldo === 0 && (
+            <div className="border-b border-destructive/30 bg-destructive/5 px-4 py-2 text-xs">
+              <p className="text-destructive">
+                Você está sem créditos.{" "}
+                <Link to="/app/creditos" className="font-semibold underline">
+                  Recarregue agora
+                </Link>{" "}
+                para continuar usando o assistente.
+              </p>
+            </div>
+          )}
 
           <div ref={scrollRef} className="flex-1 space-y-3 overflow-y-auto p-4 text-sm">
             {messages.length === 0 && (
@@ -236,6 +281,10 @@ export function AIAssistant() {
                   <li>"Faça o RDO de hoje na obra Y, trabalhada, concretagem da laje"</li>
                   <li>"Conta a pagar IPTU R$ 350 vence 15/07"</li>
                 </ul>
+                <p className="mt-3 text-xs">
+                  Cada mensagem consome créditos conforme a complexidade da ação (1 para chat,
+                  até 8 para registrar compra).
+                </p>
               </div>
             )}
             {messages.map((m, i) => {

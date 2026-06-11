@@ -28,6 +28,7 @@ import { Route as AppFornecedoresRouteImport } from './routes/app.fornecedores'
 import { Route as AppFluxoCaixaRouteImport } from './routes/app.fluxo-caixa'
 import { Route as AppFaturasCartaoRouteImport } from './routes/app.faturas-cartao'
 import { Route as AppEmpresasRouteImport } from './routes/app.empresas'
+import { Route as AppCreditosRouteImport } from './routes/app.creditos'
 import { Route as AppContasReceberRouteImport } from './routes/app.contas-receber'
 import { Route as AppContasPagarRouteImport } from './routes/app.contas-pagar'
 import { Route as AppContasBancariasRouteImport } from './routes/app.contas-bancarias'
@@ -40,6 +41,7 @@ import { Route as AdminTicketsRouteImport } from './routes/admin.tickets'
 import { Route as AdminPlanosRouteImport } from './routes/admin.planos'
 import { Route as AdminFaturasRouteImport } from './routes/admin.faturas'
 import { Route as AdminEmpresasRouteImport } from './routes/admin.empresas'
+import { Route as AdminCreditosRouteImport } from './routes/admin.creditos'
 import { Route as AdminConfiguracoesRouteImport } from './routes/admin.configuracoes'
 import { Route as AdminChangelogRouteImport } from './routes/admin.changelog'
 import { Route as AppObrasIndexRouteImport } from './routes/app.obras.index'
@@ -156,6 +158,11 @@ const AppEmpresasRoute = AppEmpresasRouteImport.update({
   path: '/empresas',
   getParentRoute: () => AppRoute,
 } as any)
+const AppCreditosRoute = AppCreditosRouteImport.update({
+  id: '/creditos',
+  path: '/creditos',
+  getParentRoute: () => AppRoute,
+} as any)
 const AppContasReceberRoute = AppContasReceberRouteImport.update({
   id: '/contas-receber',
   path: '/contas-receber',
@@ -214,6 +221,11 @@ const AdminFaturasRoute = AdminFaturasRouteImport.update({
 const AdminEmpresasRoute = AdminEmpresasRouteImport.update({
   id: '/empresas',
   path: '/empresas',
+  getParentRoute: () => AdminRoute,
+} as any)
+const AdminCreditosRoute = AdminCreditosRouteImport.update({
+  id: '/creditos',
+  path: '/creditos',
   getParentRoute: () => AdminRoute,
 } as any)
 const AdminConfiguracoesRoute = AdminConfiguracoesRouteImport.update({
@@ -328,6 +340,7 @@ export interface FileRoutesByFullPath {
   '/login': typeof LoginRoute
   '/admin/changelog': typeof AdminChangelogRoute
   '/admin/configuracoes': typeof AdminConfiguracoesRoute
+  '/admin/creditos': typeof AdminCreditosRoute
   '/admin/empresas': typeof AdminEmpresasRoute
   '/admin/faturas': typeof AdminFaturasRoute
   '/admin/planos': typeof AdminPlanosRoute
@@ -340,6 +353,7 @@ export interface FileRoutesByFullPath {
   '/app/contas-bancarias': typeof AppContasBancariasRoute
   '/app/contas-pagar': typeof AppContasPagarRoute
   '/app/contas-receber': typeof AppContasReceberRoute
+  '/app/creditos': typeof AppCreditosRoute
   '/app/empresas': typeof AppEmpresasRoute
   '/app/faturas-cartao': typeof AppFaturasCartaoRoute
   '/app/fluxo-caixa': typeof AppFluxoCaixaRoute
@@ -379,6 +393,7 @@ export interface FileRoutesByTo {
   '/login': typeof LoginRoute
   '/admin/changelog': typeof AdminChangelogRoute
   '/admin/configuracoes': typeof AdminConfiguracoesRoute
+  '/admin/creditos': typeof AdminCreditosRoute
   '/admin/empresas': typeof AdminEmpresasRoute
   '/admin/faturas': typeof AdminFaturasRoute
   '/admin/planos': typeof AdminPlanosRoute
@@ -391,6 +406,7 @@ export interface FileRoutesByTo {
   '/app/contas-bancarias': typeof AppContasBancariasRoute
   '/app/contas-pagar': typeof AppContasPagarRoute
   '/app/contas-receber': typeof AppContasReceberRoute
+  '/app/creditos': typeof AppCreditosRoute
   '/app/empresas': typeof AppEmpresasRoute
   '/app/faturas-cartao': typeof AppFaturasCartaoRoute
   '/app/fluxo-caixa': typeof AppFluxoCaixaRoute
@@ -433,6 +449,7 @@ export interface FileRoutesById {
   '/login': typeof LoginRoute
   '/admin/changelog': typeof AdminChangelogRoute
   '/admin/configuracoes': typeof AdminConfiguracoesRoute
+  '/admin/creditos': typeof AdminCreditosRoute
   '/admin/empresas': typeof AdminEmpresasRoute
   '/admin/faturas': typeof AdminFaturasRoute
   '/admin/planos': typeof AdminPlanosRoute
@@ -445,6 +462,7 @@ export interface FileRoutesById {
   '/app/contas-bancarias': typeof AppContasBancariasRoute
   '/app/contas-pagar': typeof AppContasPagarRoute
   '/app/contas-receber': typeof AppContasReceberRoute
+  '/app/creditos': typeof AppCreditosRoute
   '/app/empresas': typeof AppEmpresasRoute
   '/app/faturas-cartao': typeof AppFaturasCartaoRoute
   '/app/fluxo-caixa': typeof AppFluxoCaixaRoute
@@ -488,6 +506,7 @@ export interface FileRouteTypes {
     | '/login'
     | '/admin/changelog'
     | '/admin/configuracoes'
+    | '/admin/creditos'
     | '/admin/empresas'
     | '/admin/faturas'
     | '/admin/planos'
@@ -500,6 +519,7 @@ export interface FileRouteTypes {
     | '/app/contas-bancarias'
     | '/app/contas-pagar'
     | '/app/contas-receber'
+    | '/app/creditos'
     | '/app/empresas'
     | '/app/faturas-cartao'
     | '/app/fluxo-caixa'
@@ -539,6 +559,7 @@ export interface FileRouteTypes {
     | '/login'
     | '/admin/changelog'
     | '/admin/configuracoes'
+    | '/admin/creditos'
     | '/admin/empresas'
     | '/admin/faturas'
     | '/admin/planos'
@@ -551,6 +572,7 @@ export interface FileRouteTypes {
     | '/app/contas-bancarias'
     | '/app/contas-pagar'
     | '/app/contas-receber'
+    | '/app/creditos'
     | '/app/empresas'
     | '/app/faturas-cartao'
     | '/app/fluxo-caixa'
@@ -592,6 +614,7 @@ export interface FileRouteTypes {
     | '/login'
     | '/admin/changelog'
     | '/admin/configuracoes'
+    | '/admin/creditos'
     | '/admin/empresas'
     | '/admin/faturas'
     | '/admin/planos'
@@ -604,6 +627,7 @@ export interface FileRouteTypes {
     | '/app/contas-bancarias'
     | '/app/contas-pagar'
     | '/app/contas-receber'
+    | '/app/creditos'
     | '/app/empresas'
     | '/app/faturas-cartao'
     | '/app/fluxo-caixa'
@@ -791,6 +815,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AppEmpresasRouteImport
       parentRoute: typeof AppRoute
     }
+    '/app/creditos': {
+      id: '/app/creditos'
+      path: '/creditos'
+      fullPath: '/app/creditos'
+      preLoaderRoute: typeof AppCreditosRouteImport
+      parentRoute: typeof AppRoute
+    }
     '/app/contas-receber': {
       id: '/app/contas-receber'
       path: '/contas-receber'
@@ -873,6 +904,13 @@ declare module '@tanstack/react-router' {
       path: '/empresas'
       fullPath: '/admin/empresas'
       preLoaderRoute: typeof AdminEmpresasRouteImport
+      parentRoute: typeof AdminRoute
+    }
+    '/admin/creditos': {
+      id: '/admin/creditos'
+      path: '/creditos'
+      fullPath: '/admin/creditos'
+      preLoaderRoute: typeof AdminCreditosRouteImport
       parentRoute: typeof AdminRoute
     }
     '/admin/configuracoes': {
@@ -1021,6 +1059,7 @@ declare module '@tanstack/react-router' {
 interface AdminRouteChildren {
   AdminChangelogRoute: typeof AdminChangelogRoute
   AdminConfiguracoesRoute: typeof AdminConfiguracoesRoute
+  AdminCreditosRoute: typeof AdminCreditosRoute
   AdminEmpresasRoute: typeof AdminEmpresasRoute
   AdminFaturasRoute: typeof AdminFaturasRoute
   AdminPlanosRoute: typeof AdminPlanosRoute
@@ -1031,6 +1070,7 @@ interface AdminRouteChildren {
 const AdminRouteChildren: AdminRouteChildren = {
   AdminChangelogRoute: AdminChangelogRoute,
   AdminConfiguracoesRoute: AdminConfiguracoesRoute,
+  AdminCreditosRoute: AdminCreditosRoute,
   AdminEmpresasRoute: AdminEmpresasRoute,
   AdminFaturasRoute: AdminFaturasRoute,
   AdminPlanosRoute: AdminPlanosRoute,
@@ -1073,6 +1113,7 @@ interface AppRouteChildren {
   AppContasBancariasRoute: typeof AppContasBancariasRoute
   AppContasPagarRoute: typeof AppContasPagarRoute
   AppContasReceberRoute: typeof AppContasReceberRoute
+  AppCreditosRoute: typeof AppCreditosRoute
   AppEmpresasRoute: typeof AppEmpresasRoute
   AppFaturasCartaoRoute: typeof AppFaturasCartaoRoute
   AppFluxoCaixaRoute: typeof AppFluxoCaixaRoute
@@ -1104,6 +1145,7 @@ const AppRouteChildren: AppRouteChildren = {
   AppContasBancariasRoute: AppContasBancariasRoute,
   AppContasPagarRoute: AppContasPagarRoute,
   AppContasReceberRoute: AppContasReceberRoute,
+  AppCreditosRoute: AppCreditosRoute,
   AppEmpresasRoute: AppEmpresasRoute,
   AppFaturasCartaoRoute: AppFaturasCartaoRoute,
   AppFluxoCaixaRoute: AppFluxoCaixaRoute,
@@ -1147,13 +1189,3 @@ const rootRouteChildren: RootRouteChildren = {
 export const routeTree = rootRouteImport
   ._addFileChildren(rootRouteChildren)
   ._addFileTypes<FileRouteTypes>()
-
-import type { getRouter } from './router.tsx'
-import type { startInstance } from './start.ts'
-declare module '@tanstack/react-start' {
-  interface Register {
-    ssr: true
-    router: Awaited<ReturnType<typeof getRouter>>
-    config: Awaited<ReturnType<typeof startInstance.getOptions>>
-  }
-}
