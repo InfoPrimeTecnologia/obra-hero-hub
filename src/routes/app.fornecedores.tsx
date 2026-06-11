@@ -1,12 +1,15 @@
 import { createFileRoute } from "@tanstack/react-router";
 import { useEffect, useState, type FormEvent } from "react";
-import { Plus, Truck, Pencil, Trash2 } from "lucide-react";
+import { Plus, Truck, Pencil, Trash2, Eye, EyeOff, Copy } from "lucide-react";
 import { PageHeader } from "@/components/admin/PageHeader";
 import { Card, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
+import {
+  Select, SelectContent, SelectItem, SelectTrigger, SelectValue,
+} from "@/components/ui/select";
 import {
   Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger, DialogFooter,
 } from "@/components/ui/dialog";
@@ -18,6 +21,7 @@ import {
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/lib/auth-context";
 import { toast } from "sonner";
+import { maskPix, PIX_LABELS, type PixTipo } from "@/lib/pix-mask";
 
 export const Route = createFileRoute("/app/fornecedores")({
   component: FornecedoresPage,
@@ -32,10 +36,13 @@ type Fornecedor = {
   contato: string | null;
   endereco: string | null;
   observacoes: string | null;
+  pix_tipo: PixTipo | null;
+  pix_chave: string | null;
 };
 
 const initial = {
   nome: "", cpf_cnpj: "", email: "", telefone: "", contato: "", endereco: "", observacoes: "",
+  pix_tipo: "" as "" | PixTipo, pix_chave: "",
 };
 
 function FornecedoresPage() {
