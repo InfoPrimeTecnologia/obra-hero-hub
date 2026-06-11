@@ -72,6 +72,16 @@ type Invoice = {
   bank_slip_url: string | null;
 };
 
+type CreditTx = {
+  id: string;
+  tipo: "recarga" | "consumo" | "ajuste" | "estorno";
+  delta: number;
+  saldo_apos: number;
+  descricao: string | null;
+  invoice_id: string | null;
+  created_at: string;
+};
+
 type BillingType = "UNDEFINED" | "BOLETO" | "PIX" | "CREDIT_CARD";
 
 const cycleLabel: Record<string, string> = {
