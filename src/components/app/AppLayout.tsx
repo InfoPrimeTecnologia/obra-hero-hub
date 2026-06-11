@@ -94,6 +94,7 @@ const nav: Array<NavItem | NavGroup> = [
     ],
   },
   { to: "/app/relatorios", label: "Relatórios", icon: FileBarChart2, module: "relatorios" },
+  { to: "/app/manual", label: "Manual", icon: BookOpen },
   { to: "/app/assinatura", label: "Assinatura", icon: Sparkles },
 ];
 
