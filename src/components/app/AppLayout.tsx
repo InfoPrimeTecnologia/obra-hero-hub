@@ -30,6 +30,7 @@ import {
   Sparkles,
   Layers,
   BookOpen,
+  Coins,
 } from "lucide-react";
 import { AIAssistant } from "@/components/app/AIAssistant";
 import { Logo } from "@/components/Logo";
