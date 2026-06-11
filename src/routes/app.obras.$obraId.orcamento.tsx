@@ -1,5 +1,5 @@
 import { createFileRoute, Link } from "@tanstack/react-router";
-import { useEffect, useMemo, useState, type FormEvent } from "react";
+import { useEffect, useMemo, useRef, useState, type FormEvent } from "react";
 import {
   Plus,
   Pencil,
@@ -8,6 +8,7 @@ import {
   ChevronDown,
   ArrowLeft,
   Calendar,
+  GripVertical,
 } from "lucide-react";
 import { PageHeader } from "@/components/admin/PageHeader";
 import { Card, CardContent } from "@/components/ui/card";
@@ -303,6 +304,46 @@ function OrcamentoPage() {
     void carregar();
   };
 
+  // ---------- Reorder (drag-and-drop) ----------
+  const dragId = useRef<string | null>(null);
+  const [dragOverId, setDragOverId] = useState<string | null>(null);
+  const [saving, setSaving] = useState(false);
+
+  const persistOrdem = async (lista: Etapa[]) => {
+    setSaving(true);
+    // Two-pass to evitar colidir com unique(obra_id, ordem) durante atualizações
+    for (let i = 0; i < lista.length; i++) {
+      await supabase
+        .from("orcamento_etapas")
+        .update({ ordem: -1000 - i })
+        .eq("id", lista[i].id);
+    }
+    for (let i = 0; i < lista.length; i++) {
+      await supabase
+        .from("orcamento_etapas")
+        .update({ ordem: i })
+        .eq("id", lista[i].id);
+    }
+    setSaving(false);
+    toast.success("Ordem atualizada");
+    void carregar();
+  };
+
+  const onDropOn = (targetId: string) => {
+    const sourceId = dragId.current;
+    dragId.current = null;
+    setDragOverId(null);
+    if (!sourceId || sourceId === targetId) return;
+    const lista = [...etapas].sort((a, b) => a.ordem - b.ordem);
+    const from = lista.findIndex((e) => e.id === sourceId);
+    const to = lista.findIndex((e) => e.id === targetId);
+    if (from < 0 || to < 0) return;
+    const [moved] = lista.splice(from, 1);
+    lista.splice(to, 0, moved);
+    setEtapas(lista.map((e, i) => ({ ...e, ordem: i })));
+    void persistOrdem(lista);
+  };
+
   return (
     <div>
       <PageHeader
@@ -346,9 +387,27 @@ function OrcamentoPage() {
             const subsDaEtapa = subs.filter((s) => s.etapa_id === et.id);
             const total = totalPorEtapa.get(et.id) ?? 0;
             return (
-              <Card key={et.id}>
+              <Card
+                key={et.id}
+                className={dragOverId === et.id ? "ring-2 ring-primary" : ""}
+                onDragOver={(e) => { e.preventDefault(); setDragOverId(et.id); }}
+                onDragLeave={() => setDragOverId((cur) => (cur === et.id ? null : cur))}
+                onDrop={() => onDropOn(et.id)}
+              >
                 <CardContent className="p-0">
                   <div className="flex flex-wrap items-center gap-3 p-4">
+                    <button
+                      type="button"
+                      draggable
+                      onDragStart={() => { dragId.current = et.id; }}
+                      onDragEnd={() => { dragId.current = null; setDragOverId(null); }}
+                      className="cursor-grab rounded p-1 text-muted-foreground hover:bg-muted active:cursor-grabbing disabled:opacity-50"
+                      aria-label="Arrastar para reordenar"
+                      title="Arrastar para reordenar"
+                      disabled={saving}
+                    >
+                      <GripVertical className="h-4 w-4" />
+                    </button>
                     <button
                       type="button"
                       onClick={() => toggleExpand(et.id)}
