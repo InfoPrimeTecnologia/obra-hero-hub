@@ -607,6 +607,9 @@ function RelatoriosPage() {
             <Input id="to" type="date" value={to} onChange={(e) => setTo(e.target.value)} />
           </div>
           <div className="ml-auto flex gap-2">
+            <Button variant="outline" onClick={exportCSV} disabled={!rows.length}>
+              <Download className="mr-2 h-4 w-4" /> CSV
+            </Button>
             <Button variant="outline" onClick={exportXLSX} disabled={!rows.length}>
               <FileSpreadsheet className="mr-2 h-4 w-4" /> Excel
             </Button>
