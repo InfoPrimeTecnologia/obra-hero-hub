@@ -384,6 +384,25 @@ function AssinaturaPage() {
                     )}
                   </TabsTrigger>
                   <TabsTrigger
+                    value="paid"
+                    className="group relative gap-2 rounded-none border-b-2 border-transparent bg-transparent px-4 py-3 text-sm font-semibold text-muted-foreground data-[state=active]:border-primary data-[state=active]:bg-transparent data-[state=active]:text-primary data-[state=active]:shadow-none"
+                  >
+                    <FileCheck2 className="h-4 w-4" />
+                    Faturas pagas
+                  </TabsTrigger>
+                  <TabsTrigger
+                    value="recargas"
+                    className="group relative gap-2 rounded-none border-b-2 border-transparent bg-transparent px-4 py-3 text-sm font-semibold text-muted-foreground data-[state=active]:border-primary data-[state=active]:bg-transparent data-[state=active]:text-primary data-[state=active]:shadow-none"
+                  >
+                    <Coins className="h-4 w-4" />
+                    Recargas
+                    {recargas.length > 0 && (
+                      <span className="ml-1 inline-flex h-5 min-w-5 items-center justify-center rounded-full bg-primary/10 px-1.5 text-[11px] font-bold text-primary group-data-[state=active]:bg-primary/15">
+                        {recargas.length}
+                      </span>
+                    )}
+                  </TabsTrigger>
+                  <TabsTrigger
                     value="plans"
                     className="group relative gap-2 rounded-none border-b-2 border-transparent bg-transparent px-4 py-3 text-sm font-semibold text-muted-foreground data-[state=active]:border-primary data-[state=active]:bg-transparent data-[state=active]:text-primary data-[state=active]:shadow-none"
                   >
