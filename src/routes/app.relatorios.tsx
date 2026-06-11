@@ -421,6 +421,62 @@ const REPORTS: ReportConfig[] = [
       },
     ],
   },
+  // ---------- ORÇADO VS REALIZADO ----------
+  {
+    id: "orcado-vs-realizado",
+    module: "obras",
+    title: "Orçado vs Realizado por Etapa",
+    description: "Compara o valor orçado de cada etapa com o gasto efetivo (compras) e calcula o saldo e o avanço.",
+    icon: BarChart3,
+    columns: [
+      { key: "obra", label: "Obra" },
+      { key: "etapa", label: "Etapa" },
+      { key: "orcado", label: "Orçado", format: (r: any) => fmtBRL(r.orcado) },
+      { key: "realizado", label: "Realizado", format: (r: any) => fmtBRL(r.realizado) },
+      { key: "saldo", label: "Saldo", format: (r: any) => fmtBRL(r.saldo) },
+      { key: "avanco", label: "% Realizado", format: (r: any) => `${(r.avanco ?? 0).toFixed(1)}%` },
+      {
+        key: "alerta", label: "Status",
+        format: (r: any) => r.orcado === 0 ? "Sem orçamento" : r.avanco >= 100 ? "Estourado" : r.avanco >= 80 ? "Alerta" : "OK",
+      },
+    ],
+    async load({ customerId }) {
+      // 1. Etapas com subetapas e valor_orcado
+      const { data: etapas } = await supabase
+        .from("orcamento_etapas")
+        .select("id,nome,obra_id,obras(name),orcamento_subetapas(id,valor_orcado)")
+        .eq("customer_id", customerId)
+        .order("ordem");
+      // 2. Soma de compra_itens por etapa
+      const { data: itens } = await supabase
+        .from("compra_itens")
+        .select("etapa_id,valor_total")
+        .eq("customer_id", customerId);
+      const realizadoPorEtapa = new Map<string, number>();
+      for (const it of itens ?? []) {
+        if (!it.etapa_id) continue;
+        realizadoPorEtapa.set(it.etapa_id, (realizadoPorEtapa.get(it.etapa_id) ?? 0) + Number(it.valor_total ?? 0));
+      }
+      return (etapas ?? []).map((e: any) => {
+        const orcado = (e.orcamento_subetapas ?? []).reduce((s: number, sub: any) => s + Number(sub.valor_orcado ?? 0), 0);
+        const realizado = realizadoPorEtapa.get(e.id) ?? 0;
+        const saldo = orcado - realizado;
+        const avanco = orcado > 0 ? (realizado / orcado) * 100 : 0;
+        return { obra: e.obras?.name ?? "—", etapa: e.nome, orcado, realizado, saldo, avanco };
+      });
+    },
+    summary: (rows) => {
+      const orc = rows.reduce((s: number, r: any) => s + Number(r.orcado ?? 0), 0);
+      const real = rows.reduce((s: number, r: any) => s + Number(r.realizado ?? 0), 0);
+      return [
+        { label: "Etapas", value: String(rows.length) },
+        { label: "Total orçado", value: fmtBRL(orc) },
+        { label: "Total realizado", value: fmtBRL(real) },
+        { label: "Saldo geral", value: fmtBRL(orc - real) },
+        { label: "% Avanço", value: `${orc > 0 ? ((real / orc) * 100).toFixed(1) : "0"}%` },
+      ];
+    },
+  },
 ];
 
 function RelatoriosPage() {
