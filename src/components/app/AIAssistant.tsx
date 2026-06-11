@@ -66,6 +66,18 @@ export function AIAssistant() {
   const chat = useServerFn(aiChat);
   const execAction = useServerFn(aiExecuteAction);
   const transcribe = useServerFn(aiTranscribe);
+  const getCredits = useServerFn(getMyCredits);
+  const qc = useQueryClient();
+  const credits = useQuery({
+    queryKey: ["my-credits"],
+    queryFn: () => getCredits(),
+    enabled: open,
+    staleTime: 15_000,
+  });
+  const saldo = credits.data?.saldo ?? 0;
+  function refreshCredits() {
+    qc.invalidateQueries({ queryKey: ["my-credits"] });
+  }
 
   useEffect(() => {
     scrollRef.current?.scrollTo({ top: scrollRef.current.scrollHeight, behavior: "smooth" });
