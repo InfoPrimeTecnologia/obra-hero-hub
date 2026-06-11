@@ -100,6 +100,8 @@ const nav: Array<NavItem | NavGroup> = [
   { to: "/app/assinatura", label: "Assinatura", icon: Sparkles },
 ];
 
+const aiCreditsNav: NavItem = { to: "/app/creditos", label: "Créditos IA", icon: Coins };
+
 function isGroup(item: NavItem | NavGroup): item is NavGroup {
   return (item as NavGroup).children !== undefined;
 }
