@@ -90,11 +90,41 @@ export function TopBar() {
     return () => window.removeEventListener("keydown", handler);
   }, []);
 
-  const results = useMemo(() => {
+  const [dynResults, setDynResults] = useState<Array<{ to: string; label: string; group: string; params?: Record<string, string> }>>([]);
+
+  // Busca dinâmica nos dados do banco (debounced)
+  useEffect(() => {
+    const q = query.trim();
+    if (q.length < 2) { setDynResults([]); return; }
+    const handle = setTimeout(async () => {
+      const like = `%${q}%`;
+      const [obras, forn, colab, compras] = await Promise.all([
+        supabase.from("obras").select("id,name").ilike("name", like).limit(5),
+        supabase.from("fornecedores").select("id,nome").ilike("nome", like).limit(5),
+        supabase.from("colaboradores").select("id,nome").ilike("nome", like).limit(5),
+        supabase.from("compras").select("id,descricao,obra_id").ilike("descricao", like).limit(5),
+      ]);
+      const out: Array<{ to: string; label: string; group: string; params?: Record<string, string> }> = [];
+      (obras.data ?? []).forEach((o: any) =>
+        out.push({ to: "/app/obras/$obraId/orcamento", label: o.name, group: "Obras", params: { obraId: o.id } }));
+      (forn.data ?? []).forEach((f: any) =>
+        out.push({ to: "/app/fornecedores", label: f.nome, group: "Fornecedores" }));
+      (colab.data ?? []).forEach((c: any) =>
+        out.push({ to: "/app/rh/colaboradores", label: c.nome, group: "Colaboradores" }));
+      (compras.data ?? []).forEach((c: any) =>
+        out.push({ to: "/app/obras/$obraId/compras/$compraId", label: c.descricao ?? "(sem descrição)", group: "Compras", params: { obraId: c.obra_id, compraId: c.id } }));
+      setDynResults(out);
+    }, 200);
+    return () => clearTimeout(handle);
+  }, [query]);
+
+  const navResults = useMemo(() => {
     const q = query.trim().toLowerCase();
     if (!q) return [];
-    return SEARCH_ITEMS.filter((i) => i.label.toLowerCase().includes(q)).slice(0, 8);
+    return SEARCH_ITEMS.filter((i) => i.label.toLowerCase().includes(q)).slice(0, 6);
   }, [query]);
+
+  const hasResults = navResults.length > 0 || dynResults.length > 0;
 
   const initials = (profile?.full_name || user?.email || "U")
     .split(" ")
