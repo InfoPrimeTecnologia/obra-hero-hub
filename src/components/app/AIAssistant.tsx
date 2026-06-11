@@ -178,8 +178,13 @@ export function AIAssistant() {
         if (blob.size === 0) return;
         setBusy(true);
         try {
-          const buf = await blob.arrayBuffer();
-          const b64 = btoa(String.fromCharCode(...new Uint8Array(buf)));
+          const buf = new Uint8Array(await blob.arrayBuffer());
+          let bin = "";
+          const chunk = 0x8000;
+          for (let i = 0; i < buf.length; i += chunk) {
+            bin += String.fromCharCode.apply(null, Array.from(buf.subarray(i, i + chunk)));
+          }
+          const b64 = btoa(bin);
           const { text } = await transcribe({ data: { audioBase64: b64, mime: rec.mimeType } });
           setBusy(false);
           if (text.trim()) await send(text);
