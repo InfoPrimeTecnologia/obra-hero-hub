@@ -164,6 +164,31 @@ export const Route = createFileRoute("/api/public/asaas-webhook")({
                     : null,
               })
               .eq("id", inv.id);
+
+            // Recarga de créditos: identificar pela externalReference
+            const ref = pay.externalReference ?? "";
+            if (status === "paid" && ref.startsWith("credit_recharge:")) {
+              const parts = ref.split(":");
+              const pkgId = parts[1];
+              const custId = parts[2];
+              if (pkgId && custId) {
+                const { data: pkg } = await supabaseAdmin
+                  .from("credit_packages")
+                  .select("creditos, nome")
+                  .eq("id", pkgId)
+                  .maybeSingle();
+                if (pkg) {
+                  const { applyCreditDelta } = await import("@/lib/credits.functions");
+                  await applyCreditDelta(supabaseAdmin, {
+                    customerId: custId,
+                    delta: pkg.creditos,
+                    tipo: "recarga",
+                    descricao: `Recarga: ${pkg.nome} (+${pkg.creditos} créditos)`,
+                    invoiceId: inv.id,
+                  });
+                }
+              }
+            }
           }
 
           if (logged?.id) {
