@@ -115,6 +115,68 @@ function ContasPagarPage() {
     toast.success("Cancelada"); void carregar();
   };
 
+  const [estornando, setEstornando] = useState<CP | null>(null);
+  const [motivoEstorno, setMotivoEstorno] = useState("");
+
+  const estornarBaixa = async () => {
+    if (!estornando) return;
+    if (!motivoEstorno.trim()) return toast.error("Informe o motivo");
+    const token = crypto.randomUUID();
+    // 1. reverter lançamento + saldo
+    const { data: lancs } = await supabase.from("lancamentos").select("*")
+      .eq("conta_pagar_id", estornando.id).eq("estornado", false);
+    if (lancs) {
+      for (const l of lancs) {
+        await supabase.from("lancamentos").update({ estornado: true, estorno_token: token }).eq("id", l.id);
+        await supabase.from("lancamentos").insert({
+          customer_id: l.customer_id,
+          conta_bancaria_id: l.conta_bancaria_id,
+          tipo: "entrada", // reverso de saída
+          valor: l.valor,
+          data: new Date().toISOString().slice(0, 10),
+          descricao: `ESTORNO: ${l.descricao} - ${motivoEstorno}`,
+          estorno_token: token,
+          created_by: user!.id,
+        });
+        const { data: c } = await supabase.from("contas_bancarias").select("saldo_atual").eq("id", l.conta_bancaria_id).maybeSingle();
+        if (c) {
+          await supabase.from("contas_bancarias").update({ saldo_atual: Number(c.saldo_atual) + Number(l.valor) }).eq("id", l.conta_bancaria_id);
+        }
+      }
+    }
+    // 2. marcar conta a pagar como estornada e voltar a pendente
+    const { error } = await supabase.from("contas_pagar").update({
+      status: "pendente",
+      pago_em: null,
+      valor_pago: 0,
+      conta_bancaria_id: null,
+      estornado: true,
+      estorno_token: token,
+      estornado_em: new Date().toISOString(),
+      estornado_por: user!.id,
+      motivo_estorno: motivoEstorno,
+    } as any).eq("id", estornando.id);
+    if (error) return toast.error("Erro", { description: error.message });
+    toast.success(`Pagamento estornado (token: ${token.slice(0, 8)}…)`);
+    setEstornando(null); setMotivoEstorno(""); void carregar();
+  };
+
+  const exportarCsv = () => {
+    const headers = ["Descrição", "Vencimento", "Valor", "Status", "Origem", "Pago em", "Valor pago", "Estornada"];
+    const rows = filtrados.map(c => [
+      c.descricao,
+      fmtDate(c.vencimento),
+      fmtNum(Number(c.valor)),
+      c.status,
+      c.origem,
+      fmtDate(c.pago_em),
+      c.valor_pago ? fmtNum(Number(c.valor_pago)) : "",
+      c.estornado ? "sim" : "",
+    ]);
+    downloadCsv(`contas-pagar-${new Date().toISOString().slice(0, 10)}`, rows, headers);
+    toast.success("CSV exportado");
+  };
+
   const hoje = new Date().toISOString().slice(0, 10);
   const escopo = obra ? items.filter((c) => c.obra_id === obra.id) : items;
   const filtrados = escopo.filter((c) => {
