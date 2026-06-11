@@ -23,6 +23,7 @@ import { Route as AuthConfirmRouteImport } from './routes/auth.confirm'
 import { Route as AppTransferenciasRouteImport } from './routes/app.transferencias'
 import { Route as AppRelatoriosRouteImport } from './routes/app.relatorios'
 import { Route as AppPerfilRouteImport } from './routes/app.perfil'
+import { Route as AppManualRouteImport } from './routes/app.manual'
 import { Route as AppFornecedoresRouteImport } from './routes/app.fornecedores'
 import { Route as AppFluxoCaixaRouteImport } from './routes/app.fluxo-caixa'
 import { Route as AppFaturasCartaoRouteImport } from './routes/app.faturas-cartao'
@@ -128,6 +129,11 @@ const AppRelatoriosRoute = AppRelatoriosRouteImport.update({
 const AppPerfilRoute = AppPerfilRouteImport.update({
   id: '/perfil',
   path: '/perfil',
+  getParentRoute: () => AppRoute,
+} as any)
+const AppManualRoute = AppManualRouteImport.update({
+  id: '/manual',
+  path: '/manual',
   getParentRoute: () => AppRoute,
 } as any)
 const AppFornecedoresRoute = AppFornecedoresRouteImport.update({
@@ -338,6 +344,7 @@ export interface FileRoutesByFullPath {
   '/app/faturas-cartao': typeof AppFaturasCartaoRoute
   '/app/fluxo-caixa': typeof AppFluxoCaixaRoute
   '/app/fornecedores': typeof AppFornecedoresRoute
+  '/app/manual': typeof AppManualRoute
   '/app/perfil': typeof AppPerfilRoute
   '/app/relatorios': typeof AppRelatoriosRoute
   '/app/transferencias': typeof AppTransferenciasRoute
@@ -388,6 +395,7 @@ export interface FileRoutesByTo {
   '/app/faturas-cartao': typeof AppFaturasCartaoRoute
   '/app/fluxo-caixa': typeof AppFluxoCaixaRoute
   '/app/fornecedores': typeof AppFornecedoresRoute
+  '/app/manual': typeof AppManualRoute
   '/app/perfil': typeof AppPerfilRoute
   '/app/relatorios': typeof AppRelatoriosRoute
   '/app/transferencias': typeof AppTransferenciasRoute
@@ -441,6 +449,7 @@ export interface FileRoutesById {
   '/app/faturas-cartao': typeof AppFaturasCartaoRoute
   '/app/fluxo-caixa': typeof AppFluxoCaixaRoute
   '/app/fornecedores': typeof AppFornecedoresRoute
+  '/app/manual': typeof AppManualRoute
   '/app/perfil': typeof AppPerfilRoute
   '/app/relatorios': typeof AppRelatoriosRoute
   '/app/transferencias': typeof AppTransferenciasRoute
@@ -495,6 +504,7 @@ export interface FileRouteTypes {
     | '/app/faturas-cartao'
     | '/app/fluxo-caixa'
     | '/app/fornecedores'
+    | '/app/manual'
     | '/app/perfil'
     | '/app/relatorios'
     | '/app/transferencias'
@@ -545,6 +555,7 @@ export interface FileRouteTypes {
     | '/app/faturas-cartao'
     | '/app/fluxo-caixa'
     | '/app/fornecedores'
+    | '/app/manual'
     | '/app/perfil'
     | '/app/relatorios'
     | '/app/transferencias'
@@ -597,6 +608,7 @@ export interface FileRouteTypes {
     | '/app/faturas-cartao'
     | '/app/fluxo-caixa'
     | '/app/fornecedores'
+    | '/app/manual'
     | '/app/perfil'
     | '/app/relatorios'
     | '/app/transferencias'
@@ -742,6 +754,13 @@ declare module '@tanstack/react-router' {
       path: '/perfil'
       fullPath: '/app/perfil'
       preLoaderRoute: typeof AppPerfilRouteImport
+      parentRoute: typeof AppRoute
+    }
+    '/app/manual': {
+      id: '/app/manual'
+      path: '/manual'
+      fullPath: '/app/manual'
+      preLoaderRoute: typeof AppManualRouteImport
       parentRoute: typeof AppRoute
     }
     '/app/fornecedores': {
@@ -1058,6 +1077,7 @@ interface AppRouteChildren {
   AppFaturasCartaoRoute: typeof AppFaturasCartaoRoute
   AppFluxoCaixaRoute: typeof AppFluxoCaixaRoute
   AppFornecedoresRoute: typeof AppFornecedoresRoute
+  AppManualRoute: typeof AppManualRoute
   AppPerfilRoute: typeof AppPerfilRoute
   AppRelatoriosRoute: typeof AppRelatoriosRoute
   AppTransferenciasRoute: typeof AppTransferenciasRoute
@@ -1088,6 +1108,7 @@ const AppRouteChildren: AppRouteChildren = {
   AppFaturasCartaoRoute: AppFaturasCartaoRoute,
   AppFluxoCaixaRoute: AppFluxoCaixaRoute,
   AppFornecedoresRoute: AppFornecedoresRoute,
+  AppManualRoute: AppManualRoute,
   AppPerfilRoute: AppPerfilRoute,
   AppRelatoriosRoute: AppRelatoriosRoute,
   AppTransferenciasRoute: AppTransferenciasRoute,

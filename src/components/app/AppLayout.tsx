@@ -1,5 +1,6 @@
 import { Link, Outlet, useLocation, useNavigate } from "@tanstack/react-router";
 import { useEffect, useState } from "react";
+import { startOnboardingTour } from "@/lib/onboarding-tour";
 import {
   LayoutDashboard,
   HardHat,
@@ -28,6 +29,7 @@ import {
   FileBarChart2,
   Sparkles,
   Layers,
+  BookOpen,
 } from "lucide-react";
 import { Logo } from "@/components/Logo";
 import { useAuth } from "@/lib/auth-context";
@@ -92,6 +94,7 @@ const nav: Array<NavItem | NavGroup> = [
     ],
   },
   { to: "/app/relatorios", label: "Relatórios", icon: FileBarChart2, module: "relatorios" },
+  { to: "/app/manual", label: "Manual", icon: BookOpen },
   { to: "/app/assinatura", label: "Assinatura", icon: Sparkles },
 ];
 
@@ -108,6 +111,13 @@ export function AppLayout() {
   const { has: hasModule } = usePlanModules();
 
   const visibleNav = nav.filter((item) => !item.module || hasModule(item.module));
+
+  useEffect(() => {
+    if (!user?.id) return;
+    // dispara apenas no primeiro acesso (controle via localStorage por usuário)
+    const t = window.setTimeout(() => startOnboardingTour(user.id), 600);
+    return () => window.clearTimeout(t);
+  }, [user?.id]);
 
   const handleSignOut = async () => {
     await signOut();
