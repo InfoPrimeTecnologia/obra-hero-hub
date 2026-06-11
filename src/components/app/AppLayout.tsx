@@ -112,6 +112,13 @@ export function AppLayout() {
 
   const visibleNav = nav.filter((item) => !item.module || hasModule(item.module));
 
+  useEffect(() => {
+    if (!user?.id) return;
+    // dispara apenas no primeiro acesso (controle via localStorage por usuário)
+    const t = window.setTimeout(() => startOnboardingTour(user.id), 600);
+    return () => window.clearTimeout(t);
+  }, [user?.id]);
+
   const handleSignOut = async () => {
     await signOut();
     navigate({ to: "/login" });
