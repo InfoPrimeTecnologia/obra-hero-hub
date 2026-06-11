@@ -341,6 +341,20 @@ function ContasPagarPage() {
             <DialogFooter><Button onClick={baixar}>Confirmar</Button></DialogFooter>
           </DialogContent>
         </Dialog>
+
+        <Dialog open={!!estornando} onOpenChange={(v) => { if (!v) { setEstornando(null); setMotivoEstorno(""); } }}>
+          <DialogContent>
+            <DialogHeader><DialogTitle>Estornar pagamento</DialogTitle></DialogHeader>
+            <div className="space-y-3">
+              <p className="text-sm text-muted-foreground">
+                Reverte o lançamento bancário e devolve a conta ao status pendente. A operação fica registrada com token de auditoria.
+              </p>
+              <div className="space-y-2"><Label>Motivo *</Label>
+                <Textarea required value={motivoEstorno} onChange={(e) => setMotivoEstorno(e.target.value)} /></div>
+            </div>
+            <DialogFooter><Button variant="destructive" onClick={estornarBaixa}>Confirmar estorno</Button></DialogFooter>
+          </DialogContent>
+        </Dialog>
       </div>
     </div>
   );
