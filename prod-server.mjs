@@ -43,7 +43,7 @@ function serveFile(res, filePath, statusCode = 200) {
 async function startServer() {
   let workerHandler = null;
   try {
-    const workerModule = await import('./dist/server/index.js');
+    const workerModule = await import('./dist/server/server.js');
     workerHandler = workerModule.default?.fetch;
     if (typeof workerHandler !== 'function') {
       console.warn('Worker default.fetch is not a function');
