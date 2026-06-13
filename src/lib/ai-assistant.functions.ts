@@ -483,8 +483,8 @@ export const aiChat = createServerFn({ method: "POST" })
   .middleware([requireSupabaseAuth])
   .inputValidator((input: { messages: ChatMessage[] }) => input)
   .handler(async ({ data, context }) => {
-    const key = process.env.LOVABLE_API_KEY;
-    if (!key) throw new Error("LOVABLE_API_KEY não configurada no servidor");
+    const key = process.env.OPENAI_API_KEY;
+    if (!key) throw new Error("OPENAI_API_KEY não configurada no servidor");
     const { supabase, userId } = context;
     const customerId = await getCustomerId(supabase, userId);
     if (!(await isEmpresarial(supabase, customerId))) {
