@@ -251,14 +251,14 @@ export const adminAdjustCredits = createServerFn({ method: "POST" })
   .inputValidator((i) => AdjustSchema.parse(i))
   .handler(async ({ data, context }) => {
     if (!(await isAdmin(context.supabase, context.userId))) throw new Error("Sem permissão");
-    const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
-    return await applyCreditDelta(supabaseAdmin, {
-      customerId: data.customerId,
-      delta: data.delta,
-      tipo: "ajuste",
-      descricao: data.motivo,
-      userId: context.userId,
+    const { data: rpc, error } = await context.supabase.rpc("admin_apply_credit_delta", {
+      _customer_id: data.customerId,
+      _delta: data.delta,
+      _motivo: data.motivo,
     });
+    if (error) throw new Error(error.message);
+    const saldo = Array.isArray(rpc) ? rpc[0]?.saldo : (rpc as any)?.saldo;
+    return { saldo: saldo ?? 0, alreadyApplied: false };
   });
 
 export const adminSearchCustomers = createServerFn({ method: "POST" })
