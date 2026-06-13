@@ -502,11 +502,11 @@ export const aiChat = createServerFn({ method: "POST" })
     // Loop: enquanto vier tool_call de leitura (list_obras), executamos e continuamos.
     // Tool calls que mutam são devolvidas ao cliente como "proposals" para confirmar.
     for (let i = 0; i < 5; i++) {
-      const resp = await fetch(`${LOVABLE_AI_URL}/chat/completions`, {
+      const resp = await fetch(`${OPENAI_URL}/chat/completions`, {
         method: "POST",
         headers: {
           "Content-Type": "application/json",
-          "Lovable-API-Key": key,
+          Authorization: `Bearer ${key}`,
         },
         body: JSON.stringify({
           model: MODEL,
