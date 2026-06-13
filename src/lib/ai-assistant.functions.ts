@@ -34,8 +34,7 @@ async function chargeCredits(
 }
 
 const OPENAI_URL = "https://api.openai.com/v1";
-const LOVABLE_AI_URL = "https://ai.gateway.lovable.dev/v1";
-const MODEL = "google/gemini-2.5-flash";
+const MODEL = "gpt-4o-mini";
 
 // ---------- Tool catalog (OpenAI function calling) ----------
 const TOOLS = [
