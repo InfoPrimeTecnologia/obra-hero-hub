@@ -2891,6 +2891,12 @@ export type Database = {
       [_ in never]: never
     }
     Functions: {
+      admin_apply_credit_delta: {
+        Args: { _customer_id: string; _delta: number; _motivo: string }
+        Returns: {
+          saldo: number
+        }[]
+      }
       calcular_competencia_fatura: {
         Args: {
           p_data_compra: string

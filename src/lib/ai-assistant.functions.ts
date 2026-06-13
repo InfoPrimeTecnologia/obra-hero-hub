@@ -34,7 +34,8 @@ async function chargeCredits(
 }
 
 const OPENAI_URL = "https://api.openai.com/v1";
-const MODEL = "gpt-4o-mini";
+const LOVABLE_AI_URL = "https://ai.gateway.lovable.dev/v1";
+const MODEL = "google/gemini-2.5-flash";
 
 // ---------- Tool catalog (OpenAI function calling) ----------
 const TOOLS = [
@@ -483,8 +484,8 @@ export const aiChat = createServerFn({ method: "POST" })
   .middleware([requireSupabaseAuth])
   .inputValidator((input: { messages: ChatMessage[] }) => input)
   .handler(async ({ data, context }) => {
-    const key = process.env.OPENAI_API_KEY;
-    if (!key) throw new Error("OPENAI_API_KEY não configurada");
+    const key = process.env.LOVABLE_API_KEY;
+    if (!key) throw new Error("LOVABLE_API_KEY não configurada no servidor");
     const { supabase, userId } = context;
     const customerId = await getCustomerId(supabase, userId);
     if (!(await isEmpresarial(supabase, customerId))) {
@@ -502,11 +503,11 @@ export const aiChat = createServerFn({ method: "POST" })
     // Loop: enquanto vier tool_call de leitura (list_obras), executamos e continuamos.
     // Tool calls que mutam são devolvidas ao cliente como "proposals" para confirmar.
     for (let i = 0; i < 5; i++) {
-      const resp = await fetch(`${OPENAI_URL}/chat/completions`, {
+      const resp = await fetch(`${LOVABLE_AI_URL}/chat/completions`, {
         method: "POST",
         headers: {
           "Content-Type": "application/json",
-          Authorization: `Bearer ${key}`,
+          "Lovable-API-Key": key,
         },
         body: JSON.stringify({
           model: MODEL,
@@ -518,7 +519,9 @@ export const aiChat = createServerFn({ method: "POST" })
       });
       if (!resp.ok) {
         const txt = await resp.text();
-        throw new Error(`OpenAI ${resp.status}: ${txt.slice(0, 200)}`);
+        if (resp.status === 429) throw new Error("Limite de uso da IA atingido. Tente novamente em instantes.");
+        if (resp.status === 402) throw new Error("Créditos de IA esgotados. Contate o administrador.");
+        throw new Error(`IA ${resp.status}: ${txt.slice(0, 200)}`);
       }
       const json = await resp.json();
       const choice = json.choices?.[0]?.message;
