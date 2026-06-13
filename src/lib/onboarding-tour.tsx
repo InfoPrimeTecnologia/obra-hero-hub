@@ -124,9 +124,9 @@ function TourModal({ onClose }: { onClose: (completed: boolean) => void }) {
         style={{
           width: "100%",
           maxWidth: 520,
-          background: "hsl(var(--background))",
-          color: "hsl(var(--foreground))",
-          border: "1px solid hsl(var(--border))",
+          background: "var(--background)",
+          color: "var(--foreground)",
+          border: "1px solid var(--border)",
           borderRadius: 12,
           padding: 24,
           boxShadow: "0 20px 60px rgba(0,0,0,0.35)",
@@ -141,7 +141,7 @@ function TourModal({ onClose }: { onClose: (completed: boolean) => void }) {
                 flex: 1,
                 borderRadius: 2,
                 background:
-                  i <= step ? "hsl(var(--primary))" : "hsl(var(--muted))",
+                  i <= step ? "var(--primary)" : "var(--muted)",
                 transition: "background .2s",
               }}
             />
@@ -149,7 +149,7 @@ function TourModal({ onClose }: { onClose: (completed: boolean) => void }) {
         </div>
 
         <h2 style={{ fontSize: 20, fontWeight: 600, marginBottom: 8 }}>{current.title}</h2>
-        <p style={{ fontSize: 14, color: "hsl(var(--muted-foreground))", lineHeight: 1.55, marginBottom: 20 }}>
+        <p style={{ fontSize: 14, color: "var(--muted-foreground)", lineHeight: 1.55, marginBottom: 20 }}>
           {current.body}
         </p>
 
@@ -161,8 +161,8 @@ function TourModal({ onClose }: { onClose: (completed: boolean) => void }) {
               display: "inline-block",
               padding: "8px 14px",
               borderRadius: 8,
-              background: "hsl(var(--primary))",
-              color: "hsl(var(--primary-foreground))",
+              background: "var(--primary)",
+              color: "var(--primary-foreground)",
               fontSize: 13,
               fontWeight: 500,
               textDecoration: "none",
@@ -180,7 +180,7 @@ function TourModal({ onClose }: { onClose: (completed: boolean) => void }) {
             style={{
               background: "transparent",
               border: 0,
-              color: "hsl(var(--muted-foreground))",
+              color: "var(--muted-foreground)",
               fontSize: 13,
               cursor: "pointer",
             }}
@@ -195,9 +195,9 @@ function TourModal({ onClose }: { onClose: (completed: boolean) => void }) {
                 style={{
                   padding: "8px 14px",
                   borderRadius: 8,
-                  border: "1px solid hsl(var(--border))",
+                  border: "1px solid var(--border)",
                   background: "transparent",
-                  color: "hsl(var(--foreground))",
+                  color: "var(--foreground)",
                   fontSize: 13,
                   cursor: "pointer",
                 }}
@@ -212,8 +212,8 @@ function TourModal({ onClose }: { onClose: (completed: boolean) => void }) {
                 padding: "8px 14px",
                 borderRadius: 8,
                 border: 0,
-                background: "hsl(var(--primary))",
-                color: "hsl(var(--primary-foreground))",
+                background: "var(--primary)",
+                color: "var(--primary-foreground)",
                 fontSize: 13,
                 fontWeight: 500,
                 cursor: "pointer",
