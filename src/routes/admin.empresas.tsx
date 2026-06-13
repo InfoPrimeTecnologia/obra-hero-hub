@@ -42,7 +42,7 @@ import {
   TableRow,
 } from "@/components/ui/table";
 import { Badge } from "@/components/ui/badge";
-import { Plus, Loader2, Pencil, Trash2, Eye, Search, Package } from "lucide-react";
+import { Plus, Loader2, Pencil, Trash2, Eye, Search, Package, RotateCcw } from "lucide-react";
 import { Checkbox } from "@/components/ui/checkbox";
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
@@ -264,6 +264,20 @@ function EmpresasPage() {
     }
   };
 
+  const resetTour = async (c: Customer) => {
+    const { error } = await supabase
+      .from("customers")
+      .update({ onboarding_completed_at: null })
+      .eq("id", c.id);
+    if (error) {
+      toast.error("Erro ao resetar tour", { description: error.message });
+      return;
+    }
+    toast.success(`Tour resetado para ${c.company_name ?? c.name}`, {
+      description: "O usuário verá o tour novamente no próximo acesso ao app.",
+    });
+  };
+
   const openAssign = (c: Customer) => {
     setAssignCustomer(c);
     const current = subs[c.id];
@@ -455,6 +469,9 @@ function EmpresasPage() {
                             </Button>
                             <Button size="icon" variant="ghost" onClick={() => openEdit(c)} title="Editar">
                               <Pencil className="h-4 w-4" />
+                            </Button>
+                            <Button size="icon" variant="ghost" onClick={() => resetTour(c)} title="Resetar tour guiado">
+                              <RotateCcw className="h-4 w-4" />
                             </Button>
                             <Button
                               size="icon"

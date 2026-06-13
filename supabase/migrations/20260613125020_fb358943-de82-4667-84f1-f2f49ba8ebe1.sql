@@ -1,0 +1,1 @@
+UPDATE public.customers SET onboarding_completed_at = now() WHERE onboarding_completed_at IS NULL;

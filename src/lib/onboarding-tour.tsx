@@ -1,18 +1,27 @@
 import { createRoot } from "react-dom/client";
+import { supabase } from "@/integrations/supabase/client";
 
+// Mantemos um cache em localStorage só pra evitar reconsulta no mesmo navegador,
+// mas a fonte da verdade é a coluna customers.onboarding_completed_at.
 const TOUR_KEY = (uid?: string | null) => `mestre360.onboarding.completed.${uid ?? "anon"}`;
 
-export function shouldShowOnboardingTour(userId?: string | null) {
-  if (typeof window === "undefined") return false;
-  try {
-    return !window.localStorage.getItem(TOUR_KEY(userId));
-  } catch {
-    return false;
-  }
+async function isOnboardingDoneDB(userId?: string | null): Promise<boolean> {
+  if (!userId) return true;
+  const { data } = await supabase
+    .from("customers")
+    .select("onboarding_completed_at")
+    .eq("owner_user_id", userId)
+    .maybeSingle();
+  return !!data?.onboarding_completed_at;
 }
 
-export function markOnboardingDone(userId?: string | null) {
+async function markOnboardingDoneDB(userId?: string | null) {
+  if (!userId) return;
   try {
+    await supabase
+      .from("customers")
+      .update({ onboarding_completed_at: new Date().toISOString() })
+      .eq("owner_user_id", userId);
     window.localStorage.setItem(TOUR_KEY(userId), new Date().toISOString());
   } catch {
     /* ignore */
@@ -65,9 +74,12 @@ type Options = { force?: boolean };
 
 let mounted = false;
 
-export function startOnboardingTour(userId?: string | null, opts: Options = {}) {
+export async function startOnboardingTour(userId?: string | null, opts: Options = {}) {
   if (typeof document === "undefined") return;
-  if (!opts.force && !shouldShowOnboardingTour(userId)) return;
+  if (!opts.force) {
+    const done = await isOnboardingDoneDB(userId);
+    if (done) return;
+  }
   if (mounted) return;
   mounted = true;
 
@@ -85,7 +97,7 @@ export function startOnboardingTour(userId?: string | null, opts: Options = {}) 
   root.render(
     <TourModal
       onClose={(completed) => {
-        if (completed) markOnboardingDone(userId);
+        if (completed) void markOnboardingDoneDB(userId);
         cleanup();
       }}
     />,

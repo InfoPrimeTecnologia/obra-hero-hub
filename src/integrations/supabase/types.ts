@@ -1105,6 +1105,7 @@ export type Database = {
           id: string
           name: string
           notes: string | null
+          onboarding_completed_at: string | null
           owner_user_id: string | null
           phone: string | null
           status: Database["public"]["Enums"]["customer_status"]
@@ -1128,6 +1129,7 @@ export type Database = {
           id?: string
           name: string
           notes?: string | null
+          onboarding_completed_at?: string | null
           owner_user_id?: string | null
           phone?: string | null
           status?: Database["public"]["Enums"]["customer_status"]
@@ -1151,6 +1153,7 @@ export type Database = {
           id?: string
           name?: string
           notes?: string | null
+          onboarding_completed_at?: string | null
           owner_user_id?: string | null
           phone?: string | null
           status?: Database["public"]["Enums"]["customer_status"]
