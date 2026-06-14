@@ -11,6 +11,7 @@ import {
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
+import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
 import {
   Table,
   TableBody,
@@ -19,7 +20,7 @@ import {
   TableHeader,
   TableRow,
 } from "@/components/ui/table";
-import { Coins, Loader2, Sparkles } from "lucide-react";
+import { AlertCircle, Coins, Loader2, Sparkles } from "lucide-react";
 import { cn } from "@/lib/utils";
 
 export const Route = createFileRoute("/app/creditos")({ component: CreditosPage });
@@ -32,7 +33,15 @@ const TX_LABELS: Record<string, string> = {
 };
 
 function fmtBRL(v: number) {
+  if (!Number.isFinite(v)) return "—";
   return v.toLocaleString("pt-BR", { style: "currency", currency: "BRL" });
+}
+
+function getErrorMessage(error: unknown) {
+  if (!error) return null;
+  if (error instanceof Error) return error.message;
+  if (typeof error === "string") return error;
+  return "Não foi possível carregar os dados de créditos.";
 }
 
 function CreditosPage() {
@@ -44,6 +53,9 @@ function CreditosPage() {
 
   const credits = useQuery({ queryKey: ["my-credits"], queryFn: () => getCredits() });
   const pkgs = useQuery({ queryKey: ["credit-packages"], queryFn: () => listPkgs() });
+
+  const creditsError = getErrorMessage(credits.error);
+  const packagesError = getErrorMessage(pkgs.error);
 
   const buyMut = useMutation({
     mutationFn: async (packageId: string) =>
@@ -93,6 +105,30 @@ function CreditosPage() {
           <Sparkles className="h-10 w-10 text-primary/30" />
         </CardContent>
       </Card>
+
+      {(creditsError || packagesError) && (
+        <Alert variant="destructive">
+          <AlertCircle className="h-4 w-4" />
+          <AlertTitle>Não foi possível carregar os créditos</AlertTitle>
+          <AlertDescription className="space-y-3">
+            <div>
+              {creditsError ? <p>Saldo/extrato: {creditsError}</p> : null}
+              {packagesError ? <p>Pacotes: {packagesError}</p> : null}
+            </div>
+            <Button
+              type="button"
+              variant="outline"
+              size="sm"
+              onClick={() => {
+                void credits.refetch();
+                void pkgs.refetch();
+              }}
+            >
+              Tentar novamente
+            </Button>
+          </AlertDescription>
+        </Alert>
+      )}
 
       <section>
         <h2 className="mb-3 text-lg font-semibold">Pacotes de recarga</h2>
