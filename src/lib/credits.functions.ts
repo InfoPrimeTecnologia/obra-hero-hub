@@ -118,7 +118,7 @@ export const createCreditRecharge = createServerFn({ method: "POST" })
     dueDate.setDate(dueDate.getDate() + 3);
     const dueStr = dueDate.toISOString().slice(0, 10);
 
-    const { data: inv, error: invErr } = await supabase
+    const { data: inv, error: invErr } = await supabaseAdmin
       .from("invoices")
       .insert({
         customer_id: customerId,
