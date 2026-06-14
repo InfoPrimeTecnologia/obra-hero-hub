@@ -73,6 +73,7 @@ export const createCreditRecharge = createServerFn({ method: "POST" })
   .handler(async ({ data, context }) => {
     const { supabase, userId } = context;
     const customerId = await getCustomerId(supabase, userId);
+    const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
 
     const { data: pkg, error: pkgErr } = await supabase
       .from("credit_packages")
