@@ -73,6 +73,7 @@ export function AIAssistant() {
     queryFn: () => getCredits(),
     enabled: open,
     staleTime: 15_000,
+    retry: 1,
   });
   const saldo = credits.data?.saldo ?? 0;
   function refreshCredits() {
