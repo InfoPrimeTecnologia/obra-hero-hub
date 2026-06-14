@@ -150,7 +150,7 @@ export const createCreditRecharge = createServerFn({ method: "POST" })
       }),
     });
 
-    await supabase
+    await supabaseAdmin
       .from("invoices")
       .update({
         asaas_payment_id: pay.id,
