@@ -12,6 +12,7 @@ export function CreditBalanceBadge({ className }: { className?: string }) {
     queryFn: () => fn(),
     staleTime: 30_000,
     refetchOnWindowFocus: true,
+    retry: 1,
   });
   const saldo = data?.saldo ?? 0;
   const low = saldo < 5;
