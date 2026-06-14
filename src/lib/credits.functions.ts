@@ -73,6 +73,7 @@ export const createCreditRecharge = createServerFn({ method: "POST" })
   .handler(async ({ data, context }) => {
     const { supabase, userId } = context;
     const customerId = await getCustomerId(supabase, userId);
+    const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
 
     const { data: pkg, error: pkgErr } = await supabase
       .from("credit_packages")
@@ -117,7 +118,7 @@ export const createCreditRecharge = createServerFn({ method: "POST" })
     dueDate.setDate(dueDate.getDate() + 3);
     const dueStr = dueDate.toISOString().slice(0, 10);
 
-    const { data: inv, error: invErr } = await supabase
+    const { data: inv, error: invErr } = await supabaseAdmin
       .from("invoices")
       .insert({
         customer_id: customerId,
@@ -149,7 +150,7 @@ export const createCreditRecharge = createServerFn({ method: "POST" })
       }),
     });
 
-    await supabase
+    await supabaseAdmin
       .from("invoices")
       .update({
         asaas_payment_id: pay.id,
