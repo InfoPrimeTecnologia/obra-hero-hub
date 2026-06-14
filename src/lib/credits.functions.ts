@@ -4,11 +4,12 @@ import { requireSupabaseAuth } from "@/integrations/supabase/auth-middleware";
 
 // ---------- Helpers ----------
 async function getCustomerId(supabase: any, userId: string): Promise<string> {
-  const { data } = await supabase
+  const { data, error } = await supabase
     .from("customers")
     .select("id")
     .eq("owner_user_id", userId)
     .maybeSingle();
+  if (error) throw new Error(`Falha ao identificar a conta: ${error.message}`);
   if (!data) throw new Error("Conta não identificada");
   return data.id;
 }
@@ -29,7 +30,7 @@ export const getMyCredits = createServerFn({ method: "GET" })
   .handler(async ({ context }) => {
     const { supabase, userId } = context;
     const customerId = await getCustomerId(supabase, userId);
-    const [{ data: bal }, { data: tx }] = await Promise.all([
+    const [{ data: bal, error: balErr }, { data: tx, error: txErr }] = await Promise.all([
       supabase.from("customer_credits").select("saldo, updated_at").eq("customer_id", customerId).maybeSingle(),
       supabase
         .from("credit_transactions")
@@ -38,6 +39,8 @@ export const getMyCredits = createServerFn({ method: "GET" })
         .order("created_at", { ascending: false })
         .limit(50),
     ]);
+    if (balErr) throw new Error(`Falha ao carregar saldo: ${balErr.message}`);
+    if (txErr) throw new Error(`Falha ao carregar extrato: ${txErr.message}`);
     return {
       saldo: bal?.saldo ?? 0,
       atualizadoEm: bal?.updated_at ?? null,
@@ -48,12 +51,13 @@ export const getMyCredits = createServerFn({ method: "GET" })
 export const listCreditPackages = createServerFn({ method: "GET" })
   .middleware([requireSupabaseAuth])
   .handler(async ({ context }) => {
-    const { data } = await context.supabase
+    const { data, error } = await context.supabase
       .from("credit_packages")
       .select("*")
       .eq("ativo", true)
       .order("ordem")
       .order("valor_brl");
+    if (error) throw new Error(`Falha ao carregar pacotes: ${error.message}`);
     return data ?? [];
   });
 
