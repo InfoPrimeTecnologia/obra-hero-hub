@@ -73,7 +73,6 @@ export const createCreditRecharge = createServerFn({ method: "POST" })
   .handler(async ({ data, context }) => {
     const { supabase, userId } = context;
     const customerId = await getCustomerId(supabase, userId);
-    const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
 
     const { data: pkg, error: pkgErr } = await supabase
       .from("credit_packages")
@@ -113,27 +112,12 @@ export const createCreditRecharge = createServerFn({ method: "POST" })
       asaasCustomerId = created.id;
     }
 
-    // Cria fatura local primeiro para termos um id estável
     const dueDate = new Date();
     dueDate.setDate(dueDate.getDate() + 3);
     const dueStr = dueDate.toISOString().slice(0, 10);
 
-    const { data: inv, error: invErr } = await supabaseAdmin
-      .from("invoices")
-      .insert({
-        customer_id: customerId,
-        description: `Recarga ${pkg.creditos} créditos (${pkg.nome})`,
-        amount: pkg.valor_brl,
-        status: "pending",
-        payment_method: data.billingType === "BOLETO" ? "boleto" : data.billingType === "PIX" ? "pix" : data.billingType === "CREDIT_CARD" ? "credit_card" : "undefined",
-        due_date: dueStr,
-      })
-      .select("*")
-      .single();
-    if (invErr || !inv) throw new Error(invErr?.message ?? "Falha ao criar fatura");
-
-    // Cria payment no Asaas referenciando a fatura
-    const externalRef = `credit_recharge:${pkg.id}:${customerId}:${inv.id}`;
+    // Cria payment no Asaas antes da fatura local para salvar tudo em um INSERT via RLS.
+    const externalRef = `credit_recharge:${pkg.id}:${customerId}`;
     const pay = await asaasFetch<{
       id: string;
       invoiceUrl?: string;
@@ -150,15 +134,23 @@ export const createCreditRecharge = createServerFn({ method: "POST" })
       }),
     });
 
-    await supabaseAdmin
+    const { data: inv, error: invErr } = await supabase
       .from("invoices")
-      .update({
+      .insert({
+        customer_id: customerId,
+        description: `Recarga ${pkg.creditos} créditos (${pkg.nome})`,
+        amount: pkg.valor_brl,
+        status: "pending",
+        payment_method: data.billingType === "BOLETO" ? "boleto" : data.billingType === "PIX" ? "pix" : data.billingType === "CREDIT_CARD" ? "credit_card" : "undefined",
+        due_date: dueStr,
         asaas_payment_id: pay.id,
         invoice_url: pay.invoiceUrl ?? null,
         bank_slip_url: pay.bankSlipUrl ?? null,
         payment_link: pay.invoiceUrl ?? null,
       })
-      .eq("id", inv.id);
+      .select("id")
+      .single();
+    if (invErr || !inv) throw new Error(invErr?.message ?? "Falha ao criar fatura");
 
     return {
       invoiceId: inv.id,
