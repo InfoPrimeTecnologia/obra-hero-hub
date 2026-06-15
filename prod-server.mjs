@@ -1,10 +1,13 @@
-import 'dotenv/config';
 import http from 'node:http';
 import { existsSync, readFileSync } from 'node:fs';
 import { dirname, join, extname } from 'node:path';
 import { fileURLToPath } from 'node:url';
+import { config as loadEnv } from 'dotenv';
 
 const __dirname = dirname(fileURLToPath(import.meta.url));
+
+loadEnv({ path: join(__dirname, '.env') });
+loadEnv({ path: join(__dirname, '.env.production.local'), override: true });
 
 const MIME_TYPES = {
   '.html': 'text/html',

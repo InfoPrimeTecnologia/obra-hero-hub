@@ -74,20 +74,24 @@ npm install --production
 
 ### 4. Configurar variaveis de ambiente
 
-Crie o arquivo `.env` na raiz:
+Crie o arquivo `.env.production.local` na raiz. Esse arquivo fica fora do Git e sobrescreve o `.env` do repositório em produção:
 
 ```bash
 cd /www/wwwroot/mestre360
-nano .env
+nano .env.production.local
 ```
 
-Conteudo do `.env`:
+Conteudo do `.env.production.local`:
 
 ```env
-# Supabase (obrigatorio)
-SUPABASE_URL=https://gkdbyficckgqslvaucwz.supabase.co
-SUPABASE_PUBLISHABLE_KEY=eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImdrZGJ5ZmljY2tncXNsdmF1Y3d6Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzczOTkzMDUsImV4cCI6MjA5Mjk3NTMwNX0.OP4kzNBUX0xNUOzjLVurd19Avu16lJYBDkbsCz_Qjrw
-SUPABASE_SERVICE_ROLE_KEY=SUACHAVE_SERVICE_ROLE_AQUI
+# Backend (obrigatorio)
+SUPABASE_URL=https://SEU_PROJETO.supabase.co
+SUPABASE_PUBLISHABLE_KEY=SUA_CHAVE_PUBLICA
+SUPABASE_SERVICE_ROLE_KEY=SUA_SERVICE_ROLE_KEY
+
+# Build do frontend (obrigatorio antes de rodar npm run build)
+VITE_SUPABASE_URL=https://SEU_PROJETO.supabase.co
+VITE_SUPABASE_PUBLISHABLE_KEY=SUA_CHAVE_PUBLICA
 
 # Porta do servidor
 PORT=3000
@@ -96,7 +100,7 @@ PORT=3000
 NODE_ENV=production
 ```
 
-> **IMPORTANTE:** Substitua `SUPABASE_SERVICE_ROLE_KEY` pela chave correta. Nunca compartilhe esta chave publicamente.
+> **IMPORTANTE:** mantenha as chaves reais apenas em `.env.production.local`. O `git pull` pode substituir o `.env` do repositório, mas não deve tocar nesse arquivo local.
 
 ### 5. Iniciar com PM2
 
