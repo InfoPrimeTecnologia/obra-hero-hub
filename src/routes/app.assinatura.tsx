@@ -1,4 +1,4 @@
-import { createFileRoute } from "@tanstack/react-router";
+import { createFileRoute, Link } from "@tanstack/react-router";
 import { useEffect, useMemo, useState } from "react";
 import { useServerFn } from "@tanstack/react-start";
 import {
@@ -218,7 +218,7 @@ function AssinaturaPage() {
   const handleActivate = async (planId: string) => {
     if (!customerId) {
       toast.error("Empresa não encontrada", {
-        description: "Cadastre os dados da empresa antes de assinar.",
+        description: "Cadastre os dados da empresa em Configurações antes de assinar.",
       });
       return;
     }
@@ -256,11 +256,14 @@ function AssinaturaPage() {
                 <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-full bg-destructive/10">
                   <AlertCircle className="h-5 w-5 text-destructive" />
                 </div>
-                <div>
+                <div className="flex-1">
                   <p className="font-semibold">Cadastre os dados da empresa</p>
                   <p className="text-sm text-muted-foreground">
-                    Para assinar um plano, precisamos do CNPJ e dados da empresa. Acesse o seu perfil.
+                    Para assinar um plano, precisamos do CNPJ e dados da empresa. Acesse Configurações para preencher.
                   </p>
+                  <Button asChild size="sm" className="mt-3">
+                    <Link to="/app/configuracoes">Ir para Configurações</Link>
+                  </Button>
                 </div>
               </CardContent>
             </Card>

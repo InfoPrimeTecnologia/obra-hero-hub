@@ -17,6 +17,7 @@ const ALLOWED_WITHOUT_SUB = [
   "/app/assinatura",
   "/app/perfil",
   "/app/empresas",
+  "/app/configuracoes",
 ];
 
 function AppGate() {
