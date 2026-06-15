@@ -218,7 +218,7 @@ function AssinaturaPage() {
   const handleActivate = async (planId: string) => {
     if (!customerId) {
       toast.error("Empresa não encontrada", {
-        description: "Cadastre os dados da empresa antes de assinar.",
+        description: "Cadastre os dados da empresa em Configurações antes de assinar.",
       });
       return;
     }
