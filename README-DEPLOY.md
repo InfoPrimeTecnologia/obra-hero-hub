@@ -84,14 +84,20 @@ nano .env.production.local
 Conteudo do `.env.production.local`:
 
 ```env
-# Backend (obrigatorio)
+# Backend — Supabase (obrigatorio)
 SUPABASE_URL=https://SEU_PROJETO.supabase.co
 SUPABASE_PUBLISHABLE_KEY=SUA_CHAVE_PUBLICA
 SUPABASE_SERVICE_ROLE_KEY=SUA_SERVICE_ROLE_KEY
 
-# Build do frontend (obrigatorio antes de rodar npm run build)
+# Build do frontend — Supabase (obrigatorio ANTES de rodar npm run build)
 VITE_SUPABASE_URL=https://SEU_PROJETO.supabase.co
 VITE_SUPABASE_PUBLISHABLE_KEY=SUA_CHAVE_PUBLICA
+
+# Asaas — cobranca e webhooks (obrigatorio)
+ASAAS_API_KEY=$aact_...
+ASAAS_ENV=production          # ou sandbox
+ASAAS_WEBHOOK_TOKEN=token_seguro_para_webhook
+APP_URL=https://app.mestre360.com.br
 
 # Porta do servidor
 PORT=3000
