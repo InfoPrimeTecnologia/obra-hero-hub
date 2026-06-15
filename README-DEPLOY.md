@@ -74,14 +74,14 @@ npm install --production
 
 ### 4. Configurar variaveis de ambiente
 
-Crie o arquivo `.env` na raiz:
+Crie o arquivo `.env.production.local` na raiz. Esse arquivo fica fora do Git e sobrescreve o `.env` do repositório em produção:
 
 ```bash
 cd /www/wwwroot/mestre360
-nano .env
+nano .env.production.local
 ```
 
-Conteudo do `.env`:
+Conteudo do `.env.production.local`:
 
 ```env
 # Supabase (obrigatorio)
@@ -96,7 +96,7 @@ PORT=3000
 NODE_ENV=production
 ```
 
-> **IMPORTANTE:** Substitua `SUPABASE_SERVICE_ROLE_KEY` pela chave correta. Nunca compartilhe esta chave publicamente.
+> **IMPORTANTE:** mantenha as chaves reais apenas em `.env.production.local`. O `git pull` pode substituir o `.env` do repositório, mas não deve tocar nesse arquivo local.
 
 ### 5. Iniciar com PM2
 
