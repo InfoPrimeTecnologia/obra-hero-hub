@@ -7,6 +7,14 @@ const TOUR_KEY = (uid?: string | null) => `mestre360.onboarding.completed.${uid 
 
 async function isOnboardingDoneDB(userId?: string | null): Promise<boolean> {
   if (!userId) return true;
+  // Fallback local: se já foi marcado nesse navegador, considera concluído
+  try {
+    if (typeof window !== "undefined" && window.localStorage.getItem(TOUR_KEY(userId))) {
+      return true;
+    }
+  } catch {
+    /* ignore */
+  }
   const { data } = await supabase
     .from("customers")
     .select("onboarding_completed_at")
@@ -17,12 +25,18 @@ async function isOnboardingDoneDB(userId?: string | null): Promise<boolean> {
 
 async function markOnboardingDoneDB(userId?: string | null) {
   if (!userId) return;
+  // Sempre grava no localStorage primeiro — assim o tour não volta mesmo que
+  // o usuário ainda não tenha cadastrado uma empresa (UPDATE seria no-op).
+  try {
+    window.localStorage.setItem(TOUR_KEY(userId), new Date().toISOString());
+  } catch {
+    /* ignore */
+  }
   try {
     await supabase
       .from("customers")
       .update({ onboarding_completed_at: new Date().toISOString() })
       .eq("owner_user_id", userId);
-    window.localStorage.setItem(TOUR_KEY(userId), new Date().toISOString());
   } catch {
     /* ignore */
   }
