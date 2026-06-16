@@ -380,7 +380,7 @@ function LoginPage() {
                         id="signup-confirm"
                         type="password"
                         required
-                        minLength={6}
+                        minLength={8}
                         value={signupConfirm}
                         onChange={(e) => setSignupConfirm(e.target.value)}
                       />
