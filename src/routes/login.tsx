@@ -30,14 +30,16 @@ function LoginPage() {
   const [tab, setTab] = useState<"login" | "signup">("login");
 
   useEffect(() => {
-    if (!justLoggedIn || authLoading || !user) return;
+    if (authLoading || !user) return;
     navigate({ to: isAdmin ? "/admin" : "/app" });
   }, [justLoggedIn, authLoading, user, isAdmin, navigate]);
+
 
 
   const [loginEmail, setLoginEmail] = useState("");
   const [loginPassword, setLoginPassword] = useState("");
   const [remember, setRemember] = useState(true);
+
 
   useEffect(() => {
     try {
@@ -45,11 +47,11 @@ function LoginPage() {
       if (saved) {
         const parsed = JSON.parse(saved);
         if (parsed.email) setLoginEmail(parsed.email);
-        if (parsed.password) setLoginPassword(parsed.password);
         setRemember(true);
       }
     } catch { /* ignore */ }
   }, []);
+
 
   const [signupName, setSignupName] = useState("");
   const [signupCompany, setSignupCompany] = useState("");
@@ -126,9 +128,10 @@ function LoginPage() {
       toast.error("Falha no login", { description: error.message });
     } else {
       try {
-        if (remember) localStorage.setItem(REMEMBER_KEY, JSON.stringify({ email: loginEmail, password: loginPassword }));
+        if (remember) localStorage.setItem(REMEMBER_KEY, JSON.stringify({ email: loginEmail }));
         else localStorage.removeItem(REMEMBER_KEY);
       } catch { /* ignore */ }
+
       toast.success("Bem-vindo de volta!");
       setJustLoggedIn(true);
     }
@@ -238,8 +241,9 @@ function LoginPage() {
                         onCheckedChange={(v) => setRemember(v === true)}
                       />
                       <Label htmlFor="remember-me" className="cursor-pointer text-sm font-normal">
-                        Lembrar meu e-mail e senha neste dispositivo
+                        Lembrar meu e-mail neste dispositivo
                       </Label>
+
                     </div>
                     <Button type="submit" className="w-full" disabled={loading}>
                       {loading ? "Entrando..." : "Entrar"}
@@ -376,7 +380,7 @@ function LoginPage() {
                         id="signup-confirm"
                         type="password"
                         required
-                        minLength={6}
+                        minLength={8}
                         value={signupConfirm}
                         onChange={(e) => setSignupConfirm(e.target.value)}
                       />
