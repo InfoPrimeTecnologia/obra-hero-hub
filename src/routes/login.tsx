@@ -30,13 +30,16 @@ function LoginPage() {
   const [tab, setTab] = useState<"login" | "signup">("login");
 
   useEffect(() => {
-    if (!justLoggedIn || authLoading || !user) return;
-    navigate({ to: isAdmin ? "/admin" : "/app" });
+    if (authLoading || !user) return;
+    if (justLoggedIn || !justLoggedIn) {
+      navigate({ to: isAdmin ? "/admin" : "/app" });
+    }
   }, [justLoggedIn, authLoading, user, isAdmin, navigate]);
 
 
   const [loginEmail, setLoginEmail] = useState("");
   const [loginPassword, setLoginPassword] = useState("");
+  const [showPassword, setShowPassword] = useState(false);
   const [remember, setRemember] = useState(true);
 
   useEffect(() => {
@@ -45,11 +48,11 @@ function LoginPage() {
       if (saved) {
         const parsed = JSON.parse(saved);
         if (parsed.email) setLoginEmail(parsed.email);
-        if (parsed.password) setLoginPassword(parsed.password);
         setRemember(true);
       }
     } catch { /* ignore */ }
   }, []);
+
 
   const [signupName, setSignupName] = useState("");
   const [signupCompany, setSignupCompany] = useState("");
