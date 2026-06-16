@@ -1,4 +1,5 @@
 import { createFileRoute } from "@tanstack/react-router";
+import { useServerFn } from "@tanstack/react-start";
 import { useEffect, useState } from "react";
 import { Loader2 } from "lucide-react";
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
@@ -9,7 +10,7 @@ import { Textarea } from "@/components/ui/textarea";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { toast } from "sonner";
 import { useAuth } from "@/lib/auth-context";
-import { supabase } from "@/integrations/supabase/client";
+import { getMyCustomerSettings, saveMyCustomerSettings } from "@/lib/customer.functions";
 
 export const Route = createFileRoute("/app/configuracoes")({
   component: ConfiguracoesPage,
@@ -34,6 +35,8 @@ type Empresa = {
 
 function ConfiguracoesPage() {
   const { user } = useAuth();
+  const getEmpresa = useServerFn(getMyCustomerSettings);
+  const saveEmpresa = useServerFn(saveMyCustomerSettings);
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
   const [empresa, setEmpresa] = useState<Empresa>({});
@@ -41,15 +44,18 @@ function ConfiguracoesPage() {
   useEffect(() => {
     if (!user) return;
     void (async () => {
-      const { data } = await supabase
-        .from("customers")
-        .select("*")
-        .eq("owner_user_id", user.id)
-        .maybeSingle();
-      if (data) setEmpresa(data);
-      setLoading(false);
+      try {
+        const data = await getEmpresa();
+        if (data) setEmpresa(data);
+      } catch (error) {
+        toast.error("Erro ao carregar configurações", {
+          description: error instanceof Error ? error.message : "Tente novamente.",
+        });
+      } finally {
+        setLoading(false);
+      }
     })();
-  }, [user]);
+  }, [user, getEmpresa]);
 
   const set = <K extends keyof Empresa>(k: K, v: Empresa[K]) =>
     setEmpresa((prev) => ({ ...prev, [k]: v }));
@@ -57,46 +63,16 @@ function ConfiguracoesPage() {
   const handleSave = async () => {
     if (!user) return;
     setSaving(true);
-    if (empresa.id) {
-      const { error } = await supabase
-        .from("customers")
-        .update({
-          company_name: empresa.company_name,
-          cpf_cnpj: empresa.cpf_cnpj,
-          phone: empresa.phone,
-          whatsapp: empresa.whatsapp,
-          address_street: empresa.address_street,
-          address_number: empresa.address_number,
-          address_complement: empresa.address_complement,
-          address_neighborhood: empresa.address_neighborhood,
-          address_city: empresa.address_city,
-          address_state: empresa.address_state,
-          address_zip: empresa.address_zip,
-          notes: empresa.notes,
-        })
-        .eq("id", empresa.id);
+    try {
+      const result = await saveEmpresa({ data: empresa });
+      setEmpresa(result.customer);
+      toast.success(result.created ? "Empresa criada" : "Configurações salvas");
+    } catch (error) {
+      toast.error("Erro ao salvar configurações", {
+        description: error instanceof Error ? error.message : "Tente novamente.",
+      });
+    } finally {
       setSaving(false);
-      if (error) toast.error(error.message);
-      else toast.success("Configurações salvas");
-    } else {
-      const { id: _ignore, ...rest } = empresa;
-      const { error, data } = await supabase
-        .from("customers")
-        .insert({
-          ...rest,
-          name: empresa.company_name || user.email || "Minha empresa",
-          email: user.email!,
-          owner_user_id: user.id,
-          created_by: user.id,
-        })
-        .select()
-        .single();
-      setSaving(false);
-      if (error) toast.error(error.message);
-      else {
-        toast.success("Empresa criada");
-        if (data) setEmpresa(data);
-      }
     }
   };
 
