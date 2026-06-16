@@ -60,20 +60,36 @@ export const saveMyCustomerSettings = createServerFn({ method: "POST" })
       notes: normalizeText(data.notes),
     };
 
-    const { data: existing, error: findError } = await supabaseAdmin
+    // Try to find by owner first
+    let { data: existing, error: findError } = await supabaseAdmin
       .from("customers")
-      .select("id")
+      .select("id, owner_user_id")
       .eq("owner_user_id", context.userId)
       .maybeSingle();
 
     if (findError) throw new Error(findError.message);
 
+    // Fallback: find by email (case-insensitive) and adopt if unowned or owned by this user
+    if (!existing) {
+      const { data: byEmail, error: emailErr } = await supabaseAdmin
+        .from("customers")
+        .select("id, owner_user_id")
+        .ilike("email", email)
+        .maybeSingle();
+      if (emailErr) throw new Error(emailErr.message);
+      if (byEmail) {
+        if (byEmail.owner_user_id && byEmail.owner_user_id !== context.userId) {
+          throw new Error("Já existe uma empresa cadastrada com este e-mail por outro usuário.");
+        }
+        existing = byEmail;
+      }
+    }
+
     if (existing) {
       const { data: updated, error } = await supabaseAdmin
         .from("customers")
-        .update(payload)
+        .update({ ...payload, owner_user_id: context.userId, created_by: context.userId })
         .eq("id", existing.id)
-        .eq("owner_user_id", context.userId)
         .select("*")
         .single();
 
