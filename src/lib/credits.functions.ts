@@ -134,7 +134,9 @@ export const createCreditRecharge = createServerFn({ method: "POST" })
       }),
     });
 
-    const { data: inv, error: invErr } = await supabase
+    // Insert via admin client: já validamos acima que o customer pertence ao userId
+    const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
+    const { data: inv, error: invErr } = await supabaseAdmin
       .from("invoices")
       .insert({
         customer_id: customerId,
