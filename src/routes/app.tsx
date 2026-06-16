@@ -53,16 +53,25 @@ function AppGate() {
         return;
       }
 
-      // Libera somente se houver pelo menos uma fatura paga
-      const { data: paidInv } = await supabase
-        .from("invoices")
-        .select("id")
-        .eq("customer_id", cust.id)
-        .eq("status", "paid")
-        .limit(1)
-        .maybeSingle();
+      // Libera se houver assinatura ativa OU pelo menos uma fatura paga
+      const [{ data: activeSub }, { data: paidInv }] = await Promise.all([
+        supabase
+          .from("subscriptions")
+          .select("id")
+          .eq("customer_id", cust.id)
+          .eq("status", "active")
+          .limit(1)
+          .maybeSingle(),
+        supabase
+          .from("invoices")
+          .select("id")
+          .eq("customer_id", cust.id)
+          .eq("status", "paid")
+          .limit(1)
+          .maybeSingle(),
+      ]);
 
-      if (!cancelled) setAccessGranted(Boolean(paidInv));
+      if (!cancelled) setAccessGranted(Boolean(activeSub) || Boolean(paidInv));
     })();
 
     return () => {
