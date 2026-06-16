@@ -31,10 +31,9 @@ function LoginPage() {
 
   useEffect(() => {
     if (authLoading || !user) return;
-    if (justLoggedIn || !justLoggedIn) {
-      navigate({ to: isAdmin ? "/admin" : "/app" });
-    }
+    navigate({ to: isAdmin ? "/admin" : "/app" });
   }, [justLoggedIn, authLoading, user, isAdmin, navigate]);
+
 
 
   const [loginEmail, setLoginEmail] = useState("");
