@@ -599,7 +599,7 @@ function EmpresasPage() {
                 <SelectTrigger><SelectValue placeholder="Selecione um plano" /></SelectTrigger>
                 <SelectContent>
                   {plans.map((p) => (
-                    <SelectItem key={p.id} value={p.id}>{p.name} · {fmtBRL(Number(p.price))}/{p.cycle === "yearly" ? "ano" : "mês"}</SelectItem>
+                    <SelectItem key={p.id} value={p.id}>{p.name} · {fmtBRL(Number(p.price))}/{({monthly:"mês",quarterly:"trim",semiannual:"sem",annual:"ano"} as any)[p.cycle] ?? p.cycle}</SelectItem>
                   ))}
                 </SelectContent>
               </Select>
