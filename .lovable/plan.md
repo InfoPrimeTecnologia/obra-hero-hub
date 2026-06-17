@@ -1,112 +1,115 @@
-# Sistema de Créditos para Assistente IA
+## Objetivo
 
-## Visão geral
+Hoje o Assistente IA tem 8 ferramentas. Vamos expandir para que ele consiga executar (ou consultar) tudo que um usuário consegue fazer manualmente no sistema.
 
-Hoje o Assistente IA é liberado por plano (Empresarial). Vamos adicionar uma camada de **créditos consumíveis**: cada interação com o assistente desconta um número de créditos que varia conforme a complexidade da ação. O usuário pode recarregar créditos comprando pacotes definidos pelo admin (pagamento via Asaas, que já está integrado).
+## Considerações importantes (ler antes)
 
-## Banco de dados (novas tabelas)
+1. **Custo de tokens por chamada**: cada ferramenta vai junto na chamada da OpenAI. Hoje são 8; vamos para ~55. Isso aumenta ~3-4k tokens por mensagem enviada, então cada mensagem fica ~30% mais cara em créditos. Vale a pena, mas é bom saber.
+2. **Precisão**: com muitas ferramentas, o modelo às vezes escolhe a errada. Vou agrupar por domínio com nomes claros e descrições objetivas para minimizar isso.
+3. **Confirmação**: toda ação que **muda dados** continua exigindo confirmação do usuário no chat (como já é hoje). Leituras (listar/buscar) executam direto.
+4. **Permissões**: tudo passa pelo `requireSupabaseAuth` + RLS — o agente só faz o que o usuário logado pode fazer.
 
-1. **`credit_packages`** (admin define os pacotes de recarga)
-   - `nome` (ex.: "Pacote Bronze")
-   - `valor_brl` (preço em reais)
-   - `creditos` (quantidade de créditos)
-   - `ativo`, `ordem`, `destaque`
-   - RLS: leitura para `authenticated`; escrita só admin
+## Ferramentas a adicionar
 
-2. **`credit_action_costs`** (admin define custo por ação)
-   - `action_key` (ex.: `chat_message`, `create_compra`, `transcribe_audio`)
-   - `descricao`, `custo` (int), `ativo`
-   - Seed com defaults (ver tabela abaixo)
-   - RLS: leitura `authenticated`; escrita só admin
+### Obras (já tem 2, adicionar 4)
+- `list_obras` ✅ — já existe
+- `create_obra` ✅ — já existe
+- `update_obra` — editar dados (nome, endereço, contato, datas)
+- `archive_obra` — arquivar/desarquivar
+- `get_obra_resumo` — saldo orçamento vs realizado, % concluído, próximas etapas
 
-3. **`customer_credits`** (saldo atual por empresa)
-   - `customer_id` UNIQUE, `saldo` int, `updated_at`
-   - RLS: leitura para membros do customer
+### Orçamento (já tem 2, adicionar 3)
+- `create_etapa` ✅ / `create_subetapa` ✅
+- `update_subetapa` — ajustar valor orçado / percentual
+- `list_etapas` — listar etapas + subetapas de uma obra
+- `delete_etapa` / `delete_subetapa`
 
-4. **`credit_transactions`** (extrato/histórico)
-   - `customer_id`, `tipo` (`recarga` | `consumo` | `ajuste` | `estorno`)
-   - `delta` (positivo = entra, negativo = sai)
-   - `saldo_apos`, `action_key`, `descricao`
-   - `invoice_id` (FK quando recarga), `user_id` (quem consumiu)
-   - RLS: leitura para membros do customer; insert via server fn
+### Compras (já tem 1, adicionar 4)
+- `create_compra` ✅
+- `list_compras` — filtros por obra/fornecedor/período
+- `get_compra` — detalhes (itens, parcelas, recebimentos, NFs)
+- `add_recebimento` — registrar recebimento de itens
+- `cancel_compra`
 
-## Custos default (tabela `credit_action_costs`)
+### RDO (já tem 1, adicionar 3)
+- `create_rdo` ✅
+- `add_rdo_equipe` — registrar colaborador no RDO (com função e horas)
+- `add_rdo_atividade` — adicionar atividade ao RDO
+- `add_rdo_ocorrencia` — registrar ocorrência
 
-| Ação | Custo | Justificativa |
-|---|---|---|
-| `chat_message` | 1 | Resposta simples do GPT-4o-mini |
-| `transcribe_audio` | 2 | Whisper, custo extra de áudio |
-| `list_obras` (leitura) | 0 | Não cobra leituras auxiliares |
-| `create_etapa` | 2 | Mutação leve |
-| `create_subetapa` | 2 | Mutação leve |
-| `create_rdo` | 5 | Cria registro composto |
-| `create_compra` | 8 | Toca financeiro/estoque |
-| `create_conta_pagar` | 5 | Lançamento financeiro |
-| `create_conta_receber` | 5 | Lançamento financeiro |
+### Financeiro — Contas a Pagar/Receber (já tem 2, adicionar 4)
+- `create_conta_pagar` ✅ / `create_conta_receber` ✅
+- `pagar_conta` — dar baixa em conta a pagar (informa conta bancária + data)
+- `receber_conta` — dar baixa em conta a receber
+- `list_contas_pagar` / `list_contas_receber` — com filtros (status, vencimento, obra)
 
-Editáveis pelo admin.
+### Financeiro — Bancos / Lançamentos (4)
+- `create_conta_bancaria`
+- `list_contas_bancarias` — com saldo atual
+- `create_transferencia` — entre contas próprias
+- `list_lancamentos` — extrato com filtros
 
-## Server functions (novo `credits.functions.ts`)
+### Cartões / Faturas (3)
+- `create_cartao`
+- `list_faturas_cartao` — abertas e fechadas
+- `pagar_fatura_cartao` — gera/baixa a conta a pagar vinculada
 
-- `getMyCredits()` → saldo atual + últimos 20 lançamentos
-- `listCreditPackages()` → pacotes ativos ordenados
-- `createCreditRecharge({ packageId })` → cria fatura Asaas (cobra `valor_brl`); ao webhook confirmar pagamento, credita `creditos` no saldo
-- `consumeCredits({ actionKey, descricao })` → server-side helper, usado pelo assistente; lança erro `INSUFFICIENT_CREDITS` se saldo < custo
-- Admin: `adminUpsertPackage`, `adminUpsertActionCost`, `adminAdjustCredits` (com motivo)
+### Fornecedores (3)
+- `create_fornecedor`
+- `list_fornecedores`
+- `update_fornecedor`
 
-## Integração no Assistente IA
+### Categorias financeiras (2)
+- `create_categoria` (despesa/receita)
+- `list_categorias`
 
-Em `ai-assistant.functions.ts`:
-- `aiChat`: antes de chamar OpenAI, cobra `chat_message`
-- `aiTranscribe`: cobra `transcribe_audio`
-- `aiExecuteAction`: ao confirmar, cobra o custo da `tool` específica (`create_compra`, etc.)
-- Se saldo insuficiente, retorna `{ type: 'no_credits', needed, balance }` para a UI mostrar CTA "Recarregar"
+### Empresas (2)
+- `create_empresa` (filial/CNPJ)
+- `list_empresas`
 
-## Webhook Asaas
+### Estoque (5)
+- `create_produto`
+- `list_produtos` — com saldo
+- `create_almoxarifado`
+- `movimentar_estoque` — entrada/saída/ajuste/transferência
+- `create_requisicao` — requisição de material
 
-Em `api/public/asaas-webhook.ts`, ao processar `PAYMENT_RECEIVED`/`PAYMENT_CONFIRMED` de uma fatura do tipo "recarga de créditos":
-- Identificar pelo `external_reference` (`credit_recharge:<package_id>:<customer_id>`)
-- Inserir transação `recarga` + atualizar `customer_credits.saldo`
-- Idempotente (não credita 2x para a mesma `invoice_id`)
+### RH (4)
+- `create_colaborador`
+- `list_colaboradores`
+- `vincular_colaborador_obra` — adicionar colaborador a obra com função
+- `desligar_colaborador`
 
-## UI
+### Medições (2)
+- `create_medicao` — gerar medição de uma obra no período
+- `list_medicoes`
 
-### Usuário
-- **`/app/creditos`** (nova rota):
-  - Card grande: "Saldo atual: X créditos"
-  - Grid dos pacotes (admin define), botão "Recarregar" → abre fatura Asaas
-  - Tabela de extrato (últimas 50 transações)
-- **`AIAssistant`**: badge mostrando saldo no header; banner "Sem créditos" com link para `/app/creditos` quando vazio
-- **`TopBar`**: pill clicável com saldo (só plano Empresarial)
+### Relatórios / consultas gerais (3)
+- `fluxo_caixa` — entrada/saída por período
+- `relatorio_obra` — custo realizado vs orçado por etapa
+- `dashboard_geral` — KPIs (saldo bancos, contas em atraso, obras ativas)
 
-### Admin
-- **`/admin/creditos`** (nova rota):
-  - Aba "Pacotes de recarga": CRUD (nome, valor R$, créditos, ativo, destaque)
-  - Aba "Custos por ação": tabela editável (action_key, descrição, custo)
-  - Aba "Ajustes manuais": buscar empresa, somar/subtrair créditos com motivo (audit)
+**Total**: ~55 ferramentas (8 existentes + ~47 novas).
 
-## Sem mudança de comportamento para quem não usa o assistente
+## Implementação
 
-O sistema de créditos só importa para empresas no plano Empresarial (gate atual permanece). Empresas que não acessam o assistente nunca veem a página de créditos.
+Tudo num único arquivo, mantendo o padrão atual:
 
-## Arquivos previstos
+- `src/lib/ai-assistant.functions.ts` — adicionar entradas em `TOOLS`, em `MUTATING_TOOLS` (só as que mudam dados), e os `case` em `executeTool`.
+- `src/components/app/AIAssistant.tsx` — adicionar entradas em `TOOL_LABELS` e funções `summarizeArgs` para as novas ações.
+- `credit_action_costs` (tabela): adicionar custos para as novas ações via migração (defaults sugeridos: leituras 0, criações leves 2, criações pesadas 5-8, baixas/pagamentos 3).
 
-**Migração**: 1 arquivo SQL (4 tabelas + grants + RLS + seed dos pacotes/custos default)
+## Sugestão de fasear (opcional)
 
-**Novos**:
-- `src/lib/credits.functions.ts`
-- `src/routes/app.creditos.tsx`
-- `src/routes/admin.creditos.tsx`
-- `src/components/app/CreditBalanceBadge.tsx`
+Se preferir não fazer tudo de uma vez, posso entregar em fases:
 
-**Editados**:
-- `src/lib/ai-assistant.functions.ts` (cobrar créditos)
-- `src/components/app/AIAssistant.tsx` (mostrar saldo + erro "sem créditos")
-- `src/components/app/TopBar.tsx` (pill de saldo)
-- `src/components/admin/AdminLayout.tsx` (menu "Créditos")
-- `src/routes/api/public/asaas-webhook.ts` (creditar recarga)
-- `src/routeTree.gen.ts`
+- **Fase 1 (essencial diário)**: pagar/receber contas, list_compras, list_contas_pagar, get_obra_resumo, fluxo_caixa, dashboard_geral, vincular_colaborador_obra, add_rdo_equipe — ~10 tools
+- **Fase 2 (gestão)**: CRUD de cartões, contas bancárias, fornecedores, categorias, empresas, colaboradores — ~15 tools
+- **Fase 3 (estoque + medições)**: produtos, almoxarifados, movimentações, requisições, medições — ~10 tools
+- **Fase 4 (relatórios avançados)**: relatorio_obra, list_lancamentos, list_faturas, etc. — ~10 tools
 
-## Confirmação
+## Perguntas
 
-Confirma os custos default da tabela acima? Posso ajustar antes de implementar, ou seguir com esses valores e você edita depois pelo admin (que é justamente para isso).
+1. **Faço tudo de uma vez (~55 tools) ou prefere fasear?**
+2. **Alguma área que você nem quer expor ao agente?** (ex.: exclusões — `delete_*` — costuma ser arriscado)
+3. **Quer que ações destrutivas (`delete_*`, `cancel_*`, `archive_*`) tenham confirmação extra ("dupla confirmação")?**
