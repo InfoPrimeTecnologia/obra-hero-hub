@@ -255,21 +255,28 @@ function Column({
 
 function TarefaCard({ tarefa, onEdit }: { tarefa: Tarefa; onEdit: () => void }) {
   const { attributes, listeners, setNodeRef, transform, transition, isDragging } = useSortable({ id: tarefa.id });
-  const style = { transform: CSS.Transform.toString(transform), transition, opacity: isDragging ? 0.5 : 1 };
+  const style = {
+    transform: CSS.Transform.toString(transform),
+    transition,
+    opacity: isDragging ? 0.5 : 1,
+    touchAction: "none" as const,
+  };
   return (
-    <Card ref={setNodeRef} style={style} className="cursor-pointer hover:shadow-md" onClick={onEdit}>
+    <Card
+      ref={setNodeRef}
+      style={style}
+      {...attributes}
+      {...listeners}
+      className="cursor-grab hover:shadow-md active:cursor-grabbing"
+    >
       <CardContent className="p-3">
         <div className="flex items-start gap-2">
-          <button
-            type="button"
-            {...attributes}
-            {...listeners}
-            onClick={(e) => e.stopPropagation()}
-            className="mt-0.5 cursor-grab text-muted-foreground hover:text-foreground active:cursor-grabbing"
+          <GripVertical className="mt-0.5 h-4 w-4 shrink-0 text-muted-foreground" />
+          <div
+            className="min-w-0 flex-1 cursor-pointer"
+            onPointerDown={(e) => e.stopPropagation()}
+            onClick={onEdit}
           >
-            <GripVertical className="h-4 w-4" />
-          </button>
-          <div className="min-w-0 flex-1">
             <div className="line-clamp-2 text-sm font-medium">{tarefa.titulo}</div>
             <div className="mt-1.5 flex flex-wrap items-center gap-1.5 text-xs">
               <span className={`rounded px-1.5 py-0.5 font-medium ${PRIO_COLOR[tarefa.prioridade]}`}>{tarefa.prioridade}</span>
