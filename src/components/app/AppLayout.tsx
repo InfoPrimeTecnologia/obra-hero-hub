@@ -209,11 +209,11 @@ export function AppLayout() {
   return (
     <div className="flex min-h-screen bg-background">
       <aside className="sticky top-0 flex h-screen w-64 flex-col bg-sidebar text-sidebar-foreground">
-        <div className="flex h-16 items-center justify-center border-b border-sidebar-border bg-sidebar px-4 md:h-[68px]">
+        <div className="relative flex h-16 items-center justify-center bg-sidebar px-4 md:h-[68px] after:absolute after:inset-x-3 after:bottom-0 after:h-px after:bg-[linear-gradient(to_right,transparent,color-mix(in_oklab,var(--sidebar-primary)_55%,transparent)_50%,transparent)]">
           <Logo variant="light" className="h-8" />
         </div>
         {obra ? (
-          <div className="border-b border-sidebar-border px-4 py-3">
+          <div className="relative px-4 py-3 after:absolute after:inset-x-3 after:bottom-0 after:h-px after:bg-[linear-gradient(to_right,transparent,color-mix(in_oklab,var(--sidebar-primary)_55%,transparent)_50%,transparent)]">
             <p className="text-xs uppercase tracking-wide text-sidebar-foreground/60">Obra ativa</p>
             <p className="truncate text-sm font-medium">{obra.name}</p>
             <div className="mt-2 flex flex-wrap gap-2">
@@ -245,12 +245,20 @@ export function AppLayout() {
           {visiblePrimaryNav.map(renderNavItem)}
           {visibleSystemNav.length > 0 && (
             <>
-              <div className="my-2 border-t border-sidebar-border" />
+              <div
+                className="my-3 h-px w-full"
+                style={{
+                  background:
+                    "linear-gradient(to right, transparent, color-mix(in oklab, var(--sidebar-primary) 55%, transparent) 50%, transparent)",
+                  boxShadow:
+                    "0 1px 0 color-mix(in oklab, var(--sidebar-primary) 18%, transparent)",
+                }}
+              />
               {visibleSystemNav.map(renderNavItem)}
             </>
           )}
         </nav>
-        <div className="border-t border-sidebar-border p-3">
+        <div className="relative p-3 before:absolute before:inset-x-3 before:top-0 before:h-px before:bg-[linear-gradient(to_right,transparent,color-mix(in_oklab,var(--sidebar-primary)_55%,transparent)_50%,transparent)]">
           <div className="mb-2 truncate px-3 text-xs text-sidebar-foreground/60">{user?.email}</div>
           <Button
             variant="ghost"
