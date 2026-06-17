@@ -49,6 +49,26 @@ const TOOLS = [
   {
     type: "function" as const,
     function: {
+      name: "create_obra",
+      description: "Cria uma nova obra (projeto/construção).",
+      parameters: {
+        type: "object",
+        properties: {
+          nome: { type: "string", description: "Nome da obra" },
+          descricao: { type: "string" },
+          cidade: { type: "string" },
+          estado: { type: "string", description: "UF, 2 letras" },
+          contato_nome: { type: "string" },
+          contato_whatsapp: { type: "string" },
+        },
+        required: ["nome"],
+        additionalProperties: false,
+      },
+    },
+  },
+  {
+    type: "function" as const,
+    function: {
       name: "create_etapa",
       description: "Cria uma nova etapa de orçamento dentro de uma obra.",
       parameters: {
@@ -164,6 +184,7 @@ const TOOLS = [
 
 // Ações que mutam dados → exigem confirmação do usuário
 const MUTATING_TOOLS = new Set([
+  "create_obra",
   "create_etapa",
   "create_subetapa",
   "create_compra",
@@ -277,6 +298,29 @@ async function executeTool(
         ok: true,
         summary: `${data?.length ?? 0} obras encontradas.`,
         data: data ?? [],
+      };
+    }
+    case "create_obra": {
+      const { data, error } = await supabase
+        .from("obras")
+        .insert({
+          customer_id: customerId,
+          name: args.nome,
+          description: args.descricao ?? null,
+          address_city: args.cidade ?? null,
+          address_state: args.estado ?? null,
+          contact_name: args.contato_nome ?? null,
+          contact_whatsapp: args.contato_whatsapp ?? null,
+          status: "ativa",
+          created_by: userId,
+        })
+        .select("id, name")
+        .single();
+      if (error) throw new Error(`Erro ao criar obra: ${error.message}`);
+      return {
+        ok: true,
+        summary: `Obra "${data.name}" criada com sucesso.`,
+        data,
       };
     }
     case "create_etapa": {
