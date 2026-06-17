@@ -94,6 +94,9 @@ function ObrasPage() {
   const [obras, setObras] = useState<Obra[]>([]);
   const [empresas, setEmpresas] = useState<Empresa[]>([]);
   const [filtroEmpresa, setFiltroEmpresa] = useState<string>("todas");
+  const [filtroStatus, setFiltroStatus] = useState<"ativas" | "arquivadas" | "todas">("ativas");
+  const [obraParaExcluir, setObraParaExcluir] = useState<Obra | null>(null);
+  const [excluindo, setExcluindo] = useState(false);
   const [open, setOpen] = useState(false);
   const [saving, setSaving] = useState(false);
 
