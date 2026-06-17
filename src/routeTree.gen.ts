@@ -34,6 +34,7 @@ import { Route as AppCreditosRouteImport } from './routes/app.creditos'
 import { Route as AppContasReceberRouteImport } from './routes/app.contas-receber'
 import { Route as AppContasPagarRouteImport } from './routes/app.contas-pagar'
 import { Route as AppContasBancariasRouteImport } from './routes/app.contas-bancarias'
+import { Route as AppConfiguracoesRouteImport } from './routes/app.configuracoes'
 import { Route as AppConciliacaoRouteImport } from './routes/app.conciliacao'
 import { Route as AppCategoriasRouteImport } from './routes/app.categorias'
 import { Route as AppCartoesRouteImport } from './routes/app.cartoes'
@@ -192,6 +193,11 @@ const AppContasBancariasRoute = AppContasBancariasRouteImport.update({
   path: '/contas-bancarias',
   getParentRoute: () => AppRoute,
 } as any)
+const AppConfiguracoesRoute = AppConfiguracoesRouteImport.update({
+  id: '/configuracoes',
+  path: '/configuracoes',
+  getParentRoute: () => AppRoute,
+} as any)
 const AppConciliacaoRoute = AppConciliacaoRouteImport.update({
   id: '/conciliacao',
   path: '/conciliacao',
@@ -299,9 +305,9 @@ const AppEstoqueAlmoxarifadosRoute = AppEstoqueAlmoxarifadosRouteImport.update({
 } as any)
 const AppConfiguracoesUsuariosRoute =
   AppConfiguracoesUsuariosRouteImport.update({
-    id: '/configuracoes/usuarios',
-    path: '/configuracoes/usuarios',
-    getParentRoute: () => AppRoute,
+    id: '/usuarios',
+    path: '/usuarios',
+    getParentRoute: () => AppConfiguracoesRoute,
   } as any)
 const ApiPublicAsaasWebhookRoute = ApiPublicAsaasWebhookRouteImport.update({
   id: '/api/public/asaas-webhook',
@@ -376,6 +382,7 @@ export interface FileRoutesByFullPath {
   '/app/cartoes': typeof AppCartoesRoute
   '/app/categorias': typeof AppCategoriasRoute
   '/app/conciliacao': typeof AppConciliacaoRoute
+  '/app/configuracoes': typeof AppConfiguracoesRouteWithChildren
   '/app/contas-bancarias': typeof AppContasBancariasRoute
   '/app/contas-pagar': typeof AppContasPagarRoute
   '/app/contas-receber': typeof AppContasReceberRoute
@@ -433,6 +440,7 @@ export interface FileRoutesByTo {
   '/app/cartoes': typeof AppCartoesRoute
   '/app/categorias': typeof AppCategoriasRoute
   '/app/conciliacao': typeof AppConciliacaoRoute
+  '/app/configuracoes': typeof AppConfiguracoesRouteWithChildren
   '/app/contas-bancarias': typeof AppContasBancariasRoute
   '/app/contas-pagar': typeof AppContasPagarRoute
   '/app/contas-receber': typeof AppContasReceberRoute
@@ -493,6 +501,7 @@ export interface FileRoutesById {
   '/app/cartoes': typeof AppCartoesRoute
   '/app/categorias': typeof AppCategoriasRoute
   '/app/conciliacao': typeof AppConciliacaoRoute
+  '/app/configuracoes': typeof AppConfiguracoesRouteWithChildren
   '/app/contas-bancarias': typeof AppContasBancariasRoute
   '/app/contas-pagar': typeof AppContasPagarRoute
   '/app/contas-receber': typeof AppContasReceberRoute
@@ -554,6 +563,7 @@ export interface FileRouteTypes {
     | '/app/cartoes'
     | '/app/categorias'
     | '/app/conciliacao'
+    | '/app/configuracoes'
     | '/app/contas-bancarias'
     | '/app/contas-pagar'
     | '/app/contas-receber'
@@ -611,6 +621,7 @@ export interface FileRouteTypes {
     | '/app/cartoes'
     | '/app/categorias'
     | '/app/conciliacao'
+    | '/app/configuracoes'
     | '/app/contas-bancarias'
     | '/app/contas-pagar'
     | '/app/contas-receber'
@@ -670,6 +681,7 @@ export interface FileRouteTypes {
     | '/app/cartoes'
     | '/app/categorias'
     | '/app/conciliacao'
+    | '/app/configuracoes'
     | '/app/contas-bancarias'
     | '/app/contas-pagar'
     | '/app/contas-receber'
@@ -907,6 +919,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AppContasBancariasRouteImport
       parentRoute: typeof AppRoute
     }
+    '/app/configuracoes': {
+      id: '/app/configuracoes'
+      path: '/configuracoes'
+      fullPath: '/app/configuracoes'
+      preLoaderRoute: typeof AppConfiguracoesRouteImport
+      parentRoute: typeof AppRoute
+    }
     '/app/conciliacao': {
       id: '/app/conciliacao'
       path: '/conciliacao'
@@ -1056,10 +1075,10 @@ declare module '@tanstack/react-router' {
     }
     '/app/configuracoes/usuarios': {
       id: '/app/configuracoes/usuarios'
-      path: '/configuracoes/usuarios'
+      path: '/usuarios'
       fullPath: '/app/configuracoes/usuarios'
       preLoaderRoute: typeof AppConfiguracoesUsuariosRouteImport
-      parentRoute: typeof AppRoute
+      parentRoute: typeof AppConfiguracoesRoute
     }
     '/api/public/asaas-webhook': {
       id: '/api/public/asaas-webhook'
@@ -1160,6 +1179,17 @@ const AdminRouteChildren: AdminRouteChildren = {
 
 const AdminRouteWithChildren = AdminRoute._addFileChildren(AdminRouteChildren)
 
+interface AppConfiguracoesRouteChildren {
+  AppConfiguracoesUsuariosRoute: typeof AppConfiguracoesUsuariosRoute
+}
+
+const AppConfiguracoesRouteChildren: AppConfiguracoesRouteChildren = {
+  AppConfiguracoesUsuariosRoute: AppConfiguracoesUsuariosRoute,
+}
+
+const AppConfiguracoesRouteWithChildren =
+  AppConfiguracoesRoute._addFileChildren(AppConfiguracoesRouteChildren)
+
 interface AppObrasObraIdComprasRouteChildren {
   AppObrasObraIdComprasCompraIdRoute: typeof AppObrasObraIdComprasCompraIdRoute
 }
@@ -1190,6 +1220,7 @@ interface AppRouteChildren {
   AppCartoesRoute: typeof AppCartoesRoute
   AppCategoriasRoute: typeof AppCategoriasRoute
   AppConciliacaoRoute: typeof AppConciliacaoRoute
+  AppConfiguracoesRoute: typeof AppConfiguracoesRouteWithChildren
   AppContasBancariasRoute: typeof AppContasBancariasRoute
   AppContasPagarRoute: typeof AppContasPagarRoute
   AppContasReceberRoute: typeof AppContasReceberRoute
@@ -1204,7 +1235,6 @@ interface AppRouteChildren {
   AppTarefasRoute: typeof AppTarefasRoute
   AppTransferenciasRoute: typeof AppTransferenciasRoute
   AppIndexRoute: typeof AppIndexRoute
-  AppConfiguracoesUsuariosRoute: typeof AppConfiguracoesUsuariosRoute
   AppEstoqueAlmoxarifadosRoute: typeof AppEstoqueAlmoxarifadosRoute
   AppEstoqueMovimentacoesRoute: typeof AppEstoqueMovimentacoesRoute
   AppEstoqueProdutosRoute: typeof AppEstoqueProdutosRoute
@@ -1224,6 +1254,7 @@ const AppRouteChildren: AppRouteChildren = {
   AppCartoesRoute: AppCartoesRoute,
   AppCategoriasRoute: AppCategoriasRoute,
   AppConciliacaoRoute: AppConciliacaoRoute,
+  AppConfiguracoesRoute: AppConfiguracoesRouteWithChildren,
   AppContasBancariasRoute: AppContasBancariasRoute,
   AppContasPagarRoute: AppContasPagarRoute,
   AppContasReceberRoute: AppContasReceberRoute,
@@ -1238,7 +1269,6 @@ const AppRouteChildren: AppRouteChildren = {
   AppTarefasRoute: AppTarefasRoute,
   AppTransferenciasRoute: AppTransferenciasRoute,
   AppIndexRoute: AppIndexRoute,
-  AppConfiguracoesUsuariosRoute: AppConfiguracoesUsuariosRoute,
   AppEstoqueAlmoxarifadosRoute: AppEstoqueAlmoxarifadosRoute,
   AppEstoqueMovimentacoesRoute: AppEstoqueMovimentacoesRoute,
   AppEstoqueProdutosRoute: AppEstoqueProdutosRoute,
