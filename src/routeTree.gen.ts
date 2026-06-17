@@ -49,6 +49,7 @@ import { Route as AdminCreditosRouteImport } from './routes/admin.creditos'
 import { Route as AdminConfiguracoesRouteImport } from './routes/admin.configuracoes'
 import { Route as AdminChangelogRouteImport } from './routes/admin.changelog'
 import { Route as AppObrasIndexRouteImport } from './routes/app.obras.index'
+import { Route as AppConfiguracoesIndexRouteImport } from './routes/app.configuracoes.index'
 import { Route as LovableEmailSuppressionRouteImport } from './routes/lovable/email/suppression'
 import { Route as AppRhColaboradoresRouteImport } from './routes/app.rh.colaboradores'
 import { Route as AppEstoqueSaldosRouteImport } from './routes/app.estoque.saldos'
@@ -268,6 +269,11 @@ const AppObrasIndexRoute = AppObrasIndexRouteImport.update({
   path: '/obras/',
   getParentRoute: () => AppRoute,
 } as any)
+const AppConfiguracoesIndexRoute = AppConfiguracoesIndexRouteImport.update({
+  id: '/',
+  path: '/',
+  getParentRoute: () => AppConfiguracoesRoute,
+} as any)
 const LovableEmailSuppressionRoute = LovableEmailSuppressionRouteImport.update({
   id: '/lovable/email/suppression',
   path: '/lovable/email/suppression',
@@ -413,6 +419,7 @@ export interface FileRoutesByFullPath {
   '/app/estoque/saldos': typeof AppEstoqueSaldosRoute
   '/app/rh/colaboradores': typeof AppRhColaboradoresRoute
   '/lovable/email/suppression': typeof LovableEmailSuppressionRoute
+  '/app/configuracoes/': typeof AppConfiguracoesIndexRoute
   '/app/obras/': typeof AppObrasIndexRoute
   '/app/obras/$obraId/compras': typeof AppObrasObraIdComprasRouteWithChildren
   '/app/obras/$obraId/gantt': typeof AppObrasObraIdGanttRoute
@@ -440,7 +447,6 @@ export interface FileRoutesByTo {
   '/app/cartoes': typeof AppCartoesRoute
   '/app/categorias': typeof AppCategoriasRoute
   '/app/conciliacao': typeof AppConciliacaoRoute
-  '/app/configuracoes': typeof AppConfiguracoesRouteWithChildren
   '/app/contas-bancarias': typeof AppContasBancariasRoute
   '/app/contas-pagar': typeof AppContasPagarRoute
   '/app/contas-receber': typeof AppContasReceberRoute
@@ -471,6 +477,7 @@ export interface FileRoutesByTo {
   '/app/estoque/saldos': typeof AppEstoqueSaldosRoute
   '/app/rh/colaboradores': typeof AppRhColaboradoresRoute
   '/lovable/email/suppression': typeof LovableEmailSuppressionRoute
+  '/app/configuracoes': typeof AppConfiguracoesIndexRoute
   '/app/obras': typeof AppObrasIndexRoute
   '/app/obras/$obraId/compras': typeof AppObrasObraIdComprasRouteWithChildren
   '/app/obras/$obraId/gantt': typeof AppObrasObraIdGanttRoute
@@ -532,6 +539,7 @@ export interface FileRoutesById {
   '/app/estoque/saldos': typeof AppEstoqueSaldosRoute
   '/app/rh/colaboradores': typeof AppRhColaboradoresRoute
   '/lovable/email/suppression': typeof LovableEmailSuppressionRoute
+  '/app/configuracoes/': typeof AppConfiguracoesIndexRoute
   '/app/obras/': typeof AppObrasIndexRoute
   '/app/obras/$obraId/compras': typeof AppObrasObraIdComprasRouteWithChildren
   '/app/obras/$obraId/gantt': typeof AppObrasObraIdGanttRoute
@@ -594,6 +602,7 @@ export interface FileRouteTypes {
     | '/app/estoque/saldos'
     | '/app/rh/colaboradores'
     | '/lovable/email/suppression'
+    | '/app/configuracoes/'
     | '/app/obras/'
     | '/app/obras/$obraId/compras'
     | '/app/obras/$obraId/gantt'
@@ -621,7 +630,6 @@ export interface FileRouteTypes {
     | '/app/cartoes'
     | '/app/categorias'
     | '/app/conciliacao'
-    | '/app/configuracoes'
     | '/app/contas-bancarias'
     | '/app/contas-pagar'
     | '/app/contas-receber'
@@ -652,6 +660,7 @@ export interface FileRouteTypes {
     | '/app/estoque/saldos'
     | '/app/rh/colaboradores'
     | '/lovable/email/suppression'
+    | '/app/configuracoes'
     | '/app/obras'
     | '/app/obras/$obraId/compras'
     | '/app/obras/$obraId/gantt'
@@ -712,6 +721,7 @@ export interface FileRouteTypes {
     | '/app/estoque/saldos'
     | '/app/rh/colaboradores'
     | '/lovable/email/suppression'
+    | '/app/configuracoes/'
     | '/app/obras/'
     | '/app/obras/$obraId/compras'
     | '/app/obras/$obraId/gantt'
@@ -1024,6 +1034,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AppObrasIndexRouteImport
       parentRoute: typeof AppRoute
     }
+    '/app/configuracoes/': {
+      id: '/app/configuracoes/'
+      path: '/'
+      fullPath: '/app/configuracoes/'
+      preLoaderRoute: typeof AppConfiguracoesIndexRouteImport
+      parentRoute: typeof AppConfiguracoesRoute
+    }
     '/lovable/email/suppression': {
       id: '/lovable/email/suppression'
       path: '/lovable/email/suppression'
@@ -1181,10 +1198,12 @@ const AdminRouteWithChildren = AdminRoute._addFileChildren(AdminRouteChildren)
 
 interface AppConfiguracoesRouteChildren {
   AppConfiguracoesUsuariosRoute: typeof AppConfiguracoesUsuariosRoute
+  AppConfiguracoesIndexRoute: typeof AppConfiguracoesIndexRoute
 }
 
 const AppConfiguracoesRouteChildren: AppConfiguracoesRouteChildren = {
   AppConfiguracoesUsuariosRoute: AppConfiguracoesUsuariosRoute,
+  AppConfiguracoesIndexRoute: AppConfiguracoesIndexRoute,
 }
 
 const AppConfiguracoesRouteWithChildren =
