@@ -41,6 +41,7 @@ import { TopBar } from "@/components/app/TopBar";
 import { cn } from "@/lib/utils";
 import { useObraSelecionada } from "@/lib/obra-context";
 import { usePlanModules } from "@/lib/use-plan-modules";
+import { usePermissions } from "@/lib/use-permissions";
 
 type NavItem = {
   to: string;
@@ -60,8 +61,8 @@ type NavGroup = {
 const primaryNav: Array<NavItem | NavGroup> = [
   { to: "/app", label: "Dashboard", icon: LayoutDashboard, exact: true },
   { to: "/app/obras", label: "Obras", icon: HardHat, module: "obras" },
-  { to: "/app/tarefas", label: "Tarefas", icon: KanbanSquare },
-  { to: "/app/agenda", label: "Agenda", icon: CalendarDays },
+  { to: "/app/tarefas", label: "Tarefas", icon: KanbanSquare, module: "tarefas" },
+  { to: "/app/agenda", label: "Agenda", icon: CalendarDays, module: "agenda" },
   { to: "/app/empresas", label: "Empresas", icon: Building2 },
   {
     label: "Estoque",
@@ -111,6 +112,7 @@ export function AppLayout() {
   const navigate = useNavigate();
   const [openGroups, setOpenGroups] = useState<Record<string, boolean>>({});
   const { has: hasModule, hasFeature } = usePlanModules();
+  const { can, loading: permsLoading } = usePermissions();
 
   const systemNav: Array<NavItem | NavGroup> = [
     { to: "/app/relatorios", label: "Relatórios", icon: FileBarChart2, module: "relatorios" },
@@ -125,8 +127,13 @@ export function AppLayout() {
     },
   ];
 
-  const visiblePrimaryNav = primaryNav.filter((item) => !item.module || hasModule(item.module));
-  const visibleSystemNav = systemNav.filter((item) => !item.module || hasModule(item.module));
+  const allowedByPerm = (mod?: string) => !mod || permsLoading || can(mod, "view");
+  const visiblePrimaryNav = primaryNav.filter(
+    (item) => (!item.module || hasModule(item.module)) && allowedByPerm(item.module),
+  );
+  const visibleSystemNav = systemNav.filter(
+    (item) => (!item.module || hasModule(item.module)) && allowedByPerm(item.module),
+  );
 
   const renderNavItem = (item: NavItem | NavGroup) => {
     if (isGroup(item)) {
