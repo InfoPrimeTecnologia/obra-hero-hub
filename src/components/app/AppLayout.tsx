@@ -245,7 +245,15 @@ export function AppLayout() {
           {visiblePrimaryNav.map(renderNavItem)}
           {visibleSystemNav.length > 0 && (
             <>
-              <div className="my-2 border-t border-sidebar-border" />
+              <div
+                className="my-3 h-px w-full"
+                style={{
+                  background:
+                    "linear-gradient(to right, transparent, color-mix(in oklab, var(--sidebar-primary) 55%, transparent) 50%, transparent)",
+                  boxShadow:
+                    "0 1px 0 color-mix(in oklab, var(--sidebar-primary) 18%, transparent)",
+                }}
+              />
               {visibleSystemNav.map(renderNavItem)}
             </>
           )}
