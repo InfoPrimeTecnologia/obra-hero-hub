@@ -1,6 +1,16 @@
 import { createFileRoute, Link, useNavigate } from "@tanstack/react-router";
 import { useEffect, useRef, useState, type FormEvent } from "react";
-import { Plus, FolderOpen, CheckCircle2, ListTree, Building2, Camera, Loader2, ImageIcon } from "lucide-react";
+import { Plus, FolderOpen, CheckCircle2, ListTree, Building2, Camera, Loader2, ImageIcon, Archive, ArchiveRestore, Trash2 } from "lucide-react";
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+} from "@/components/ui/alert-dialog";
 import { PageHeader } from "@/components/admin/PageHeader";
 import { Card, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
@@ -84,6 +94,9 @@ function ObrasPage() {
   const [obras, setObras] = useState<Obra[]>([]);
   const [empresas, setEmpresas] = useState<Empresa[]>([]);
   const [filtroEmpresa, setFiltroEmpresa] = useState<string>("todas");
+  const [filtroStatus, setFiltroStatus] = useState<"ativas" | "arquivadas" | "todas">("ativas");
+  const [obraParaExcluir, setObraParaExcluir] = useState<Obra | null>(null);
+  const [excluindo, setExcluindo] = useState(false);
   const [open, setOpen] = useState(false);
   const [saving, setSaving] = useState(false);
 
@@ -201,10 +214,45 @@ function ObrasPage() {
     navigate({ to: "/app/obras/$obraId/rdo", params: { obraId: o.id } });
   };
 
-  const obrasFiltradas =
-    filtroEmpresa === "todas"
-      ? obras
-      : obras.filter((o) => o.empresa_id === filtroEmpresa);
+  const arquivarObra = async (o: Obra, arquivar: boolean) => {
+    const novoStatus = arquivar ? "arquivada" : "ativa";
+    const { error } = await supabase.from("obras").update({ status: novoStatus }).eq("id", o.id);
+    if (error) {
+      toast.error("Erro ao atualizar obra", { description: error.message });
+      return;
+    }
+    if (arquivar && obraAtiva?.id === o.id) setObra(null);
+    toast.success(arquivar ? "Obra arquivada" : "Obra reativada");
+    void carregar();
+  };
+
+  const excluirObra = async () => {
+    if (!obraParaExcluir) return;
+    setExcluindo(true);
+    const { error } = await supabase.from("obras").delete().eq("id", obraParaExcluir.id);
+    setExcluindo(false);
+    if (error) {
+      toast.error("Erro ao excluir obra", {
+        description:
+          error.message.includes("foreign key") || error.message.includes("violates")
+            ? "Existem dados vinculados (orçamento, RDOs, compras, etc.). Arquive a obra ao invés de excluir."
+            : error.message,
+      });
+      return;
+    }
+    if (obraAtiva?.id === obraParaExcluir.id) setObra(null);
+    toast.success("Obra excluída");
+    setObraParaExcluir(null);
+    void carregar();
+  };
+
+  const obrasFiltradas = obras.filter((o) => {
+    if (filtroEmpresa !== "todas" && o.empresa_id !== filtroEmpresa) return false;
+    const arquivada = o.status === "arquivada";
+    if (filtroStatus === "ativas" && arquivada) return false;
+    if (filtroStatus === "arquivadas" && !arquivada) return false;
+    return true;
+  });
 
   const empresaNome = (id: string | null) =>
     empresas.find((e) => e.id === id)?.nome ?? "—";
@@ -319,21 +367,36 @@ function ObrasPage() {
         )}
 
         {empresas.length > 0 && (
-          <div className="flex items-center gap-2">
-            <Label className="text-xs text-muted-foreground">Filtrar por empresa:</Label>
-            <Select value={filtroEmpresa} onValueChange={setFiltroEmpresa}>
-              <SelectTrigger className="w-[260px]">
-                <SelectValue />
-              </SelectTrigger>
-              <SelectContent>
-                <SelectItem value="todas">Todas as empresas</SelectItem>
-                {empresas.map((e) => (
-                  <SelectItem key={e.id} value={e.id}>
-                    {e.nome}
-                  </SelectItem>
-                ))}
-              </SelectContent>
-            </Select>
+          <div className="flex flex-wrap items-center gap-3">
+            <div className="flex items-center gap-2">
+              <Label className="text-xs text-muted-foreground">Empresa:</Label>
+              <Select value={filtroEmpresa} onValueChange={setFiltroEmpresa}>
+                <SelectTrigger className="w-[220px]">
+                  <SelectValue />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="todas">Todas as empresas</SelectItem>
+                  {empresas.map((e) => (
+                    <SelectItem key={e.id} value={e.id}>
+                      {e.nome}
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+            </div>
+            <div className="flex items-center gap-2">
+              <Label className="text-xs text-muted-foreground">Status:</Label>
+              <Select value={filtroStatus} onValueChange={(v) => setFiltroStatus(v as typeof filtroStatus)}>
+                <SelectTrigger className="w-[160px]">
+                  <SelectValue />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="ativas">Ativas</SelectItem>
+                  <SelectItem value="arquivadas">Arquivadas</SelectItem>
+                  <SelectItem value="todas">Todas</SelectItem>
+                </SelectContent>
+              </Select>
+            </div>
           </div>
         )}
 
@@ -348,8 +411,9 @@ function ObrasPage() {
         ) : (
           obrasFiltradas.map((o) => {
             const ativa = obraAtiva?.id === o.id;
+            const arquivada = o.status === "arquivada";
             return (
-              <Card key={o.id}>
+              <Card key={o.id} className={arquivada ? "opacity-70" : undefined}>
                 <CardContent className="flex flex-wrap items-center gap-4 p-4">
                   <ObraThumb
                     obra={o}
@@ -364,6 +428,11 @@ function ObrasPage() {
                           <CheckCircle2 className="h-3 w-3" /> Ativa
                         </Badge>
                       )}
+                      {arquivada && (
+                        <Badge variant="outline" className="gap-1">
+                          <Archive className="h-3 w-3" /> Arquivada
+                        </Badge>
+                      )}
                     </div>
                     <p className="text-xs text-muted-foreground">
                       <Building2 className="mr-1 inline h-3 w-3" />
@@ -375,23 +444,52 @@ function ObrasPage() {
                     </p>
                   </div>
                   <div className="flex flex-wrap gap-2">
+                    {!arquivada && (
+                      <>
+                        <Button
+                          variant={ativa ? "default" : "outline"}
+                          size="sm"
+                          onClick={() => abrirObra(o)}
+                        >
+                          <FolderOpen className="mr-2 h-4 w-4" />
+                          {ativa ? "Aberta" : "Abrir"}
+                        </Button>
+                        <Button variant="ghost" size="sm" asChild>
+                          <Link to="/app/obras/$obraId/orcamento" params={{ obraId: o.id }}>
+                            <ListTree className="mr-2 h-4 w-4" /> Orçamento
+                          </Link>
+                        </Button>
+                        <Button variant="ghost" size="sm" asChild>
+                          <Link to="/app/obras/$obraId/rdo" params={{ obraId: o.id }}>
+                            RDO
+                          </Link>
+                        </Button>
+                      </>
+                    )}
                     <Button
-                      variant={ativa ? "default" : "outline"}
+                      variant="ghost"
                       size="sm"
-                      onClick={() => abrirObra(o)}
+                      onClick={() => arquivarObra(o, !arquivada)}
+                      title={arquivada ? "Reativar" : "Arquivar"}
                     >
-                      <FolderOpen className="mr-2 h-4 w-4" />
-                      {ativa ? "Aberta" : "Abrir"}
+                      {arquivada ? (
+                        <>
+                          <ArchiveRestore className="mr-2 h-4 w-4" /> Reativar
+                        </>
+                      ) : (
+                        <>
+                          <Archive className="mr-2 h-4 w-4" /> Arquivar
+                        </>
+                      )}
                     </Button>
-                    <Button variant="ghost" size="sm" asChild>
-                      <Link to="/app/obras/$obraId/orcamento" params={{ obraId: o.id }}>
-                        <ListTree className="mr-2 h-4 w-4" /> Orçamento
-                      </Link>
-                    </Button>
-                    <Button variant="ghost" size="sm" asChild>
-                      <Link to="/app/obras/$obraId/rdo" params={{ obraId: o.id }}>
-                        RDO
-                      </Link>
+                    <Button
+                      variant="ghost"
+                      size="sm"
+                      className="text-destructive hover:text-destructive"
+                      onClick={() => setObraParaExcluir(o)}
+                      title="Excluir"
+                    >
+                      <Trash2 className="h-4 w-4" />
                     </Button>
                   </div>
                 </CardContent>
@@ -400,6 +498,31 @@ function ObrasPage() {
           })
         )}
       </div>
+
+      <AlertDialog open={!!obraParaExcluir} onOpenChange={(open) => !open && setObraParaExcluir(null)}>
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>Excluir obra "{obraParaExcluir?.name}"?</AlertDialogTitle>
+            <AlertDialogDescription>
+              Esta ação é permanente. Se a obra possui orçamento, RDOs, compras ou outros dados vinculados,
+              a exclusão será bloqueada — nesse caso, use <strong>Arquivar</strong>.
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel disabled={excluindo}>Cancelar</AlertDialogCancel>
+            <AlertDialogAction
+              onClick={(e) => {
+                e.preventDefault();
+                void excluirObra();
+              }}
+              disabled={excluindo}
+              className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
+            >
+              {excluindo ? "Excluindo..." : "Excluir"}
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
     </div>
   );
 }
