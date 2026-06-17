@@ -424,7 +424,7 @@ async function executeTool(
           descricao: args.descricao,
           valor: args.valor,
           vencimento: args.vencimento,
-          status: "aberta",
+          status: "pendente",
           origem: "manual",
           created_by: userId,
         })
@@ -452,7 +452,7 @@ async function executeTool(
           descricao: args.descricao,
           valor: args.valor,
           vencimento: args.vencimento,
-          status: "aberta",
+          status: "pendente",
           origem: "manual",
           created_by: userId,
         })
