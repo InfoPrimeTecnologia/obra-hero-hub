@@ -2,7 +2,7 @@ import { useEffect, useState } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/lib/auth-context";
 
-const ALL_MODULES = ["obras", "financeiro", "compras", "estoque", "rh", "relatorios"];
+const ALL_MODULES = ["obras", "financeiro", "compras", "estoque", "rh", "relatorios", "tarefas", "agenda"];
 const ALL_FEATURES = ["rdo_whatsapp", "nf_xml", "ai_assistant"];
 
 export function usePlanModules() {
