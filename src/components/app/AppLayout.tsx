@@ -213,7 +213,7 @@ export function AppLayout() {
           <Logo variant="light" className="h-8" />
         </div>
         {obra ? (
-          <div className="border-b border-sidebar-border px-4 py-3">
+          <div className="relative px-4 py-3 after:absolute after:inset-x-3 after:bottom-0 after:h-px after:bg-[linear-gradient(to_right,transparent,color-mix(in_oklab,var(--sidebar-primary)_55%,transparent)_50%,transparent)]">
             <p className="text-xs uppercase tracking-wide text-sidebar-foreground/60">Obra ativa</p>
             <p className="truncate text-sm font-medium">{obra.name}</p>
             <div className="mt-2 flex flex-wrap gap-2">
