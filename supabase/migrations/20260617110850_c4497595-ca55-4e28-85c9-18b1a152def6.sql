@@ -1,0 +1,11 @@
+GRANT SELECT, INSERT, UPDATE, DELETE ON public.tarefas TO authenticated;
+GRANT ALL ON public.tarefas TO service_role;
+GRANT SELECT, INSERT, UPDATE, DELETE ON public.tarefa_colunas TO authenticated;
+GRANT ALL ON public.tarefa_colunas TO service_role;
+GRANT SELECT, INSERT, UPDATE, DELETE ON public.tarefa_materiais TO authenticated;
+GRANT ALL ON public.tarefa_materiais TO service_role;
+GRANT SELECT, INSERT, UPDATE, DELETE ON public.eventos_agenda TO authenticated;
+GRANT ALL ON public.eventos_agenda TO service_role;
+GRANT SELECT, INSERT, UPDATE, DELETE ON public.customer_invites TO authenticated;
+GRANT ALL ON public.customer_invites TO service_role;
+NOTIFY pgrst, 'reload schema';
