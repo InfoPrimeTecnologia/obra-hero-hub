@@ -297,7 +297,8 @@ function EmpresasPage() {
     try {
       const today = new Date();
       const nextDue = new Date(today);
-      nextDue.setMonth(nextDue.getMonth() + (assignForm.cycle === "yearly" ? 12 : 1));
+      const cycleMonths: Record<string, number> = { monthly: 1, quarterly: 3, semiannual: 6, annual: 12 };
+      nextDue.setMonth(nextDue.getMonth() + (cycleMonths[assignForm.cycle] ?? 1));
       const dueDay = Math.min(Math.max(assignForm.due_day || 10, 1), 28);
 
       // Cancela assinaturas ativas anteriores
