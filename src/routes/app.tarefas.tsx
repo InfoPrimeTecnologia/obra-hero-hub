@@ -486,8 +486,8 @@ function TarefaDialog({
       // sincroniza materiais (delete os removidos, insere novos sem id)
       if (tarefaId) {
         const { data: existing } = await (supabase as any).from("tarefa_materiais").select("id").eq("tarefa_id", tarefaId);
-        const existingIds = new Set((existing ?? []).map((r: any) => r.id));
-        const keepIds = new Set(materiais.filter((m) => m.id).map((m) => m.id));
+        const existingIds = new Set<string>((existing ?? []).map((r: any) => String(r.id)));
+        const keepIds = new Set<string>(materiais.filter((m) => m.id).map((m) => String(m.id)));
         const toDelete = [...existingIds].filter((id) => !keepIds.has(id));
         if (toDelete.length) await (supabase as any).from("tarefa_materiais").delete().in("id", toDelete);
         const toInsert = materiais.filter((m) => !m.id);
