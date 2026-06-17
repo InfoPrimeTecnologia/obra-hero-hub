@@ -500,7 +500,15 @@ function ObrasPage() {
         )}
       </div>
 
-      <AlertDialog open={!!obraParaExcluir} onOpenChange={(open) => !open && setObraParaExcluir(null)}>
+      <AlertDialog
+        open={!!obraParaExcluir}
+        onOpenChange={(open) => {
+          if (!open) {
+            setObraParaExcluir(null);
+            setConfirmName("");
+          }
+        }}
+      >
         <AlertDialogContent>
           <AlertDialogHeader>
             <AlertDialogTitle>Excluir obra "{obraParaExcluir?.name}"?</AlertDialogTitle>
@@ -509,6 +517,18 @@ function ObrasPage() {
               a exclusão será bloqueada — nesse caso, use <strong>Arquivar</strong>.
             </AlertDialogDescription>
           </AlertDialogHeader>
+          <div className="space-y-2 py-2">
+            <Label htmlFor="confirm-excluir-obra">
+              Digite o nome da obra para confirmar:
+            </Label>
+            <Input
+              id="confirm-excluir-obra"
+              value={confirmName}
+              onChange={(e) => setConfirmName(e.target.value)}
+              placeholder={obraParaExcluir?.name ?? ""}
+              disabled={excluindo}
+            />
+          </div>
           <AlertDialogFooter>
             <AlertDialogCancel disabled={excluindo}>Cancelar</AlertDialogCancel>
             <AlertDialogAction
@@ -516,7 +536,7 @@ function ObrasPage() {
                 e.preventDefault();
                 void excluirObra();
               }}
-              disabled={excluindo}
+              disabled={excluindo || confirmName !== obraParaExcluir?.name}
               className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
             >
               {excluindo ? "Excluindo..." : "Excluir"}
