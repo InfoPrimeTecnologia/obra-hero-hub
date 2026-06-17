@@ -24,6 +24,8 @@ const MODULES = [
   { id: "estoque", label: "Estoque" },
   { id: "rh", label: "RH" },
   { id: "relatorios", label: "Relatórios" },
+  { id: "tarefas", label: "Tarefas (Kanban)" },
+  { id: "agenda", label: "Agenda" },
 ];
 
 type Cycle = "monthly" | "quarterly" | "semiannual" | "annual";
