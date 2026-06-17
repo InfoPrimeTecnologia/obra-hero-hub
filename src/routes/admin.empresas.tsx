@@ -297,7 +297,8 @@ function EmpresasPage() {
     try {
       const today = new Date();
       const nextDue = new Date(today);
-      nextDue.setMonth(nextDue.getMonth() + (assignForm.cycle === "yearly" ? 12 : 1));
+      const cycleMonths: Record<string, number> = { monthly: 1, quarterly: 3, semiannual: 6, annual: 12 };
+      nextDue.setMonth(nextDue.getMonth() + (cycleMonths[assignForm.cycle] ?? 1));
       const dueDay = Math.min(Math.max(assignForm.due_day || 10, 1), 28);
 
       // Cancela assinaturas ativas anteriores
@@ -598,7 +599,7 @@ function EmpresasPage() {
                 <SelectTrigger><SelectValue placeholder="Selecione um plano" /></SelectTrigger>
                 <SelectContent>
                   {plans.map((p) => (
-                    <SelectItem key={p.id} value={p.id}>{p.name} · {fmtBRL(Number(p.price))}/{p.cycle === "yearly" ? "ano" : "mês"}</SelectItem>
+                    <SelectItem key={p.id} value={p.id}>{p.name} · {fmtBRL(Number(p.price))}/{({monthly:"mês",quarterly:"trim",semiannual:"sem",annual:"ano"} as any)[p.cycle] ?? p.cycle}</SelectItem>
                   ))}
                 </SelectContent>
               </Select>
@@ -618,7 +619,9 @@ function EmpresasPage() {
                   <SelectTrigger><SelectValue /></SelectTrigger>
                   <SelectContent>
                     <SelectItem value="monthly">Mensal</SelectItem>
-                    <SelectItem value="yearly">Anual</SelectItem>
+                    <SelectItem value="quarterly">Trimestral</SelectItem>
+                    <SelectItem value="semiannual">Semestral</SelectItem>
+                    <SelectItem value="annual">Anual</SelectItem>
                   </SelectContent>
                 </Select>
               </div>
