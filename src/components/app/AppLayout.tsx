@@ -30,6 +30,8 @@ import {
   Sparkles,
   BookOpen,
   Coins,
+  KanbanSquare,
+  CalendarDays,
 } from "lucide-react";
 import { AIAssistant } from "@/components/app/AIAssistant";
 import { Logo } from "@/components/Logo";
@@ -58,6 +60,8 @@ type NavGroup = {
 const primaryNav: Array<NavItem | NavGroup> = [
   { to: "/app", label: "Dashboard", icon: LayoutDashboard, exact: true },
   { to: "/app/obras", label: "Obras", icon: HardHat, module: "obras" },
+  { to: "/app/tarefas", label: "Tarefas", icon: KanbanSquare },
+  { to: "/app/agenda", label: "Agenda", icon: CalendarDays },
   { to: "/app/empresas", label: "Empresas", icon: Building2 },
   {
     label: "Estoque",

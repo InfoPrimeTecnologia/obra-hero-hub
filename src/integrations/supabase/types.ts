@@ -1087,6 +1087,121 @@ export type Database = {
           },
         ]
       }
+      customer_invites: {
+        Row: {
+          accepted_at: string | null
+          accepted_user_id: string | null
+          allowed_obras: string[]
+          can_access_all_obras: boolean
+          created_at: string
+          created_by: string | null
+          customer_id: string
+          email: string
+          expires_at: string
+          full_name: string | null
+          id: string
+          permissions: Json
+          role: string
+          token: string
+        }
+        Insert: {
+          accepted_at?: string | null
+          accepted_user_id?: string | null
+          allowed_obras?: string[]
+          can_access_all_obras?: boolean
+          created_at?: string
+          created_by?: string | null
+          customer_id: string
+          email: string
+          expires_at?: string
+          full_name?: string | null
+          id?: string
+          permissions?: Json
+          role?: string
+          token: string
+        }
+        Update: {
+          accepted_at?: string | null
+          accepted_user_id?: string | null
+          allowed_obras?: string[]
+          can_access_all_obras?: boolean
+          created_at?: string
+          created_by?: string | null
+          customer_id?: string
+          email?: string
+          expires_at?: string
+          full_name?: string | null
+          id?: string
+          permissions?: Json
+          role?: string
+          token?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "customer_invites_customer_id_fkey"
+            columns: ["customer_id"]
+            isOneToOne: false
+            referencedRelation: "customers"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      customer_members: {
+        Row: {
+          allowed_obras: string[]
+          can_access_all_obras: boolean
+          created_at: string
+          created_by: string | null
+          customer_id: string
+          email: string | null
+          full_name: string | null
+          id: string
+          permissions: Json
+          role: string
+          status: string
+          updated_at: string
+          user_id: string
+        }
+        Insert: {
+          allowed_obras?: string[]
+          can_access_all_obras?: boolean
+          created_at?: string
+          created_by?: string | null
+          customer_id: string
+          email?: string | null
+          full_name?: string | null
+          id?: string
+          permissions?: Json
+          role?: string
+          status?: string
+          updated_at?: string
+          user_id: string
+        }
+        Update: {
+          allowed_obras?: string[]
+          can_access_all_obras?: boolean
+          created_at?: string
+          created_by?: string | null
+          customer_id?: string
+          email?: string | null
+          full_name?: string | null
+          id?: string
+          permissions?: Json
+          role?: string
+          status?: string
+          updated_at?: string
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "customer_members_customer_id_fkey"
+            columns: ["customer_id"]
+            isOneToOne: false
+            referencedRelation: "customers"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       customers: {
         Row: {
           address_city: string | null
@@ -1368,6 +1483,75 @@ export type Database = {
           updated_at?: string
         }
         Relationships: []
+      }
+      eventos_agenda: {
+        Row: {
+          cor: string | null
+          created_at: string
+          created_by: string | null
+          customer_id: string
+          descricao: string | null
+          dia_inteiro: boolean
+          dt_fim: string
+          dt_inicio: string
+          id: string
+          lembrete_minutos: number | null
+          local: string | null
+          obra_id: string | null
+          tarefa_id: string | null
+          titulo: string
+          updated_at: string
+        }
+        Insert: {
+          cor?: string | null
+          created_at?: string
+          created_by?: string | null
+          customer_id: string
+          descricao?: string | null
+          dia_inteiro?: boolean
+          dt_fim: string
+          dt_inicio: string
+          id?: string
+          lembrete_minutos?: number | null
+          local?: string | null
+          obra_id?: string | null
+          tarefa_id?: string | null
+          titulo: string
+          updated_at?: string
+        }
+        Update: {
+          cor?: string | null
+          created_at?: string
+          created_by?: string | null
+          customer_id?: string
+          descricao?: string | null
+          dia_inteiro?: boolean
+          dt_fim?: string
+          dt_inicio?: string
+          id?: string
+          lembrete_minutos?: number | null
+          local?: string | null
+          obra_id?: string | null
+          tarefa_id?: string | null
+          titulo?: string
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "eventos_agenda_obra_id_fkey"
+            columns: ["obra_id"]
+            isOneToOne: false
+            referencedRelation: "obras"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "eventos_agenda_tarefa_id_fkey"
+            columns: ["tarefa_id"]
+            isOneToOne: false
+            referencedRelation: "tarefas"
+            referencedColumns: ["id"]
+          },
+        ]
       }
       faturas_cartao: {
         Row: {
@@ -2067,6 +2251,7 @@ export type Database = {
           is_active: boolean
           is_featured: boolean
           limits: Json
+          max_usuarios: number
           modules: Json
           name: string
           price: number
@@ -2082,6 +2267,7 @@ export type Database = {
           is_active?: boolean
           is_featured?: boolean
           limits?: Json
+          max_usuarios?: number
           modules?: Json
           name: string
           price: number
@@ -2097,6 +2283,7 @@ export type Database = {
           is_active?: boolean
           is_featured?: boolean
           limits?: Json
+          max_usuarios?: number
           modules?: Json
           name?: string
           price?: number
@@ -2645,6 +2832,191 @@ export type Database = {
         }
         Relationships: []
       }
+      tarefa_colunas: {
+        Row: {
+          cor: string | null
+          created_at: string
+          customer_id: string
+          id: string
+          is_done: boolean
+          nome: string
+          obra_id: string | null
+          ordem: number
+          updated_at: string
+        }
+        Insert: {
+          cor?: string | null
+          created_at?: string
+          customer_id: string
+          id?: string
+          is_done?: boolean
+          nome: string
+          obra_id?: string | null
+          ordem?: number
+          updated_at?: string
+        }
+        Update: {
+          cor?: string | null
+          created_at?: string
+          customer_id?: string
+          id?: string
+          is_done?: boolean
+          nome?: string
+          obra_id?: string | null
+          ordem?: number
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "tarefa_colunas_obra_id_fkey"
+            columns: ["obra_id"]
+            isOneToOne: false
+            referencedRelation: "obras"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      tarefa_materiais: {
+        Row: {
+          created_at: string
+          customer_id: string
+          id: string
+          observacao: string | null
+          produto_id: string
+          quantidade: number
+          tarefa_id: string
+        }
+        Insert: {
+          created_at?: string
+          customer_id: string
+          id?: string
+          observacao?: string | null
+          produto_id: string
+          quantidade?: number
+          tarefa_id: string
+        }
+        Update: {
+          created_at?: string
+          customer_id?: string
+          id?: string
+          observacao?: string | null
+          produto_id?: string
+          quantidade?: number
+          tarefa_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "tarefa_materiais_produto_id_fkey"
+            columns: ["produto_id"]
+            isOneToOne: false
+            referencedRelation: "produtos"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "tarefa_materiais_tarefa_id_fkey"
+            columns: ["tarefa_id"]
+            isOneToOne: false
+            referencedRelation: "tarefas"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      tarefas: {
+        Row: {
+          coluna_id: string | null
+          concluida_em: string | null
+          created_at: string
+          created_by: string | null
+          customer_id: string
+          descricao: string | null
+          etapa_id: string | null
+          id: string
+          obra_id: string | null
+          ordem: number
+          prazo: string | null
+          prioridade: string
+          responsavel_colaborador_id: string | null
+          responsavel_user_id: string | null
+          subetapa_id: string | null
+          titulo: string
+          updated_at: string
+        }
+        Insert: {
+          coluna_id?: string | null
+          concluida_em?: string | null
+          created_at?: string
+          created_by?: string | null
+          customer_id: string
+          descricao?: string | null
+          etapa_id?: string | null
+          id?: string
+          obra_id?: string | null
+          ordem?: number
+          prazo?: string | null
+          prioridade?: string
+          responsavel_colaborador_id?: string | null
+          responsavel_user_id?: string | null
+          subetapa_id?: string | null
+          titulo: string
+          updated_at?: string
+        }
+        Update: {
+          coluna_id?: string | null
+          concluida_em?: string | null
+          created_at?: string
+          created_by?: string | null
+          customer_id?: string
+          descricao?: string | null
+          etapa_id?: string | null
+          id?: string
+          obra_id?: string | null
+          ordem?: number
+          prazo?: string | null
+          prioridade?: string
+          responsavel_colaborador_id?: string | null
+          responsavel_user_id?: string | null
+          subetapa_id?: string | null
+          titulo?: string
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "tarefas_coluna_id_fkey"
+            columns: ["coluna_id"]
+            isOneToOne: false
+            referencedRelation: "tarefa_colunas"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "tarefas_etapa_id_fkey"
+            columns: ["etapa_id"]
+            isOneToOne: false
+            referencedRelation: "orcamento_etapas"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "tarefas_obra_id_fkey"
+            columns: ["obra_id"]
+            isOneToOne: false
+            referencedRelation: "obras"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "tarefas_responsavel_colaborador_id_fkey"
+            columns: ["responsavel_colaborador_id"]
+            isOneToOne: false
+            referencedRelation: "colaboradores"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "tarefas_subetapa_id_fkey"
+            columns: ["subetapa_id"]
+            isOneToOne: false
+            referencedRelation: "orcamento_subetapas"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       ticket_messages: {
         Row: {
           attachments: Json
@@ -2941,6 +3313,10 @@ export type Database = {
           msg_id: number
           read_ct: number
         }[]
+      }
+      user_has_customer_access: {
+        Args: { _cust: string; _user: string }
+        Returns: boolean
       }
     }
     Enums: {
