@@ -258,7 +258,7 @@ export function AppLayout() {
             </>
           )}
         </nav>
-        <div className="border-t border-sidebar-border p-3">
+        <div className="relative p-3 before:absolute before:inset-x-3 before:top-0 before:h-px before:bg-[linear-gradient(to_right,transparent,color-mix(in_oklab,var(--sidebar-primary)_55%,transparent)_50%,transparent)]">
           <div className="mb-2 truncate px-3 text-xs text-sidebar-foreground/60">{user?.email}</div>
           <Button
             variant="ghost"
