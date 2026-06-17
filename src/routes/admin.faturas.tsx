@@ -100,6 +100,25 @@ function FaturasPage() {
     onError: (e: any) => toast.error("Erro", { description: e.message }),
   });
 
+  // Auto-sync silencioso ao abrir e a cada 60s (evita depender do webhook de produção)
+  const autoSyncedRef = useRef(false);
+  useEffect(() => {
+    const run = async () => {
+      try {
+        await syncAll({ data: { days: 14 } });
+        qc.invalidateQueries({ queryKey: ["admin-invoices"] });
+      } catch {
+        /* silencioso */
+      }
+    };
+    if (!autoSyncedRef.current) {
+      autoSyncedRef.current = true;
+      run();
+    }
+    const id = setInterval(run, 60_000);
+    return () => clearInterval(id);
+  }, [syncAll, qc]);
+
   return (
     <div>
       <PageHeader
