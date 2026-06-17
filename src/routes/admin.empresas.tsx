@@ -619,7 +619,9 @@ function EmpresasPage() {
                   <SelectTrigger><SelectValue /></SelectTrigger>
                   <SelectContent>
                     <SelectItem value="monthly">Mensal</SelectItem>
-                    <SelectItem value="yearly">Anual</SelectItem>
+                    <SelectItem value="quarterly">Trimestral</SelectItem>
+                    <SelectItem value="semiannual">Semestral</SelectItem>
+                    <SelectItem value="annual">Anual</SelectItem>
                   </SelectContent>
                 </Select>
               </div>
