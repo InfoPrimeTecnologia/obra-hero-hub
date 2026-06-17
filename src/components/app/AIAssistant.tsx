@@ -25,28 +25,114 @@ type Msg =
     };
 
 const TOOL_LABELS: Record<string, string> = {
+  create_obra: "Criar obra",
+  update_obra: "Atualizar obra",
+  archive_obra: "Arquivar obra",
   create_etapa: "Criar etapa",
   create_subetapa: "Criar subetapa",
+  update_subetapa: "Atualizar subetapa",
+  delete_etapa: "Excluir etapa",
+  delete_subetapa: "Excluir subetapa",
   create_compra: "Registrar compra",
+  cancel_compra: "Cancelar compra",
   create_rdo: "Criar RDO",
+  add_rdo_equipe: "Equipe no RDO",
+  add_rdo_atividade: "Atividade no RDO",
+  add_rdo_ocorrencia: "Ocorrência no RDO",
   create_conta_pagar: "Conta a pagar",
   create_conta_receber: "Conta a receber",
+  pagar_conta: "Pagar conta",
+  receber_conta: "Receber conta",
+  create_conta_bancaria: "Criar conta bancária",
+  create_transferencia: "Transferência",
+  create_cartao: "Criar cartão",
+  pagar_fatura_cartao: "Pagar fatura",
+  create_fornecedor: "Criar fornecedor",
+  update_fornecedor: "Atualizar fornecedor",
+  create_categoria: "Criar categoria",
+  create_empresa: "Criar empresa",
+  create_produto: "Criar produto",
+  create_almoxarifado: "Criar almoxarifado",
+  movimentar_estoque: "Movimentar estoque",
+  create_requisicao: "Criar requisição",
+  create_colaborador: "Cadastrar colaborador",
+  vincular_colaborador_obra: "Vincular colaborador",
+  desligar_colaborador: "Desligar colaborador",
+  create_medicao: "Criar medição",
 };
+
+const brl = (n: any) => Number(n || 0).toLocaleString("pt-BR", { minimumFractionDigits: 2 });
 
 function summarizeArgs(tool: string, args: any): string {
   switch (tool) {
+    case "create_obra":
+      return `${args.nome}${args.cidade ? ` — ${args.cidade}/${args.estado || ""}` : ""}`;
+    case "update_obra":
+      return `${args.obra_nome}${args.novo_nome ? ` → ${args.novo_nome}` : ""}`;
+    case "archive_obra":
+      return `${args.obra_nome} (${args.arquivar ? "arquivar" : "reativar"})`;
     case "create_etapa":
       return `${args.nome} em ${args.obra_nome}`;
     case "create_subetapa":
-      return `${args.nome} (R$ ${Number(args.valor_orcado).toLocaleString("pt-BR", { minimumFractionDigits: 2 })}) em ${args.etapa_nome}`;
+      return `${args.nome} (R$ ${brl(args.valor_orcado)}) em ${args.etapa_nome}`;
+    case "update_subetapa":
+      return `${args.subetapa_nome}${args.novo_valor !== undefined ? ` → R$ ${brl(args.novo_valor)}` : ""}${args.percentual !== undefined ? ` — ${args.percentual}%` : ""}`;
+    case "delete_etapa":
+      return `${args.etapa_nome} em ${args.obra_nome}`;
+    case "delete_subetapa":
+      return `${args.subetapa_nome} (${args.etapa_nome})`;
     case "create_compra":
-      return `${args.descricao} — R$ ${Number(args.valor_total).toLocaleString("pt-BR", { minimumFractionDigits: 2 })} (${args.forma_pagamento}) em ${args.obra_nome}`;
+      return `${args.descricao} — R$ ${brl(args.valor_total)} (${args.forma_pagamento}) em ${args.obra_nome}`;
+    case "cancel_compra":
+      return `Compra ${args.compra_id}`;
     case "create_rdo":
       return `${args.obra_nome} em ${args.data || "hoje"} — ${args.condicao}`;
+    case "add_rdo_equipe":
+      return `${args.quantidade}× ${args.funcao} (${args.horas}h) em ${args.obra_nome}`;
+    case "add_rdo_atividade":
+      return `${args.descricao} (${args.obra_nome})`;
+    case "add_rdo_ocorrencia":
+      return `${args.tipo}: ${args.descricao} — ${args.obra_nome}`;
     case "create_conta_pagar":
-      return `${args.descricao} — R$ ${Number(args.valor).toLocaleString("pt-BR", { minimumFractionDigits: 2 })} vence ${args.vencimento}`;
+      return `${args.descricao} — R$ ${brl(args.valor)} vence ${args.vencimento}`;
     case "create_conta_receber":
-      return `${args.descricao} — R$ ${Number(args.valor).toLocaleString("pt-BR", { minimumFractionDigits: 2 })} vence ${args.vencimento}`;
+      return `${args.descricao} — R$ ${brl(args.valor)} vence ${args.vencimento}`;
+    case "pagar_conta":
+      return `${args.descricao_busca} via ${args.conta_bancaria_nome}`;
+    case "receber_conta":
+      return `${args.descricao_busca} em ${args.conta_bancaria_nome}`;
+    case "create_conta_bancaria":
+      return `${args.nome} (${args.tipo})`;
+    case "create_transferencia":
+      return `R$ ${brl(args.valor)}: ${args.conta_origem_nome} → ${args.conta_destino_nome}`;
+    case "create_cartao":
+      return `${args.nome} — limite R$ ${brl(args.limite)}, fecha dia ${args.dia_fechamento}, vence dia ${args.dia_vencimento}`;
+    case "pagar_fatura_cartao":
+      return `${args.cartao_nome} ${args.competencia}${args.conta_bancaria_nome ? ` via ${args.conta_bancaria_nome}` : ""}`;
+    case "create_fornecedor":
+      return `${args.nome}${args.cpf_cnpj ? ` (${args.cpf_cnpj})` : ""}`;
+    case "update_fornecedor":
+      return `${args.nome_busca}${args.novo_nome ? ` → ${args.novo_nome}` : ""}`;
+    case "create_categoria":
+      return `${args.nome} (${args.tipo})`;
+    case "create_empresa":
+      return `${args.nome}${args.cnpj ? ` (${args.cnpj})` : ""}`;
+    case "create_produto":
+      return `${args.nome} (${args.unidade})`;
+    case "create_almoxarifado":
+      return `${args.nome}${args.obra_nome ? ` — ${args.obra_nome}` : ""}`;
+    case "movimentar_estoque":
+      return `${args.tipo} de ${args.quantidade} ${args.produto_nome} em ${args.almoxarifado_nome}`;
+    case "create_requisicao":
+      return `Requisição em ${args.obra_nome} (${args.itens?.length || 0} itens)`;
+    case "create_colaborador":
+      return `${args.nome} — ${args.vinculo} R$ ${brl(args.remuneracao)}`;
+    case "vincular_colaborador_obra":
+      return `${args.colaborador_nome} → ${args.obra_nome}`;
+    case "desligar_colaborador":
+      return `${args.colaborador_nome} em ${args.data_saida || "hoje"}`;
+    case "create_medicao":
+      return `${args.obra_nome} — R$ ${brl(args.valor_total)}`;
     default:
       return JSON.stringify(args);
   }
