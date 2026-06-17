@@ -41,6 +41,7 @@ import { TopBar } from "@/components/app/TopBar";
 import { cn } from "@/lib/utils";
 import { useObraSelecionada } from "@/lib/obra-context";
 import { usePlanModules } from "@/lib/use-plan-modules";
+import { usePermissions } from "@/lib/use-permissions";
 
 type NavItem = {
   to: string;
