@@ -87,6 +87,18 @@ function ConfiguracoesPage() {
         <p className="text-muted-foreground">Gerencie informações da empresa e preferências do sistema</p>
       </div>
 
+      <Card>
+        <CardContent className="flex items-center justify-between gap-3 p-4">
+          <div>
+            <p className="font-semibold">Usuários e permissões</p>
+            <p className="text-sm text-muted-foreground">Crie usuários, defina permissões por módulo e restrinja obras</p>
+          </div>
+          <Button asChild variant="outline">
+            <Link to="/app/configuracoes/usuarios">Gerenciar usuários</Link>
+          </Button>
+        </CardContent>
+      </Card>
+
       <Tabs defaultValue="empresa">
         <TabsList>
           <TabsTrigger value="empresa">Empresa</TabsTrigger>
