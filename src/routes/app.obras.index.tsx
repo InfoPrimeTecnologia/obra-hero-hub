@@ -411,8 +411,9 @@ function ObrasPage() {
         ) : (
           obrasFiltradas.map((o) => {
             const ativa = obraAtiva?.id === o.id;
+            const arquivada = o.status === "arquivada";
             return (
-              <Card key={o.id}>
+              <Card key={o.id} className={arquivada ? "opacity-70" : undefined}>
                 <CardContent className="flex flex-wrap items-center gap-4 p-4">
                   <ObraThumb
                     obra={o}
@@ -427,6 +428,11 @@ function ObrasPage() {
                           <CheckCircle2 className="h-3 w-3" /> Ativa
                         </Badge>
                       )}
+                      {arquivada && (
+                        <Badge variant="outline" className="gap-1">
+                          <Archive className="h-3 w-3" /> Arquivada
+                        </Badge>
+                      )}
                     </div>
                     <p className="text-xs text-muted-foreground">
                       <Building2 className="mr-1 inline h-3 w-3" />
@@ -438,23 +444,52 @@ function ObrasPage() {
                     </p>
                   </div>
                   <div className="flex flex-wrap gap-2">
+                    {!arquivada && (
+                      <>
+                        <Button
+                          variant={ativa ? "default" : "outline"}
+                          size="sm"
+                          onClick={() => abrirObra(o)}
+                        >
+                          <FolderOpen className="mr-2 h-4 w-4" />
+                          {ativa ? "Aberta" : "Abrir"}
+                        </Button>
+                        <Button variant="ghost" size="sm" asChild>
+                          <Link to="/app/obras/$obraId/orcamento" params={{ obraId: o.id }}>
+                            <ListTree className="mr-2 h-4 w-4" /> Orçamento
+                          </Link>
+                        </Button>
+                        <Button variant="ghost" size="sm" asChild>
+                          <Link to="/app/obras/$obraId/rdo" params={{ obraId: o.id }}>
+                            RDO
+                          </Link>
+                        </Button>
+                      </>
+                    )}
                     <Button
-                      variant={ativa ? "default" : "outline"}
+                      variant="ghost"
                       size="sm"
-                      onClick={() => abrirObra(o)}
+                      onClick={() => arquivarObra(o, !arquivada)}
+                      title={arquivada ? "Reativar" : "Arquivar"}
                     >
-                      <FolderOpen className="mr-2 h-4 w-4" />
-                      {ativa ? "Aberta" : "Abrir"}
+                      {arquivada ? (
+                        <>
+                          <ArchiveRestore className="mr-2 h-4 w-4" /> Reativar
+                        </>
+                      ) : (
+                        <>
+                          <Archive className="mr-2 h-4 w-4" /> Arquivar
+                        </>
+                      )}
                     </Button>
-                    <Button variant="ghost" size="sm" asChild>
-                      <Link to="/app/obras/$obraId/orcamento" params={{ obraId: o.id }}>
-                        <ListTree className="mr-2 h-4 w-4" /> Orçamento
-                      </Link>
-                    </Button>
-                    <Button variant="ghost" size="sm" asChild>
-                      <Link to="/app/obras/$obraId/rdo" params={{ obraId: o.id }}>
-                        RDO
-                      </Link>
+                    <Button
+                      variant="ghost"
+                      size="sm"
+                      className="text-destructive hover:text-destructive"
+                      onClick={() => setObraParaExcluir(o)}
+                      title="Excluir"
+                    >
+                      <Trash2 className="h-4 w-4" />
                     </Button>
                   </div>
                 </CardContent>
@@ -463,6 +498,31 @@ function ObrasPage() {
           })
         )}
       </div>
+
+      <AlertDialog open={!!obraParaExcluir} onOpenChange={(open) => !open && setObraParaExcluir(null)}>
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>Excluir obra "{obraParaExcluir?.name}"?</AlertDialogTitle>
+            <AlertDialogDescription>
+              Esta ação é permanente. Se a obra possui orçamento, RDOs, compras ou outros dados vinculados,
+              a exclusão será bloqueada — nesse caso, use <strong>Arquivar</strong>.
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel disabled={excluindo}>Cancelar</AlertDialogCancel>
+            <AlertDialogAction
+              onClick={(e) => {
+                e.preventDefault();
+                void excluirObra();
+              }}
+              disabled={excluindo}
+              className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
+            >
+              {excluindo ? "Excluindo..." : "Excluir"}
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
     </div>
   );
 }
