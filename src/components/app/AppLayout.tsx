@@ -30,6 +30,8 @@ import {
   Sparkles,
   BookOpen,
   Coins,
+  KanbanSquare,
+  CalendarDays,
 } from "lucide-react";
 import { AIAssistant } from "@/components/app/AIAssistant";
 import { Logo } from "@/components/Logo";
