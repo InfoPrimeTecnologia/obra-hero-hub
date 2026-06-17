@@ -45,6 +45,7 @@ const TOOLS = [
       description: "Lista as obras ativas do usuário (id e nome).",
       parameters: { type: "object", properties: {}, additionalProperties: false },
     },
+  },
   {
     type: "function" as const,
     function: {
