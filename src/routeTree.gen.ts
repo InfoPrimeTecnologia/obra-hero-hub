@@ -16,11 +16,13 @@ import { Route as IndexRouteImport } from './routes/index'
 import { Route as AppIndexRouteImport } from './routes/app.index'
 import { Route as AdminIndexRouteImport } from './routes/admin.index'
 import { Route as EmailUnsubscribeRouteImport } from './routes/email/unsubscribe'
+import { Route as ConviteTokenRouteImport } from './routes/convite.$token'
 import { Route as AuthResetPasswordRouteImport } from './routes/auth.reset-password'
 import { Route as AuthMagicLinkRouteImport } from './routes/auth.magic-link'
 import { Route as AuthForgotPasswordRouteImport } from './routes/auth.forgot-password'
 import { Route as AuthConfirmRouteImport } from './routes/auth.confirm'
 import { Route as AppTransferenciasRouteImport } from './routes/app.transferencias'
+import { Route as AppTarefasRouteImport } from './routes/app.tarefas'
 import { Route as AppRelatoriosRouteImport } from './routes/app.relatorios'
 import { Route as AppPerfilRouteImport } from './routes/app.perfil'
 import { Route as AppManualRouteImport } from './routes/app.manual'
@@ -37,6 +39,7 @@ import { Route as AppConciliacaoRouteImport } from './routes/app.conciliacao'
 import { Route as AppCategoriasRouteImport } from './routes/app.categorias'
 import { Route as AppCartoesRouteImport } from './routes/app.cartoes'
 import { Route as AppAssinaturaRouteImport } from './routes/app.assinatura'
+import { Route as AppAgendaRouteImport } from './routes/app.agenda'
 import { Route as AdminWebhooksRouteImport } from './routes/admin.webhooks'
 import { Route as AdminTicketsRouteImport } from './routes/admin.tickets'
 import { Route as AdminPlanosRouteImport } from './routes/admin.planos'
@@ -53,6 +56,7 @@ import { Route as AppEstoqueRequisicoesRouteImport } from './routes/app.estoque.
 import { Route as AppEstoqueProdutosRouteImport } from './routes/app.estoque.produtos'
 import { Route as AppEstoqueMovimentacoesRouteImport } from './routes/app.estoque.movimentacoes'
 import { Route as AppEstoqueAlmoxarifadosRouteImport } from './routes/app.estoque.almoxarifados'
+import { Route as AppConfiguracoesUsuariosRouteImport } from './routes/app.configuracoes.usuarios'
 import { Route as ApiPublicAsaasWebhookRouteImport } from './routes/api/public/asaas-webhook'
 import { Route as LovableEmailTransactionalSendRouteImport } from './routes/lovable/email/transactional/send'
 import { Route as LovableEmailTransactionalPreviewRouteImport } from './routes/lovable/email/transactional/preview'
@@ -99,6 +103,11 @@ const EmailUnsubscribeRoute = EmailUnsubscribeRouteImport.update({
   path: '/email/unsubscribe',
   getParentRoute: () => rootRouteImport,
 } as any)
+const ConviteTokenRoute = ConviteTokenRouteImport.update({
+  id: '/convite/$token',
+  path: '/convite/$token',
+  getParentRoute: () => rootRouteImport,
+} as any)
 const AuthResetPasswordRoute = AuthResetPasswordRouteImport.update({
   id: '/auth/reset-password',
   path: '/auth/reset-password',
@@ -122,6 +131,11 @@ const AuthConfirmRoute = AuthConfirmRouteImport.update({
 const AppTransferenciasRoute = AppTransferenciasRouteImport.update({
   id: '/transferencias',
   path: '/transferencias',
+  getParentRoute: () => AppRoute,
+} as any)
+const AppTarefasRoute = AppTarefasRouteImport.update({
+  id: '/tarefas',
+  path: '/tarefas',
   getParentRoute: () => AppRoute,
 } as any)
 const AppRelatoriosRoute = AppRelatoriosRouteImport.update({
@@ -204,6 +218,11 @@ const AppAssinaturaRoute = AppAssinaturaRouteImport.update({
   path: '/assinatura',
   getParentRoute: () => AppRoute,
 } as any)
+const AppAgendaRoute = AppAgendaRouteImport.update({
+  id: '/agenda',
+  path: '/agenda',
+  getParentRoute: () => AppRoute,
+} as any)
 const AdminWebhooksRoute = AdminWebhooksRouteImport.update({
   id: '/webhooks',
   path: '/webhooks',
@@ -284,6 +303,12 @@ const AppEstoqueAlmoxarifadosRoute = AppEstoqueAlmoxarifadosRouteImport.update({
   path: '/estoque/almoxarifados',
   getParentRoute: () => AppRoute,
 } as any)
+const AppConfiguracoesUsuariosRoute =
+  AppConfiguracoesUsuariosRouteImport.update({
+    id: '/usuarios',
+    path: '/usuarios',
+    getParentRoute: () => AppConfiguracoesRoute,
+  } as any)
 const ApiPublicAsaasWebhookRoute = ApiPublicAsaasWebhookRouteImport.update({
   id: '/api/public/asaas-webhook',
   path: '/api/public/asaas-webhook',
@@ -352,11 +377,12 @@ export interface FileRoutesByFullPath {
   '/admin/planos': typeof AdminPlanosRoute
   '/admin/tickets': typeof AdminTicketsRoute
   '/admin/webhooks': typeof AdminWebhooksRoute
+  '/app/agenda': typeof AppAgendaRoute
   '/app/assinatura': typeof AppAssinaturaRoute
   '/app/cartoes': typeof AppCartoesRoute
   '/app/categorias': typeof AppCategoriasRoute
   '/app/conciliacao': typeof AppConciliacaoRoute
-  '/app/configuracoes': typeof AppConfiguracoesRoute
+  '/app/configuracoes': typeof AppConfiguracoesRouteWithChildren
   '/app/contas-bancarias': typeof AppContasBancariasRoute
   '/app/contas-pagar': typeof AppContasPagarRoute
   '/app/contas-receber': typeof AppContasReceberRoute
@@ -368,15 +394,18 @@ export interface FileRoutesByFullPath {
   '/app/manual': typeof AppManualRoute
   '/app/perfil': typeof AppPerfilRoute
   '/app/relatorios': typeof AppRelatoriosRoute
+  '/app/tarefas': typeof AppTarefasRoute
   '/app/transferencias': typeof AppTransferenciasRoute
   '/auth/confirm': typeof AuthConfirmRoute
   '/auth/forgot-password': typeof AuthForgotPasswordRoute
   '/auth/magic-link': typeof AuthMagicLinkRoute
   '/auth/reset-password': typeof AuthResetPasswordRoute
+  '/convite/$token': typeof ConviteTokenRoute
   '/email/unsubscribe': typeof EmailUnsubscribeRoute
   '/admin/': typeof AdminIndexRoute
   '/app/': typeof AppIndexRoute
   '/api/public/asaas-webhook': typeof ApiPublicAsaasWebhookRoute
+  '/app/configuracoes/usuarios': typeof AppConfiguracoesUsuariosRoute
   '/app/estoque/almoxarifados': typeof AppEstoqueAlmoxarifadosRoute
   '/app/estoque/movimentacoes': typeof AppEstoqueMovimentacoesRoute
   '/app/estoque/produtos': typeof AppEstoqueProdutosRoute
@@ -406,11 +435,12 @@ export interface FileRoutesByTo {
   '/admin/planos': typeof AdminPlanosRoute
   '/admin/tickets': typeof AdminTicketsRoute
   '/admin/webhooks': typeof AdminWebhooksRoute
+  '/app/agenda': typeof AppAgendaRoute
   '/app/assinatura': typeof AppAssinaturaRoute
   '/app/cartoes': typeof AppCartoesRoute
   '/app/categorias': typeof AppCategoriasRoute
   '/app/conciliacao': typeof AppConciliacaoRoute
-  '/app/configuracoes': typeof AppConfiguracoesRoute
+  '/app/configuracoes': typeof AppConfiguracoesRouteWithChildren
   '/app/contas-bancarias': typeof AppContasBancariasRoute
   '/app/contas-pagar': typeof AppContasPagarRoute
   '/app/contas-receber': typeof AppContasReceberRoute
@@ -422,15 +452,18 @@ export interface FileRoutesByTo {
   '/app/manual': typeof AppManualRoute
   '/app/perfil': typeof AppPerfilRoute
   '/app/relatorios': typeof AppRelatoriosRoute
+  '/app/tarefas': typeof AppTarefasRoute
   '/app/transferencias': typeof AppTransferenciasRoute
   '/auth/confirm': typeof AuthConfirmRoute
   '/auth/forgot-password': typeof AuthForgotPasswordRoute
   '/auth/magic-link': typeof AuthMagicLinkRoute
   '/auth/reset-password': typeof AuthResetPasswordRoute
+  '/convite/$token': typeof ConviteTokenRoute
   '/email/unsubscribe': typeof EmailUnsubscribeRoute
   '/admin': typeof AdminIndexRoute
   '/app': typeof AppIndexRoute
   '/api/public/asaas-webhook': typeof ApiPublicAsaasWebhookRoute
+  '/app/configuracoes/usuarios': typeof AppConfiguracoesUsuariosRoute
   '/app/estoque/almoxarifados': typeof AppEstoqueAlmoxarifadosRoute
   '/app/estoque/movimentacoes': typeof AppEstoqueMovimentacoesRoute
   '/app/estoque/produtos': typeof AppEstoqueProdutosRoute
@@ -463,11 +496,12 @@ export interface FileRoutesById {
   '/admin/planos': typeof AdminPlanosRoute
   '/admin/tickets': typeof AdminTicketsRoute
   '/admin/webhooks': typeof AdminWebhooksRoute
+  '/app/agenda': typeof AppAgendaRoute
   '/app/assinatura': typeof AppAssinaturaRoute
   '/app/cartoes': typeof AppCartoesRoute
   '/app/categorias': typeof AppCategoriasRoute
   '/app/conciliacao': typeof AppConciliacaoRoute
-  '/app/configuracoes': typeof AppConfiguracoesRoute
+  '/app/configuracoes': typeof AppConfiguracoesRouteWithChildren
   '/app/contas-bancarias': typeof AppContasBancariasRoute
   '/app/contas-pagar': typeof AppContasPagarRoute
   '/app/contas-receber': typeof AppContasReceberRoute
@@ -479,15 +513,18 @@ export interface FileRoutesById {
   '/app/manual': typeof AppManualRoute
   '/app/perfil': typeof AppPerfilRoute
   '/app/relatorios': typeof AppRelatoriosRoute
+  '/app/tarefas': typeof AppTarefasRoute
   '/app/transferencias': typeof AppTransferenciasRoute
   '/auth/confirm': typeof AuthConfirmRoute
   '/auth/forgot-password': typeof AuthForgotPasswordRoute
   '/auth/magic-link': typeof AuthMagicLinkRoute
   '/auth/reset-password': typeof AuthResetPasswordRoute
+  '/convite/$token': typeof ConviteTokenRoute
   '/email/unsubscribe': typeof EmailUnsubscribeRoute
   '/admin/': typeof AdminIndexRoute
   '/app/': typeof AppIndexRoute
   '/api/public/asaas-webhook': typeof ApiPublicAsaasWebhookRoute
+  '/app/configuracoes/usuarios': typeof AppConfiguracoesUsuariosRoute
   '/app/estoque/almoxarifados': typeof AppEstoqueAlmoxarifadosRoute
   '/app/estoque/movimentacoes': typeof AppEstoqueMovimentacoesRoute
   '/app/estoque/produtos': typeof AppEstoqueProdutosRoute
@@ -521,6 +558,7 @@ export interface FileRouteTypes {
     | '/admin/planos'
     | '/admin/tickets'
     | '/admin/webhooks'
+    | '/app/agenda'
     | '/app/assinatura'
     | '/app/cartoes'
     | '/app/categorias'
@@ -537,15 +575,18 @@ export interface FileRouteTypes {
     | '/app/manual'
     | '/app/perfil'
     | '/app/relatorios'
+    | '/app/tarefas'
     | '/app/transferencias'
     | '/auth/confirm'
     | '/auth/forgot-password'
     | '/auth/magic-link'
     | '/auth/reset-password'
+    | '/convite/$token'
     | '/email/unsubscribe'
     | '/admin/'
     | '/app/'
     | '/api/public/asaas-webhook'
+    | '/app/configuracoes/usuarios'
     | '/app/estoque/almoxarifados'
     | '/app/estoque/movimentacoes'
     | '/app/estoque/produtos'
@@ -575,6 +616,7 @@ export interface FileRouteTypes {
     | '/admin/planos'
     | '/admin/tickets'
     | '/admin/webhooks'
+    | '/app/agenda'
     | '/app/assinatura'
     | '/app/cartoes'
     | '/app/categorias'
@@ -591,15 +633,18 @@ export interface FileRouteTypes {
     | '/app/manual'
     | '/app/perfil'
     | '/app/relatorios'
+    | '/app/tarefas'
     | '/app/transferencias'
     | '/auth/confirm'
     | '/auth/forgot-password'
     | '/auth/magic-link'
     | '/auth/reset-password'
+    | '/convite/$token'
     | '/email/unsubscribe'
     | '/admin'
     | '/app'
     | '/api/public/asaas-webhook'
+    | '/app/configuracoes/usuarios'
     | '/app/estoque/almoxarifados'
     | '/app/estoque/movimentacoes'
     | '/app/estoque/produtos'
@@ -631,6 +676,7 @@ export interface FileRouteTypes {
     | '/admin/planos'
     | '/admin/tickets'
     | '/admin/webhooks'
+    | '/app/agenda'
     | '/app/assinatura'
     | '/app/cartoes'
     | '/app/categorias'
@@ -647,15 +693,18 @@ export interface FileRouteTypes {
     | '/app/manual'
     | '/app/perfil'
     | '/app/relatorios'
+    | '/app/tarefas'
     | '/app/transferencias'
     | '/auth/confirm'
     | '/auth/forgot-password'
     | '/auth/magic-link'
     | '/auth/reset-password'
+    | '/convite/$token'
     | '/email/unsubscribe'
     | '/admin/'
     | '/app/'
     | '/api/public/asaas-webhook'
+    | '/app/configuracoes/usuarios'
     | '/app/estoque/almoxarifados'
     | '/app/estoque/movimentacoes'
     | '/app/estoque/produtos'
@@ -684,6 +733,7 @@ export interface RootRouteChildren {
   AuthForgotPasswordRoute: typeof AuthForgotPasswordRoute
   AuthMagicLinkRoute: typeof AuthMagicLinkRoute
   AuthResetPasswordRoute: typeof AuthResetPasswordRoute
+  ConviteTokenRoute: typeof ConviteTokenRoute
   EmailUnsubscribeRoute: typeof EmailUnsubscribeRoute
   ApiPublicAsaasWebhookRoute: typeof ApiPublicAsaasWebhookRoute
   LovableEmailSuppressionRoute: typeof LovableEmailSuppressionRoute
@@ -743,6 +793,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof EmailUnsubscribeRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/convite/$token': {
+      id: '/convite/$token'
+      path: '/convite/$token'
+      fullPath: '/convite/$token'
+      preLoaderRoute: typeof ConviteTokenRouteImport
+      parentRoute: typeof rootRouteImport
+    }
     '/auth/reset-password': {
       id: '/auth/reset-password'
       path: '/auth/reset-password'
@@ -776,6 +833,13 @@ declare module '@tanstack/react-router' {
       path: '/transferencias'
       fullPath: '/app/transferencias'
       preLoaderRoute: typeof AppTransferenciasRouteImport
+      parentRoute: typeof AppRoute
+    }
+    '/app/tarefas': {
+      id: '/app/tarefas'
+      path: '/tarefas'
+      fullPath: '/app/tarefas'
+      preLoaderRoute: typeof AppTarefasRouteImport
       parentRoute: typeof AppRoute
     }
     '/app/relatorios': {
@@ -890,6 +954,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AppAssinaturaRouteImport
       parentRoute: typeof AppRoute
     }
+    '/app/agenda': {
+      id: '/app/agenda'
+      path: '/agenda'
+      fullPath: '/app/agenda'
+      preLoaderRoute: typeof AppAgendaRouteImport
+      parentRoute: typeof AppRoute
+    }
     '/admin/webhooks': {
       id: '/admin/webhooks'
       path: '/webhooks'
@@ -1002,6 +1073,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AppEstoqueAlmoxarifadosRouteImport
       parentRoute: typeof AppRoute
     }
+    '/app/configuracoes/usuarios': {
+      id: '/app/configuracoes/usuarios'
+      path: '/usuarios'
+      fullPath: '/app/configuracoes/usuarios'
+      preLoaderRoute: typeof AppConfiguracoesUsuariosRouteImport
+      parentRoute: typeof AppConfiguracoesRoute
+    }
     '/api/public/asaas-webhook': {
       id: '/api/public/asaas-webhook'
       path: '/api/public/asaas-webhook'
@@ -1101,6 +1179,17 @@ const AdminRouteChildren: AdminRouteChildren = {
 
 const AdminRouteWithChildren = AdminRoute._addFileChildren(AdminRouteChildren)
 
+interface AppConfiguracoesRouteChildren {
+  AppConfiguracoesUsuariosRoute: typeof AppConfiguracoesUsuariosRoute
+}
+
+const AppConfiguracoesRouteChildren: AppConfiguracoesRouteChildren = {
+  AppConfiguracoesUsuariosRoute: AppConfiguracoesUsuariosRoute,
+}
+
+const AppConfiguracoesRouteWithChildren =
+  AppConfiguracoesRoute._addFileChildren(AppConfiguracoesRouteChildren)
+
 interface AppObrasObraIdComprasRouteChildren {
   AppObrasObraIdComprasCompraIdRoute: typeof AppObrasObraIdComprasCompraIdRoute
 }
@@ -1126,11 +1215,12 @@ const AppObrasObraIdRdoRouteWithChildren =
   AppObrasObraIdRdoRoute._addFileChildren(AppObrasObraIdRdoRouteChildren)
 
 interface AppRouteChildren {
+  AppAgendaRoute: typeof AppAgendaRoute
   AppAssinaturaRoute: typeof AppAssinaturaRoute
   AppCartoesRoute: typeof AppCartoesRoute
   AppCategoriasRoute: typeof AppCategoriasRoute
   AppConciliacaoRoute: typeof AppConciliacaoRoute
-  AppConfiguracoesRoute: typeof AppConfiguracoesRoute
+  AppConfiguracoesRoute: typeof AppConfiguracoesRouteWithChildren
   AppContasBancariasRoute: typeof AppContasBancariasRoute
   AppContasPagarRoute: typeof AppContasPagarRoute
   AppContasReceberRoute: typeof AppContasReceberRoute
@@ -1142,6 +1232,7 @@ interface AppRouteChildren {
   AppManualRoute: typeof AppManualRoute
   AppPerfilRoute: typeof AppPerfilRoute
   AppRelatoriosRoute: typeof AppRelatoriosRoute
+  AppTarefasRoute: typeof AppTarefasRoute
   AppTransferenciasRoute: typeof AppTransferenciasRoute
   AppIndexRoute: typeof AppIndexRoute
   AppEstoqueAlmoxarifadosRoute: typeof AppEstoqueAlmoxarifadosRoute
@@ -1158,11 +1249,12 @@ interface AppRouteChildren {
 }
 
 const AppRouteChildren: AppRouteChildren = {
+  AppAgendaRoute: AppAgendaRoute,
   AppAssinaturaRoute: AppAssinaturaRoute,
   AppCartoesRoute: AppCartoesRoute,
   AppCategoriasRoute: AppCategoriasRoute,
   AppConciliacaoRoute: AppConciliacaoRoute,
-  AppConfiguracoesRoute: AppConfiguracoesRoute,
+  AppConfiguracoesRoute: AppConfiguracoesRouteWithChildren,
   AppContasBancariasRoute: AppContasBancariasRoute,
   AppContasPagarRoute: AppContasPagarRoute,
   AppContasReceberRoute: AppContasReceberRoute,
@@ -1174,6 +1266,7 @@ const AppRouteChildren: AppRouteChildren = {
   AppManualRoute: AppManualRoute,
   AppPerfilRoute: AppPerfilRoute,
   AppRelatoriosRoute: AppRelatoriosRoute,
+  AppTarefasRoute: AppTarefasRoute,
   AppTransferenciasRoute: AppTransferenciasRoute,
   AppIndexRoute: AppIndexRoute,
   AppEstoqueAlmoxarifadosRoute: AppEstoqueAlmoxarifadosRoute,
@@ -1200,6 +1293,7 @@ const rootRouteChildren: RootRouteChildren = {
   AuthForgotPasswordRoute: AuthForgotPasswordRoute,
   AuthMagicLinkRoute: AuthMagicLinkRoute,
   AuthResetPasswordRoute: AuthResetPasswordRoute,
+  ConviteTokenRoute: ConviteTokenRoute,
   EmailUnsubscribeRoute: EmailUnsubscribeRoute,
   ApiPublicAsaasWebhookRoute: ApiPublicAsaasWebhookRoute,
   LovableEmailSuppressionRoute: LovableEmailSuppressionRoute,

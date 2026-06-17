@@ -53,6 +53,7 @@ type Tarefa = {
   prioridade: "baixa" | "media" | "alta" | "urgente";
   prazo: string | null;
   ordem: number;
+  concluida_em: string | null;
 };
 type Material = { id: string; tarefa_id: string; produto_id: string; quantidade: number; observacao: string | null };
 
