@@ -214,10 +214,45 @@ function ObrasPage() {
     navigate({ to: "/app/obras/$obraId/rdo", params: { obraId: o.id } });
   };
 
-  const obrasFiltradas =
-    filtroEmpresa === "todas"
-      ? obras
-      : obras.filter((o) => o.empresa_id === filtroEmpresa);
+  const arquivarObra = async (o: Obra, arquivar: boolean) => {
+    const novoStatus = arquivar ? "arquivada" : "ativa";
+    const { error } = await supabase.from("obras").update({ status: novoStatus }).eq("id", o.id);
+    if (error) {
+      toast.error("Erro ao atualizar obra", { description: error.message });
+      return;
+    }
+    if (arquivar && obraAtiva?.id === o.id) setObra(null);
+    toast.success(arquivar ? "Obra arquivada" : "Obra reativada");
+    void carregar();
+  };
+
+  const excluirObra = async () => {
+    if (!obraParaExcluir) return;
+    setExcluindo(true);
+    const { error } = await supabase.from("obras").delete().eq("id", obraParaExcluir.id);
+    setExcluindo(false);
+    if (error) {
+      toast.error("Erro ao excluir obra", {
+        description:
+          error.message.includes("foreign key") || error.message.includes("violates")
+            ? "Existem dados vinculados (orçamento, RDOs, compras, etc.). Arquive a obra ao invés de excluir."
+            : error.message,
+      });
+      return;
+    }
+    if (obraAtiva?.id === obraParaExcluir.id) setObra(null);
+    toast.success("Obra excluída");
+    setObraParaExcluir(null);
+    void carregar();
+  };
+
+  const obrasFiltradas = obras.filter((o) => {
+    if (filtroEmpresa !== "todas" && o.empresa_id !== filtroEmpresa) return false;
+    const arquivada = o.status === "arquivada";
+    if (filtroStatus === "ativas" && arquivada) return false;
+    if (filtroStatus === "arquivadas" && !arquivada) return false;
+    return true;
+  });
 
   const empresaNome = (id: string | null) =>
     empresas.find((e) => e.id === id)?.nome ?? "—";
