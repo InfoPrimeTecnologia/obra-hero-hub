@@ -93,9 +93,12 @@ function ConfiguracoesPage() {
             <p className="font-semibold">Usuários e permissões</p>
             <p className="text-sm text-muted-foreground">Crie usuários, defina permissões por módulo e restrinja obras</p>
           </div>
-          <Button asChild variant="outline">
-            <Link to="/app/configuracoes/usuarios">Gerenciar usuários</Link>
-          </Button>
+          <Link
+            to="/app/configuracoes/usuarios"
+            className="inline-flex h-10 items-center justify-center rounded-md border border-input bg-background px-4 py-2 text-sm font-medium ring-offset-background transition-colors hover:bg-accent hover:text-accent-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2"
+          >
+            Gerenciar usuários
+          </Link>
         </CardContent>
       </Card>
 
