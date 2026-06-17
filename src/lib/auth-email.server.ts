@@ -75,15 +75,20 @@ export async function sendEmail(args: { to: string; subject: string; html: strin
   const RESEND_API_KEY = process.env.RESEND_API_KEY;
   const LOVABLE_API_KEY = process.env.LOVABLE_API_KEY;
   if (!RESEND_API_KEY) throw new Error('RESEND_API_KEY is not configured');
-  if (!LOVABLE_API_KEY) throw new Error('LOVABLE_API_KEY is not configured');
 
-  const res = await fetch(`${RESEND_GATEWAY_URL}/emails`, {
+  // Em produção (servidor próprio) o LOVABLE_API_KEY não existe;
+  // usa Resend direto. Quando LOVABLE_API_KEY existir (sandbox Lovable), passa pelo gateway.
+  const useGateway = !!LOVABLE_API_KEY;
+  const url = useGateway ? `${RESEND_GATEWAY_URL}/emails` : 'https://api.resend.com/emails';
+  const headers: Record<string, string> = {
+    'Content-Type': 'application/json',
+    Authorization: useGateway ? `Bearer ${LOVABLE_API_KEY}` : `Bearer ${RESEND_API_KEY}`,
+  };
+  if (useGateway) headers['X-Connection-Api-Key'] = RESEND_API_KEY;
+
+  const res = await fetch(url, {
     method: 'POST',
-    headers: {
-      'Content-Type': 'application/json',
-      Authorization: `Bearer ${LOVABLE_API_KEY}`,
-      'X-Connection-Api-Key': RESEND_API_KEY,
-    },
+    headers,
     body: JSON.stringify({
       from: FROM,
       to: [args.to],
