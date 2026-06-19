@@ -1,14 +1,13 @@
 import { useEffect, useMemo, useState } from "react";
-import { Link, useNavigate } from "@tanstack/react-router";
+import { Link, useLocation, useNavigate } from "@tanstack/react-router";
 import {
   Search,
   User as UserIcon,
   Settings,
   LogOut,
   KeyRound,
-  Bell,
   HelpCircle,
-  
+  HardHat,
 } from "lucide-react";
 import { format } from "date-fns";
 import { ptBR } from "date-fns/locale";
@@ -25,6 +24,8 @@ import {
 } from "@/components/ui/dropdown-menu";
 import { useAuth } from "@/lib/auth-context";
 import { supabase } from "@/integrations/supabase/client";
+import { NotificationBell } from "@/components/app/NotificationBell";
+import { useObraSelecionada } from "@/lib/obra-context";
 
 type NavItem = { to: string; label: string };
 
@@ -57,10 +58,14 @@ const SEARCH_ITEMS: NavItem[] = [
 export function TopBar() {
   const { user, signOut } = useAuth();
   const navigate = useNavigate();
+  const location = useLocation();
+  const { obra: ultimaObra } = useObraSelecionada();
   const [query, setQuery] = useState("");
   const [open, setOpen] = useState(false);
   const [profile, setProfile] = useState<{ full_name: string | null; avatar_url: string | null } | null>(null);
   const [now, setNow] = useState(() => new Date());
+  const dentroDeObra = /^\/app\/obras\/[^/]+(\/.*)?$/.test(location.pathname);
+
 
   useEffect(() => {
     const i = setInterval(() => setNow(new Date()), 60_000);
@@ -155,6 +160,21 @@ export function TopBar() {
         </div>
       </div>
 
+      {/* Atalho para última obra acessada (oculto quando já estamos dentro da obra) */}
+      {!dentroDeObra && ultimaObra ? (
+        <Link
+          to="/app/obras/$obraId"
+          params={{ obraId: ultimaObra.id }}
+          title={`Voltar para ${ultimaObra.name}`}
+          className="hidden items-center gap-2 rounded-full border border-border/60 bg-card px-3 py-1.5 text-xs font-medium text-foreground shadow-[var(--shadow-card)] transition-colors hover:bg-muted md:inline-flex"
+        >
+          <HardHat className="h-3.5 w-3.5 text-primary" />
+          <span className="max-w-[160px] truncate">{ultimaObra.name}</span>
+        </Link>
+      ) : null}
+
+
+
       {/* Search pill */}
       <div className="relative mx-auto w-full max-w-2xl">
         <Search className="pointer-events-none absolute left-4 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
@@ -230,9 +250,8 @@ export function TopBar() {
         <IconBtn title="Ajuda" to="/app/configuracoes">
           <HelpCircle className="h-[18px] w-[18px]" />
         </IconBtn>
-        <IconBtn title="Notificações" badge>
-          <Bell className="h-[18px] w-[18px]" />
-        </IconBtn>
+        <NotificationBell />
+
 
         <DropdownMenu>
           <DropdownMenuTrigger asChild>

@@ -212,8 +212,9 @@ function ObrasPage() {
   const abrirObra = (o: Obra) => {
     setObra(o);
     toast.success(`Obra ativa: ${o.name}`);
-    navigate({ to: "/app/obras/$obraId/rdo", params: { obraId: o.id } });
+    navigate({ to: "/app/obras/$obraId", params: { obraId: o.id } });
   };
+
 
   const arquivarObra = async (o: Obra, arquivar: boolean) => {
     const novoStatus = arquivar ? "arquivada" : "ativa";
@@ -448,12 +449,12 @@ function ObrasPage() {
                     {!arquivada && (
                       <>
                         <Button
-                          variant={ativa ? "default" : "outline"}
+                          variant="default"
                           size="sm"
                           onClick={() => abrirObra(o)}
                         >
                           <FolderOpen className="mr-2 h-4 w-4" />
-                          {ativa ? "Aberta" : "Abrir"}
+                          {ativa ? "Abrir obra" : "Abrir obra"}
                         </Button>
                         <Button variant="ghost" size="sm" asChild>
                           <Link to="/app/obras/$obraId/orcamento" params={{ obraId: o.id }}>

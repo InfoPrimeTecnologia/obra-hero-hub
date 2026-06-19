@@ -75,6 +75,7 @@ export function ObraSidebar({ obraId }: { obraId: string }) {
       items: [
         { to: `${base}/orcamento`, label: "Orçamento", icon: ListTree },
         { to: `${base}/planejamento`, label: "Planejamento", icon: CalendarRange },
+        { to: `${base}/medicoes`, label: "Medições", icon: FileBarChart2 },
         { to: `${base}/rdo`, label: "Diário de obra", icon: ClipboardList },
       ],
     },

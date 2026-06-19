@@ -1,8 +1,18 @@
 import { createFileRoute } from "@tanstack/react-router";
-import { useEffect, useState } from "react";
-import { ListTree } from "lucide-react";
+import { useEffect, useMemo, useState } from "react";
+import { ListTree, TrendingUp } from "lucide-react";
+import {
+  LineChart,
+  Line,
+  XAxis,
+  YAxis,
+  CartesianGrid,
+  Tooltip,
+  Legend,
+  ResponsiveContainer,
+} from "recharts";
 import { PageHeader } from "@/components/admin/PageHeader";
-import { Card, CardContent } from "@/components/ui/card";
+import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Progress } from "@/components/ui/progress";
 import { supabase } from "@/integrations/supabase/client";
@@ -10,6 +20,7 @@ import { supabase } from "@/integrations/supabase/client";
 export const Route = createFileRoute("/app/obras/$obraId/relatorios/orcado-realizado")({
   component: RelOrcadoReal,
 });
+
 
 type Etapa = { id: string; nome: string; ordem: number | null };
 type Sub = {
@@ -25,6 +36,9 @@ function RelOrcadoReal() {
   const [subs, setSubs] = useState<Sub[]>([]);
   const [realizadoPorSub, setRealizadoPorSub] = useState<Record<string, number>>({});
   const [realizadoSemSub, setRealizadoSemSub] = useState(0);
+  const [comprasMensais, setComprasMensais] = useState<{ mes: string; valor: number }[]>([]);
+  const [medicoesMensais, setMedicoesMensais] = useState<{ mes: string; valor: number }[]>([]);
+
 
   useEffect(() => {
     void (async () => {
@@ -45,33 +59,86 @@ function RelOrcadoReal() {
 
       const { data: compras } = await supabase
         .from("compras")
-        .select("id")
+        .select("id,data_compra")
         .eq("obra_id", obraId);
       const compraIds = (compras ?? []).map((c: any) => c.id);
       const map: Record<string, number> = {};
       let semSub = 0;
+      const comprasMes: Record<string, number> = {};
       if (compraIds.length > 0) {
         const { data: itens } = await supabase
           .from("compra_itens")
           .select("subetapa_id,quantidade,valor_unitario,compra_id")
           .in("compra_id", compraIds);
+        const dataPorCompra = new Map<string, string>();
+        (compras ?? []).forEach((c: any) => dataPorCompra.set(c.id, c.data_compra));
         (itens ?? []).forEach((i: any) => {
           const total = Number(i.quantidade || 0) * Number(i.valor_unitario || 0);
           if (i.subetapa_id) map[i.subetapa_id] = (map[i.subetapa_id] ?? 0) + total;
           else semSub += total;
+          const d = dataPorCompra.get(i.compra_id);
+          if (d) {
+            const mes = d.slice(0, 7);
+            comprasMes[mes] = (comprasMes[mes] ?? 0) + total;
+          }
         });
       }
+      setComprasMensais(
+        Object.entries(comprasMes)
+          .sort((a, b) => a[0].localeCompare(b[0]))
+          .map(([mes, valor]) => ({ mes, valor })),
+      );
+
+      const { data: meds } = await supabase
+        .from("medicoes_obra")
+        .select("data,valor_total")
+        .eq("obra_id", obraId)
+        .order("data");
+      const medMes: Record<string, number> = {};
+      (meds ?? []).forEach((m: any) => {
+        const mes = (m.data as string).slice(0, 7);
+        medMes[mes] = (medMes[mes] ?? 0) + Number(m.valor_total || 0);
+      });
+      setMedicoesMensais(
+        Object.entries(medMes)
+          .sort((a, b) => a[0].localeCompare(b[0]))
+          .map(([mes, valor]) => ({ mes, valor })),
+      );
 
       setRealizadoPorSub(map);
       setRealizadoSemSub(semSub);
     })();
   }, [obraId]);
 
+
   const brl = (n: number) => n.toLocaleString("pt-BR", { style: "currency", currency: "BRL" });
 
   const totalOrcado = subs.reduce((s, x) => s + Number(x.valor_orcado || 0), 0);
   const totalRealizado =
     Object.values(realizadoPorSub).reduce((s, v) => s + v, 0) + realizadoSemSub;
+
+  // Curva S: acumulados mensais
+  const curvaS = useMemo(() => {
+    const meses = new Set<string>();
+    comprasMensais.forEach((c) => meses.add(c.mes));
+    medicoesMensais.forEach((m) => meses.add(m.mes));
+    const ord = Array.from(meses).sort();
+    let accC = 0;
+    let accM = 0;
+    return ord.map((mes) => {
+      const c = comprasMensais.find((x) => x.mes === mes)?.valor ?? 0;
+      const m = medicoesMensais.find((x) => x.mes === mes)?.valor ?? 0;
+      accC += c;
+      accM += m;
+      return {
+        mes,
+        Orçado: totalOrcado,
+        "Físico (medição)": accM,
+        "Financeiro (compras)": accC,
+      };
+    });
+  }, [comprasMensais, medicoesMensais, totalOrcado]);
+
 
   return (
     <div>
@@ -106,6 +173,39 @@ function RelOrcadoReal() {
             </CardContent>
           </Card>
         </div>
+
+        {curvaS.length > 0 && (
+          <Card>
+            <CardHeader>
+              <CardTitle className="flex items-center gap-2 text-base">
+                <TrendingUp className="h-4 w-4 text-primary" /> Curva S
+              </CardTitle>
+            </CardHeader>
+            <CardContent>
+              <div className="h-72 w-full">
+                <ResponsiveContainer width="100%" height="100%">
+                  <LineChart data={curvaS}>
+                    <CartesianGrid strokeDasharray="3 3" className="opacity-30" />
+                    <XAxis dataKey="mes" tick={{ fontSize: 11 }} />
+                    <YAxis
+                      tick={{ fontSize: 11 }}
+                      tickFormatter={(v) =>
+                        (v / 1000).toLocaleString("pt-BR", { maximumFractionDigits: 0 }) + "k"
+                      }
+                    />
+                    <Tooltip formatter={(v: number) => brl(v)} />
+                    <Legend />
+                    <Line type="monotone" dataKey="Orçado" stroke="#94a3b8" strokeDasharray="5 5" dot={false} />
+                    <Line type="monotone" dataKey="Físico (medição)" stroke="#10b981" strokeWidth={2} />
+                    <Line type="monotone" dataKey="Financeiro (compras)" stroke="#3b82f6" strokeWidth={2} />
+                  </LineChart>
+                </ResponsiveContainer>
+              </div>
+            </CardContent>
+          </Card>
+        )}
+
+
 
         {etapas.map((etapa) => {
           const etSubs = subs.filter((s) => s.etapa_id === etapa.id);
