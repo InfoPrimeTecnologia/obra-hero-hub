@@ -1,8 +1,18 @@
 import { createFileRoute } from "@tanstack/react-router";
-import { useEffect, useState } from "react";
-import { ListTree } from "lucide-react";
+import { useEffect, useMemo, useState } from "react";
+import { ListTree, TrendingUp } from "lucide-react";
+import {
+  LineChart,
+  Line,
+  XAxis,
+  YAxis,
+  CartesianGrid,
+  Tooltip,
+  Legend,
+  ResponsiveContainer,
+} from "recharts";
 import { PageHeader } from "@/components/admin/PageHeader";
-import { Card, CardContent } from "@/components/ui/card";
+import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Progress } from "@/components/ui/progress";
 import { supabase } from "@/integrations/supabase/client";
@@ -10,6 +20,7 @@ import { supabase } from "@/integrations/supabase/client";
 export const Route = createFileRoute("/app/obras/$obraId/relatorios/orcado-realizado")({
   component: RelOrcadoReal,
 });
+
 
 type Etapa = { id: string; nome: string; ordem: number | null };
 type Sub = {
