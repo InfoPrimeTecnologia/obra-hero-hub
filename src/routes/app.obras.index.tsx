@@ -449,12 +449,12 @@ function ObrasPage() {
                     {!arquivada && (
                       <>
                         <Button
-                          variant={ativa ? "default" : "outline"}
+                          variant="default"
                           size="sm"
                           onClick={() => abrirObra(o)}
                         >
                           <FolderOpen className="mr-2 h-4 w-4" />
-                          {ativa ? "Aberta" : "Abrir"}
+                          {ativa ? "Abrir obra" : "Abrir obra"}
                         </Button>
                         <Button variant="ghost" size="sm" asChild>
                           <Link to="/app/obras/$obraId/orcamento" params={{ obraId: o.id }}>
