@@ -16,7 +16,7 @@ type Fatura = {
   cartao_id: string;
   status: string;
   valor_total: number;
-  vencimento: string | null;
+  dt_vencimento: string | null;
   competencia: string | null;
 };
 type Cartao = { id: string; nome: string };
