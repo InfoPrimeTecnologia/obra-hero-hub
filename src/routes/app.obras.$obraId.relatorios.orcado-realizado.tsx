@@ -59,27 +59,57 @@ function RelOrcadoReal() {
 
       const { data: compras } = await supabase
         .from("compras")
-        .select("id")
+        .select("id,data_compra")
         .eq("obra_id", obraId);
       const compraIds = (compras ?? []).map((c: any) => c.id);
       const map: Record<string, number> = {};
       let semSub = 0;
+      const comprasMes: Record<string, number> = {};
       if (compraIds.length > 0) {
         const { data: itens } = await supabase
           .from("compra_itens")
           .select("subetapa_id,quantidade,valor_unitario,compra_id")
           .in("compra_id", compraIds);
+        const dataPorCompra = new Map<string, string>();
+        (compras ?? []).forEach((c: any) => dataPorCompra.set(c.id, c.data_compra));
         (itens ?? []).forEach((i: any) => {
           const total = Number(i.quantidade || 0) * Number(i.valor_unitario || 0);
           if (i.subetapa_id) map[i.subetapa_id] = (map[i.subetapa_id] ?? 0) + total;
           else semSub += total;
+          const d = dataPorCompra.get(i.compra_id);
+          if (d) {
+            const mes = d.slice(0, 7);
+            comprasMes[mes] = (comprasMes[mes] ?? 0) + total;
+          }
         });
       }
+      setComprasMensais(
+        Object.entries(comprasMes)
+          .sort((a, b) => a[0].localeCompare(b[0]))
+          .map(([mes, valor]) => ({ mes, valor })),
+      );
+
+      const { data: meds } = await supabase
+        .from("medicoes_obra")
+        .select("data,valor_total")
+        .eq("obra_id", obraId)
+        .order("data");
+      const medMes: Record<string, number> = {};
+      (meds ?? []).forEach((m: any) => {
+        const mes = (m.data as string).slice(0, 7);
+        medMes[mes] = (medMes[mes] ?? 0) + Number(m.valor_total || 0);
+      });
+      setMedicoesMensais(
+        Object.entries(medMes)
+          .sort((a, b) => a[0].localeCompare(b[0]))
+          .map(([mes, valor]) => ({ mes, valor })),
+      );
 
       setRealizadoPorSub(map);
       setRealizadoSemSub(semSub);
     })();
   }, [obraId]);
+
 
   const brl = (n: number) => n.toLocaleString("pt-BR", { style: "currency", currency: "BRL" });
 
