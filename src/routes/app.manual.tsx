@@ -167,6 +167,7 @@ const SECTIONS: Section[] = [
       "Veja obras ativas sem RDO há 7 dias ou mais.",
     ],
     tips: ["Os alertas são calculados em tempo real — não é preciso configurar nada."],
+  },
   {
     id: "orcamento",
     title: "Orçamento e Etapas",
