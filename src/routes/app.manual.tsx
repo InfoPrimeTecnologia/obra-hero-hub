@@ -89,6 +89,85 @@ const SECTIONS: Section[] = [
     ],
   },
   {
+    id: "workspace-obra",
+    title: "Workspace dedicado da obra",
+    icon: HardHat,
+    summary:
+      "Ao abrir uma obra, a sidebar muda para o contexto dela: você só vê os módulos daquela obra (Visão, Planejamento, RDO, Compras, Consulta, Fornecedores, Caixa, Faturas, Contas a Pagar, Pagamentos, RH e Relatórios).",
+    steps: [
+      'Em Obras, clique em "Abrir obra" no card desejado.',
+      "A barra lateral passa a mostrar apenas os módulos daquela obra; o breadcrumb no topo mostra Empresa › Obra › Seção.",
+      'Use o atalho "Última obra" na barra superior para voltar rapidamente ao último projeto acessado.',
+      "Para sair do workspace, use o botão Voltar ou navegue por Obras no topo.",
+    ],
+    tips: [
+      "O atalho da última obra fica salvo localmente — útil para retomar o trabalho do dia.",
+      "Tudo dentro do workspace já vem filtrado pela obra: você não precisa reaplicar filtros.",
+    ],
+  },
+  {
+    id: "planejamento",
+    title: "Planejamento (Engenharia)",
+    icon: CalendarRange,
+    summary:
+      "Tela de planejamento dentro da obra para organizar etapas, prazos e responsáveis pela execução física.",
+    steps: [
+      "Dentro da obra, acesse Planejamento.",
+      "Defina marcos, datas-alvo e responsáveis por etapa.",
+      "Acompanhe o avanço junto com Medições e RDO.",
+    ],
+  },
+  {
+    id: "medicoes",
+    title: "Medições por etapa",
+    icon: ClipboardList,
+    summary:
+      "Registre o avanço físico (%) de cada subetapa da obra. As medições alimentam a Curva S no relatório Orçado x Realizado.",
+    steps: [
+      "Dentro da obra, acesse Medições.",
+      "Selecione a subetapa e informe o percentual executado no período.",
+      "Salve — o histórico fica disponível e atualiza automaticamente a Curva S.",
+    ],
+    tips: ["Combine RDO + Medições para ter avanço físico confiável por dia/semana."],
+  },
+  {
+    id: "consulta-suprimentos",
+    title: "Consulta (Suprimentos)",
+    icon: SearchIcon,
+    summary:
+      "Consulta rápida de preços, fornecedores e histórico de compras da obra para apoiar cotações.",
+    steps: [
+      "Dentro da obra, acesse Consulta.",
+      "Pesquise por produto, fornecedor ou período.",
+      "Use o resultado como base para novas cotações e compras.",
+    ],
+  },
+  {
+    id: "relatorios-obra",
+    title: "Relatórios por obra",
+    icon: LineChart,
+    summary:
+      "Cada obra tem seus próprios relatórios: Compras, Pagamentos e Orçado x Realizado — esse último agora com Curva S (planejado vs físico vs financeiro).",
+    steps: [
+      "Dentro da obra, abra Relatórios e escolha Compras, Pagamentos ou Orçado x Realizado.",
+      "Filtre por período e etapa.",
+      "Na Curva S, compare a linha de planejado, físico (medições) e financeiro (compras).",
+    ],
+  },
+  {
+    id: "notificacoes",
+    title: "Notificações no sino",
+    icon: Bell,
+    summary:
+      "O sino na barra superior agrupa alertas operacionais: contas a pagar vencendo, faturas de cartão fechando e obras sem RDO recente.",
+    steps: [
+      "Clique no sino no topo para abrir o painel.",
+      "Veja contas a pagar com vencimento em até 3 dias (ou em atraso).",
+      "Veja faturas de cartão fechando em até 3 dias.",
+      "Veja obras ativas sem RDO há 7 dias ou mais.",
+    ],
+    tips: ["Os alertas são calculados em tempo real — não é preciso configurar nada."],
+  {
     id: "orcamento",
     title: "Orçamento e Etapas",
     icon: ListTree,
