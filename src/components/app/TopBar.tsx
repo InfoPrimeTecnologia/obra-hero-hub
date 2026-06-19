@@ -1,14 +1,13 @@
 import { useEffect, useMemo, useState } from "react";
-import { Link, useNavigate } from "@tanstack/react-router";
+import { Link, useLocation, useNavigate } from "@tanstack/react-router";
 import {
   Search,
   User as UserIcon,
   Settings,
   LogOut,
   KeyRound,
-  Bell,
   HelpCircle,
-  
+  HardHat,
 } from "lucide-react";
 import { format } from "date-fns";
 import { ptBR } from "date-fns/locale";
@@ -25,6 +24,8 @@ import {
 } from "@/components/ui/dropdown-menu";
 import { useAuth } from "@/lib/auth-context";
 import { supabase } from "@/integrations/supabase/client";
+import { NotificationBell } from "@/components/app/NotificationBell";
+import { useObraSelecionada } from "@/lib/obra-context";
 
 type NavItem = { to: string; label: string };
 
