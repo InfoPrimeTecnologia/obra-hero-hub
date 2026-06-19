@@ -174,6 +174,39 @@ function RelOrcadoReal() {
           </Card>
         </div>
 
+        {curvaS.length > 0 && (
+          <Card>
+            <CardHeader>
+              <CardTitle className="flex items-center gap-2 text-base">
+                <TrendingUp className="h-4 w-4 text-primary" /> Curva S
+              </CardTitle>
+            </CardHeader>
+            <CardContent>
+              <div className="h-72 w-full">
+                <ResponsiveContainer width="100%" height="100%">
+                  <LineChart data={curvaS}>
+                    <CartesianGrid strokeDasharray="3 3" className="opacity-30" />
+                    <XAxis dataKey="mes" tick={{ fontSize: 11 }} />
+                    <YAxis
+                      tick={{ fontSize: 11 }}
+                      tickFormatter={(v) =>
+                        (v / 1000).toLocaleString("pt-BR", { maximumFractionDigits: 0 }) + "k"
+                      }
+                    />
+                    <Tooltip formatter={(v: number) => brl(v)} />
+                    <Legend />
+                    <Line type="monotone" dataKey="Orçado" stroke="#94a3b8" strokeDasharray="5 5" dot={false} />
+                    <Line type="monotone" dataKey="Físico (medição)" stroke="#10b981" strokeWidth={2} />
+                    <Line type="monotone" dataKey="Financeiro (compras)" stroke="#3b82f6" strokeWidth={2} />
+                  </LineChart>
+                </ResponsiveContainer>
+              </div>
+            </CardContent>
+          </Card>
+        )}
+
+
+
         {etapas.map((etapa) => {
           const etSubs = subs.filter((s) => s.etapa_id === etapa.id);
           const orc = etSubs.reduce((s, x) => s + Number(x.valor_orcado || 0), 0);
