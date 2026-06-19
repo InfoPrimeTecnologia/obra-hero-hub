@@ -67,12 +67,18 @@ function ObraDashboard() {
         setEmpresaNome(emp?.nome ?? null);
       }
 
-      const [etapas, subs, compras, cps, rdos, equipe] = await Promise.all([
-        supabase.from("orcamento_etapas").select("id").eq("obra_id", obraId),
-        supabase
-          .from("orcamento_subetapas")
-          .select("valor_orcado,etapa_id,orcamento_etapas!inner(obra_id)")
-          .eq("orcamento_etapas.obra_id", obraId),
+      const { data: etapasData } = await supabase
+        .from("orcamento_etapas")
+        .select("id")
+        .eq("obra_id", obraId);
+      const etapaIds = (etapasData ?? []).map((e: any) => e.id);
+      const [subs, compras, cps, rdos, equipe] = await Promise.all([
+        etapaIds.length
+          ? supabase
+              .from("orcamento_subetapas")
+              .select("valor_orcado")
+              .in("etapa_id", etapaIds)
+          : Promise.resolve({ data: [] as any[] }),
         supabase.from("compras").select("valor_total").eq("obra_id", obraId),
         supabase
           .from("contas_pagar")
@@ -85,6 +91,7 @@ function ObraDashboard() {
           .select("id", { count: "exact", head: true })
           .eq("obra_id", obraId),
       ]);
+
 
       const orcado = (subs.data ?? []).reduce((s: number, r: any) => s + Number(r.valor_orcado || 0), 0);
       const realizado = (compras.data ?? []).reduce((s: number, r: any) => s + Number(r.valor_total || 0), 0);
