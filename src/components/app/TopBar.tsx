@@ -231,9 +231,8 @@ export function TopBar() {
         <IconBtn title="Ajuda" to="/app/configuracoes">
           <HelpCircle className="h-[18px] w-[18px]" />
         </IconBtn>
-        <IconBtn title="Notificações" badge>
-          <Bell className="h-[18px] w-[18px]" />
-        </IconBtn>
+        <NotificationBell />
+
 
         <DropdownMenu>
           <DropdownMenuTrigger asChild>
