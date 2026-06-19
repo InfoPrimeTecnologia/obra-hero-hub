@@ -42,7 +42,7 @@ function FaturasObraPage() {
       const [{ data: f }, { data: c }] = await Promise.all([
         supabase
           .from("faturas_cartao")
-          .select("id,cartao_id,status,valor_total,vencimento,competencia")
+          .select("id,cartao_id,status,valor_total,dt_vencimento,competencia")
           .in("cartao_id", cartaoIds)
           .order("vencimento", { ascending: false }),
         supabase.from("cartoes").select("id,nome").in("id", cartaoIds),
@@ -84,8 +84,8 @@ function FaturasObraPage() {
                   <p className="font-medium">{cartaoNome(f.cartao_id)}</p>
                   <p className="text-xs text-muted-foreground">
                     {f.competencia ?? "—"}
-                    {f.vencimento
-                      ? ` • venc. ${new Date(f.vencimento).toLocaleDateString("pt-BR")}`
+                    {f.dt_vencimento
+                      ? ` • venc. ${new Date(f.dt_vencimento).toLocaleDateString("pt-BR")}`
                       : ""}
                   </p>
                 </div>
