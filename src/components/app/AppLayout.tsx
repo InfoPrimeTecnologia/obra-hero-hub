@@ -217,9 +217,18 @@ export function AppLayout() {
     navigate({ to: "/login" });
   };
 
+  // Quando estamos em uma obra (`/app/obras/:id/...`), o layout próprio da obra
+  // (src/routes/app.obras.$obraId.tsx) cuida da sidebar/topbar — aqui só renderizamos o Outlet.
+  const isObraScoped = /^\/app\/obras\/[^/]+(\/.*)?$/.test(location.pathname);
+
+  if (isObraScoped) {
+    return <Outlet />;
+  }
+
   return (
     <div className="flex min-h-screen bg-background">
       <aside className="sticky top-0 flex h-screen w-64 flex-col bg-sidebar text-sidebar-foreground">
+
         <div className="relative flex h-16 items-center justify-center bg-sidebar px-4 md:h-[68px] after:absolute after:inset-x-3 after:bottom-0 after:h-px after:bg-[linear-gradient(to_right,transparent,color-mix(in_oklab,var(--sidebar-primary)_55%,transparent)_50%,transparent)]">
           <Logo variant="light" className="h-8" />
         </div>
