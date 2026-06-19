@@ -44,7 +44,7 @@ function FaturasObraPage() {
           .from("faturas_cartao")
           .select("id,cartao_id,status,valor_total,dt_vencimento,competencia")
           .in("cartao_id", cartaoIds)
-          .order("vencimento", { ascending: false }),
+          .order("dt_vencimento", { ascending: false }),
         supabase.from("cartoes").select("id,nome").in("id", cartaoIds),
       ]);
       setFaturas((f as Fatura[]) ?? []);
