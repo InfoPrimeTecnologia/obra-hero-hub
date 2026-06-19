@@ -117,6 +117,29 @@ function RelOrcadoReal() {
   const totalRealizado =
     Object.values(realizadoPorSub).reduce((s, v) => s + v, 0) + realizadoSemSub;
 
+  // Curva S: acumulados mensais
+  const curvaS = useMemo(() => {
+    const meses = new Set<string>();
+    comprasMensais.forEach((c) => meses.add(c.mes));
+    medicoesMensais.forEach((m) => meses.add(m.mes));
+    const ord = Array.from(meses).sort();
+    let accC = 0;
+    let accM = 0;
+    return ord.map((mes) => {
+      const c = comprasMensais.find((x) => x.mes === mes)?.valor ?? 0;
+      const m = medicoesMensais.find((x) => x.mes === mes)?.valor ?? 0;
+      accC += c;
+      accM += m;
+      return {
+        mes,
+        Orçado: totalOrcado,
+        "Físico (medição)": accM,
+        "Financeiro (compras)": accC,
+      };
+    });
+  }, [comprasMensais, medicoesMensais, totalOrcado]);
+
+
   return (
     <div>
       <PageHeader
