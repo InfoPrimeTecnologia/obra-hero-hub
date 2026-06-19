@@ -36,6 +36,9 @@ function RelOrcadoReal() {
   const [subs, setSubs] = useState<Sub[]>([]);
   const [realizadoPorSub, setRealizadoPorSub] = useState<Record<string, number>>({});
   const [realizadoSemSub, setRealizadoSemSub] = useState(0);
+  const [comprasMensais, setComprasMensais] = useState<{ mes: string; valor: number }[]>([]);
+  const [medicoesMensais, setMedicoesMensais] = useState<{ mes: string; valor: number }[]>([]);
+
 
   useEffect(() => {
     void (async () => {
