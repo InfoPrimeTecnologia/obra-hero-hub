@@ -58,10 +58,14 @@ const SEARCH_ITEMS: NavItem[] = [
 export function TopBar() {
   const { user, signOut } = useAuth();
   const navigate = useNavigate();
+  const location = useLocation();
+  const { obra: ultimaObra } = useObraSelecionada();
   const [query, setQuery] = useState("");
   const [open, setOpen] = useState(false);
   const [profile, setProfile] = useState<{ full_name: string | null; avatar_url: string | null } | null>(null);
   const [now, setNow] = useState(() => new Date());
+  const dentroDeObra = /^\/app\/obras\/[^/]+(\/.*)?$/.test(location.pathname);
+
 
   useEffect(() => {
     const i = setInterval(() => setNow(new Date()), 60_000);
