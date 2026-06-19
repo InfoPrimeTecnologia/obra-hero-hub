@@ -43,17 +43,25 @@ function RelOrcadoReal() {
         setSubs((sb as Sub[]) ?? []);
       }
 
-      const { data: itens } = await supabase
-        .from("compra_itens")
-        .select("subetapa_id,quantidade,valor_unitario,compras!inner(obra_id)")
-        .eq("compras.obra_id", obraId);
+      const { data: compras } = await supabase
+        .from("compras")
+        .select("id")
+        .eq("obra_id", obraId);
+      const compraIds = (compras ?? []).map((c: any) => c.id);
       const map: Record<string, number> = {};
       let semSub = 0;
-      (itens ?? []).forEach((i: any) => {
-        const total = Number(i.quantidade || 0) * Number(i.valor_unitario || 0);
-        if (i.subetapa_id) map[i.subetapa_id] = (map[i.subetapa_id] ?? 0) + total;
-        else semSub += total;
-      });
+      if (compraIds.length > 0) {
+        const { data: itens } = await supabase
+          .from("compra_itens")
+          .select("subetapa_id,quantidade,valor_unitario,compra_id")
+          .in("compra_id", compraIds);
+        (itens ?? []).forEach((i: any) => {
+          const total = Number(i.quantidade || 0) * Number(i.valor_unitario || 0);
+          if (i.subetapa_id) map[i.subetapa_id] = (map[i.subetapa_id] ?? 0) + total;
+          else semSub += total;
+        });
+      }
+
       setRealizadoPorSub(map);
       setRealizadoSemSub(semSub);
     })();
