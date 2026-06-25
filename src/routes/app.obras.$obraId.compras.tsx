@@ -33,6 +33,8 @@ type Compra = {
   qtd_parcelas: number;
   fornecedor_id: string | null;
   cartao_id: string | null;
+  etapa_id: string | null;
+  subetapa_id: string | null;
 };
 type Fornecedor = { id: string; nome: string };
 type Cartao = { id: string; nome: string };
