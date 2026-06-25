@@ -36,6 +36,8 @@ type Compra = {
 };
 type Fornecedor = { id: string; nome: string };
 type Cartao = { id: string; nome: string };
+type Etapa = { id: string; nome: string };
+type Subetapa = { id: string; etapa_id: string; nome: string };
 
 const formaLabels: Record<string, string> = {
   dinheiro: "Dinheiro", pix: "PIX", boleto: "Boleto",
