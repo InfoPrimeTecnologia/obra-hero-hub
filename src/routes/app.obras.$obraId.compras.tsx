@@ -176,6 +176,20 @@ function ComprasPage() {
                   <div className="space-y-2"><Label>Descrição</Label>
                     <Textarea rows={2} value={form.descricao} onChange={(e) => setForm({ ...form, descricao: e.target.value })} /></div>
                   <div className="grid grid-cols-2 gap-3">
+                    <div className="space-y-2"><Label>Etapa do orçamento *</Label>
+                      <Select value={form.etapa_id} onValueChange={(v) => setForm({ ...form, etapa_id: v, subetapa_id: "" })}>
+                        <SelectTrigger><SelectValue placeholder={etapas.length ? "Selecione" : "Cadastre no orçamento"} /></SelectTrigger>
+                        <SelectContent>{etapas.map((e) => <SelectItem key={e.id} value={e.id}>{e.nome}</SelectItem>)}</SelectContent>
+                      </Select>
+                    </div>
+                    <div className="space-y-2"><Label>Subetapa *</Label>
+                      <Select value={form.subetapa_id} onValueChange={(v) => setForm({ ...form, subetapa_id: v })} disabled={!form.etapa_id}>
+                        <SelectTrigger><SelectValue placeholder={form.etapa_id ? (subsDoForm.length ? "Selecione" : "Sem subetapas") : "Escolha a etapa"} /></SelectTrigger>
+                        <SelectContent>{subsDoForm.map((s) => <SelectItem key={s.id} value={s.id}>{s.nome}</SelectItem>)}</SelectContent>
+                      </Select>
+                    </div>
+                  </div>
+                  <div className="grid grid-cols-2 gap-3">
                     <div className="space-y-2"><Label>Forma de pagamento *</Label>
                       <Select value={form.forma_pagamento} onValueChange={(v) => setForm({ ...form, forma_pagamento: v })}>
                         <SelectTrigger><SelectValue /></SelectTrigger>
