@@ -35,14 +35,7 @@ export function ObraSidebar({ obraId }: { obraId: string }) {
   const navigate = useNavigate();
   const { signOut, user } = useAuth();
   const { obra, setObra } = useObraSelecionada();
-  const [openGroups, setOpenGroups] = useState<Record<string, boolean>>({
-    "Visão geral": true,
-    Administração: true,
-    Engenharia: true,
-    Suprimentos: true,
-    Financeiro: true,
-    Relatórios: true,
-  });
+  const [openGroups, setOpenGroups] = useState<Record<string, boolean>>({});
 
   // Garante que a obra ativa do contexto bate com a URL.
   useEffect(() => {
@@ -145,7 +138,8 @@ export function ObraSidebar({ obraId }: { obraId: string }) {
 
       <nav className="flex-1 space-y-3 overflow-y-auto p-3">
         {groups.map((group) => {
-          const open = openGroups[group.label] ?? true;
+          const hasActive = group.items.some((i) => isActive(i));
+          const open = openGroups[group.label] ?? hasActive;
           return (
             <div key={group.label}>
               <button

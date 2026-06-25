@@ -33,9 +33,13 @@ type Compra = {
   qtd_parcelas: number;
   fornecedor_id: string | null;
   cartao_id: string | null;
+  etapa_id: string | null;
+  subetapa_id: string | null;
 };
 type Fornecedor = { id: string; nome: string };
 type Cartao = { id: string; nome: string };
+type Etapa = { id: string; nome: string };
+type Subetapa = { id: string; etapa_id: string; nome: string };
 
 const formaLabels: Record<string, string> = {
   dinheiro: "Dinheiro", pix: "PIX", boleto: "Boleto",
@@ -49,6 +53,8 @@ function ComprasPage() {
   const [items, setItems] = useState<Compra[]>([]);
   const [fornecedores, setFornecedores] = useState<Fornecedor[]>([]);
   const [cartoes, setCartoes] = useState<Cartao[]>([]);
+  const [etapas, setEtapas] = useState<Etapa[]>([]);
+  const [subetapas, setSubetapas] = useState<Subetapa[]>([]);
   const [open, setOpen] = useState(false);
   const [saving, setSaving] = useState(false);
   const [novoFornOpen, setNovoFornOpen] = useState(false);
@@ -62,23 +68,34 @@ function ComprasPage() {
     qtd_parcelas: "1",
     data_compra: new Date().toISOString().slice(0, 10),
     data_primeira_parcela: new Date().toISOString().slice(0, 10),
+    etapa_id: "",
+    subetapa_id: "",
   });
 
   const carregar = async () => {
-    const [{ data: cs }, { data: fs }, { data: ks }] = await Promise.all([
+    const [{ data: cs }, { data: fs }, { data: ks }, { data: es }, { data: ss }] = await Promise.all([
       supabase.from("compras").select("*").eq("obra_id", obraId).order("data_compra", { ascending: false }),
       supabase.from("fornecedores").select("id,nome").eq("ativo", true).order("nome"),
       supabase.from("cartoes").select("id,nome").eq("ativo", true).order("nome"),
+      supabase.from("orcamento_etapas").select("id,nome").eq("obra_id", obraId).order("ordem"),
+      supabase.from("orcamento_subetapas").select("id,etapa_id,nome").order("ordem"),
     ]);
     setItems((cs ?? []) as Compra[]);
     setFornecedores((fs ?? []) as Fornecedor[]);
     setCartoes((ks ?? []) as Cartao[]);
+    setEtapas((es ?? []) as Etapa[]);
+    setSubetapas((ss ?? []) as Subetapa[]);
   };
 
   useEffect(() => { void carregar(); }, [obraId]);
 
+  const subsDoForm = subetapas.filter((s) => s.etapa_id === form.etapa_id);
+
   const criar = async (e: FormEvent) => {
     e.preventDefault();
+    if (!form.etapa_id || !form.subetapa_id) {
+      return toast.error("Selecione a etapa e a subetapa do orçamento");
+    }
     setSaving(true);
     const { data: customer } = await supabase
       .from("customers").select("id").eq("owner_user_id", user!.id).maybeSingle();
@@ -93,6 +110,8 @@ function ComprasPage() {
       qtd_parcelas: Number(form.qtd_parcelas) || 1,
       data_compra: form.data_compra,
       data_primeira_parcela: form.data_primeira_parcela,
+      etapa_id: form.etapa_id,
+      subetapa_id: form.subetapa_id,
       created_by: user!.id,
     }).select("id").single();
     setSaving(false);
@@ -156,6 +175,20 @@ function ComprasPage() {
                   </div>
                   <div className="space-y-2"><Label>Descrição</Label>
                     <Textarea rows={2} value={form.descricao} onChange={(e) => setForm({ ...form, descricao: e.target.value })} /></div>
+                  <div className="grid grid-cols-2 gap-3">
+                    <div className="space-y-2"><Label>Etapa do orçamento *</Label>
+                      <Select value={form.etapa_id} onValueChange={(v) => setForm({ ...form, etapa_id: v, subetapa_id: "" })}>
+                        <SelectTrigger><SelectValue placeholder={etapas.length ? "Selecione" : "Cadastre no orçamento"} /></SelectTrigger>
+                        <SelectContent>{etapas.map((e) => <SelectItem key={e.id} value={e.id}>{e.nome}</SelectItem>)}</SelectContent>
+                      </Select>
+                    </div>
+                    <div className="space-y-2"><Label>Subetapa *</Label>
+                      <Select value={form.subetapa_id} onValueChange={(v) => setForm({ ...form, subetapa_id: v })} disabled={!form.etapa_id}>
+                        <SelectTrigger><SelectValue placeholder={form.etapa_id ? (subsDoForm.length ? "Selecione" : "Sem subetapas") : "Escolha a etapa"} /></SelectTrigger>
+                        <SelectContent>{subsDoForm.map((s) => <SelectItem key={s.id} value={s.id}>{s.nome}</SelectItem>)}</SelectContent>
+                      </Select>
+                    </div>
+                  </div>
                   <div className="grid grid-cols-2 gap-3">
                     <div className="space-y-2"><Label>Forma de pagamento *</Label>
                       <Select value={form.forma_pagamento} onValueChange={(v) => setForm({ ...form, forma_pagamento: v })}>
@@ -224,6 +257,8 @@ function ComprasPage() {
           </CardContent></Card>
         ) : items.map((c) => {
           const f = fornecedores.find((x) => x.id === c.fornecedor_id);
+          const et = etapas.find((x) => x.id === c.etapa_id);
+          const sb = subetapas.find((x) => x.id === c.subetapa_id);
           return (
             <Card key={c.id}>
               <CardContent className="flex flex-wrap items-center justify-between gap-3 p-4">
@@ -238,6 +273,11 @@ function ComprasPage() {
                       {f ? ` ${f.nome} · ` : " "}{formaLabels[c.forma_pagamento]} · {c.qtd_parcelas}x ·
                       {" "}R$ {Number(c.valor_total).toLocaleString("pt-BR", { minimumFractionDigits: 2 })}
                     </p>
+                    {(et || sb) && (
+                      <p className="text-xs text-muted-foreground">
+                        {et?.nome}{sb ? ` › ${sb.nome}` : ""}
+                      </p>
+                    )}
                   </div>
                 </div>
                 <div className="flex items-center gap-2">

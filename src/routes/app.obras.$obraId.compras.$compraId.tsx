@@ -41,6 +41,8 @@ type Compra = {
   data_primeira_parcela: string | null;
   status: string;
   observacoes: string | null;
+  etapa_id: string | null;
+  subetapa_id: string | null;
 };
 type Item = {
   id: string;
@@ -134,14 +136,19 @@ function CompraDetalhePage() {
   // ==== ITENS ====
   const resetItemForm = () => {
     setEditingItem(null);
-    setItemForm({ descricao: "", unidade: "", quantidade: "1", valor_unitario: "0", etapa_id: "", subetapa_id: "" });
+    setItemForm({
+      descricao: "", unidade: "", quantidade: "1", valor_unitario: "0",
+      etapa_id: compra?.etapa_id ?? "",
+      subetapa_id: compra?.subetapa_id ?? "",
+    });
   };
   const abrirEdicaoItem = (i: Item) => {
     setEditingItem(i);
     setItemForm({
       descricao: i.descricao, unidade: i.unidade ?? "",
       quantidade: String(i.quantidade), valor_unitario: String(i.valor_unitario),
-      etapa_id: i.etapa_id ?? "", subetapa_id: i.subetapa_id ?? "",
+      etapa_id: i.etapa_id ?? compra?.etapa_id ?? "",
+      subetapa_id: i.subetapa_id ?? compra?.subetapa_id ?? "",
     });
     setOpenItem(true);
   };
@@ -336,7 +343,12 @@ function CompraDetalhePage() {
     <div>
       <PageHeader
         title={compra.descricao || "Compra"}
-        description={`${new Date(compra.data_compra).toLocaleDateString("pt-BR")} · ${compra.qtd_parcelas}x · R$ ${Number(compra.valor_total).toLocaleString("pt-BR", { minimumFractionDigits: 2 })}`}
+        description={(() => {
+          const et = etapas.find((x) => x.id === compra.etapa_id);
+          const sb = subetapas.find((x) => x.id === compra.subetapa_id);
+          const base = `${new Date(compra.data_compra).toLocaleDateString("pt-BR")} · ${compra.qtd_parcelas}x · R$ ${Number(compra.valor_total).toLocaleString("pt-BR", { minimumFractionDigits: 2 })}`;
+          return et || sb ? `${base} · ${et?.nome ?? ""}${sb ? ` › ${sb.nome}` : ""}` : base;
+        })()}
         actions={
           <Button asChild variant="ghost" size="sm">
             <Link to="/app/obras/$obraId/compras" params={{ obraId }}>

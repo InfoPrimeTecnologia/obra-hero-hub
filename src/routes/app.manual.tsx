@@ -205,10 +205,13 @@ const SECTIONS: Section[] = [
       "Registre toda compra de material/serviço vinculada a uma etapa da obra, com fornecedor, parcelas e NF.",
     steps: [
       "Dentro da obra, vá em Compras → Nova compra.",
-      "Escolha fornecedor, etapa/subetapa, itens, valor e forma de pagamento (à vista, parcelado, cartão).",
+      "Escolha obrigatoriamente a etapa e a subetapa do orçamento — toda a compra ficará vinculada a esse local.",
+      "Informe fornecedor, itens, valor e forma de pagamento (à vista, parcelado, cartão).",
       "Anexe a NF (PDF/XML) e suas parcelas viram contas a pagar automaticamente.",
     ],
     tips: [
+      "Os itens da compra já vêm pré-preenchidos com a etapa/subetapa escolhida.",
+      "A sidebar da obra inicia recolhida; expanda apenas o grupo que precisar.",
       "Parcelas no cartão entram na fatura do cartão.",
       'Use "Medições" quando o serviço é faturado em etapas (ex.: empreitada).',
     ],
