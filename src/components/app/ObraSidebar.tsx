@@ -138,7 +138,8 @@ export function ObraSidebar({ obraId }: { obraId: string }) {
 
       <nav className="flex-1 space-y-3 overflow-y-auto p-3">
         {groups.map((group) => {
-          const open = openGroups[group.label] ?? true;
+          const hasActive = group.items.some((i) => isActive(i));
+          const open = openGroups[group.label] ?? hasActive;
           return (
             <div key={group.label}>
               <button
