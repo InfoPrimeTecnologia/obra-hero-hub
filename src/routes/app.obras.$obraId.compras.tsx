@@ -257,6 +257,8 @@ function ComprasPage() {
           </CardContent></Card>
         ) : items.map((c) => {
           const f = fornecedores.find((x) => x.id === c.fornecedor_id);
+          const et = etapas.find((x) => x.id === c.etapa_id);
+          const sb = subetapas.find((x) => x.id === c.subetapa_id);
           return (
             <Card key={c.id}>
               <CardContent className="flex flex-wrap items-center justify-between gap-3 p-4">
@@ -271,6 +273,11 @@ function ComprasPage() {
                       {f ? ` ${f.nome} · ` : " "}{formaLabels[c.forma_pagamento]} · {c.qtd_parcelas}x ·
                       {" "}R$ {Number(c.valor_total).toLocaleString("pt-BR", { minimumFractionDigits: 2 })}
                     </p>
+                    {(et || sb) && (
+                      <p className="text-xs text-muted-foreground">
+                        {et?.nome}{sb ? ` › ${sb.nome}` : ""}
+                      </p>
+                    )}
                   </div>
                 </div>
                 <div className="flex items-center gap-2">
