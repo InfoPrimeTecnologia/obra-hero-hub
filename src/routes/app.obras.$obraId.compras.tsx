@@ -53,6 +53,8 @@ function ComprasPage() {
   const [items, setItems] = useState<Compra[]>([]);
   const [fornecedores, setFornecedores] = useState<Fornecedor[]>([]);
   const [cartoes, setCartoes] = useState<Cartao[]>([]);
+  const [etapas, setEtapas] = useState<Etapa[]>([]);
+  const [subetapas, setSubetapas] = useState<Subetapa[]>([]);
   const [open, setOpen] = useState(false);
   const [saving, setSaving] = useState(false);
   const [novoFornOpen, setNovoFornOpen] = useState(false);
@@ -66,20 +68,28 @@ function ComprasPage() {
     qtd_parcelas: "1",
     data_compra: new Date().toISOString().slice(0, 10),
     data_primeira_parcela: new Date().toISOString().slice(0, 10),
+    etapa_id: "",
+    subetapa_id: "",
   });
 
   const carregar = async () => {
-    const [{ data: cs }, { data: fs }, { data: ks }] = await Promise.all([
+    const [{ data: cs }, { data: fs }, { data: ks }, { data: es }, { data: ss }] = await Promise.all([
       supabase.from("compras").select("*").eq("obra_id", obraId).order("data_compra", { ascending: false }),
       supabase.from("fornecedores").select("id,nome").eq("ativo", true).order("nome"),
       supabase.from("cartoes").select("id,nome").eq("ativo", true).order("nome"),
+      supabase.from("orcamento_etapas").select("id,nome").eq("obra_id", obraId).order("ordem"),
+      supabase.from("orcamento_subetapas").select("id,etapa_id,nome").order("ordem"),
     ]);
     setItems((cs ?? []) as Compra[]);
     setFornecedores((fs ?? []) as Fornecedor[]);
     setCartoes((ks ?? []) as Cartao[]);
+    setEtapas((es ?? []) as Etapa[]);
+    setSubetapas((ss ?? []) as Subetapa[]);
   };
 
   useEffect(() => { void carregar(); }, [obraId]);
+
+  const subsDoForm = subetapas.filter((s) => s.etapa_id === form.etapa_id);
 
   const criar = async (e: FormEvent) => {
     e.preventDefault();
