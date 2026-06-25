@@ -136,14 +136,19 @@ function CompraDetalhePage() {
   // ==== ITENS ====
   const resetItemForm = () => {
     setEditingItem(null);
-    setItemForm({ descricao: "", unidade: "", quantidade: "1", valor_unitario: "0", etapa_id: "", subetapa_id: "" });
+    setItemForm({
+      descricao: "", unidade: "", quantidade: "1", valor_unitario: "0",
+      etapa_id: compra?.etapa_id ?? "",
+      subetapa_id: compra?.subetapa_id ?? "",
+    });
   };
   const abrirEdicaoItem = (i: Item) => {
     setEditingItem(i);
     setItemForm({
       descricao: i.descricao, unidade: i.unidade ?? "",
       quantidade: String(i.quantidade), valor_unitario: String(i.valor_unitario),
-      etapa_id: i.etapa_id ?? "", subetapa_id: i.subetapa_id ?? "",
+      etapa_id: i.etapa_id ?? compra?.etapa_id ?? "",
+      subetapa_id: i.subetapa_id ?? compra?.subetapa_id ?? "",
     });
     setOpenItem(true);
   };
