@@ -41,6 +41,8 @@ type Compra = {
   data_primeira_parcela: string | null;
   status: string;
   observacoes: string | null;
+  etapa_id: string | null;
+  subetapa_id: string | null;
 };
 type Item = {
   id: string;
