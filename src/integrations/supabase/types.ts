@@ -552,6 +552,7 @@ export type Database = {
           data_compra: string
           data_primeira_parcela: string | null
           descricao: string | null
+          etapa_id: string | null
           forma_pagamento: string
           fornecedor_id: string | null
           id: string
@@ -560,6 +561,7 @@ export type Database = {
           observacoes: string | null
           qtd_parcelas: number
           status: string
+          subetapa_id: string | null
           updated_at: string
           valor_total: number
         }
@@ -571,6 +573,7 @@ export type Database = {
           data_compra?: string
           data_primeira_parcela?: string | null
           descricao?: string | null
+          etapa_id?: string | null
           forma_pagamento?: string
           fornecedor_id?: string | null
           id?: string
@@ -579,6 +582,7 @@ export type Database = {
           observacoes?: string | null
           qtd_parcelas?: number
           status?: string
+          subetapa_id?: string | null
           updated_at?: string
           valor_total?: number
         }
@@ -590,6 +594,7 @@ export type Database = {
           data_compra?: string
           data_primeira_parcela?: string | null
           descricao?: string | null
+          etapa_id?: string | null
           forma_pagamento?: string
           fornecedor_id?: string | null
           id?: string
@@ -598,10 +603,26 @@ export type Database = {
           observacoes?: string | null
           qtd_parcelas?: number
           status?: string
+          subetapa_id?: string | null
           updated_at?: string
           valor_total?: number
         }
-        Relationships: []
+        Relationships: [
+          {
+            foreignKeyName: "compras_etapa_id_fkey"
+            columns: ["etapa_id"]
+            isOneToOne: false
+            referencedRelation: "orcamento_etapas"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "compras_subetapa_id_fkey"
+            columns: ["subetapa_id"]
+            isOneToOne: false
+            referencedRelation: "orcamento_subetapas"
+            referencedColumns: ["id"]
+          },
+        ]
       }
       conciliacao_extratos: {
         Row: {
