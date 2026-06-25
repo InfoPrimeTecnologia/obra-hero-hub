@@ -343,7 +343,12 @@ function CompraDetalhePage() {
     <div>
       <PageHeader
         title={compra.descricao || "Compra"}
-        description={`${new Date(compra.data_compra).toLocaleDateString("pt-BR")} · ${compra.qtd_parcelas}x · R$ ${Number(compra.valor_total).toLocaleString("pt-BR", { minimumFractionDigits: 2 })}`}
+        description={(() => {
+          const et = etapas.find((x) => x.id === compra.etapa_id);
+          const sb = subetapas.find((x) => x.id === compra.subetapa_id);
+          const base = `${new Date(compra.data_compra).toLocaleDateString("pt-BR")} · ${compra.qtd_parcelas}x · R$ ${Number(compra.valor_total).toLocaleString("pt-BR", { minimumFractionDigits: 2 })}`;
+          return et || sb ? `${base} · ${et?.nome ?? ""}${sb ? ` › ${sb.nome}` : ""}` : base;
+        })()}
         actions={
           <Button asChild variant="ghost" size="sm">
             <Link to="/app/obras/$obraId/compras" params={{ obraId }}>
