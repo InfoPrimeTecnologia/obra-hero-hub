@@ -35,14 +35,7 @@ export function ObraSidebar({ obraId }: { obraId: string }) {
   const navigate = useNavigate();
   const { signOut, user } = useAuth();
   const { obra, setObra } = useObraSelecionada();
-  const [openGroups, setOpenGroups] = useState<Record<string, boolean>>({
-    "Visão geral": true,
-    Administração: true,
-    Engenharia: true,
-    Suprimentos: true,
-    Financeiro: true,
-    Relatórios: true,
-  });
+  const [openGroups, setOpenGroups] = useState<Record<string, boolean>>({});
 
   // Garante que a obra ativa do contexto bate com a URL.
   useEffect(() => {
