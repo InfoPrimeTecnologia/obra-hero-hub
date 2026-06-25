@@ -93,6 +93,9 @@ function ComprasPage() {
 
   const criar = async (e: FormEvent) => {
     e.preventDefault();
+    if (!form.etapa_id || !form.subetapa_id) {
+      return toast.error("Selecione a etapa e a subetapa do orçamento");
+    }
     setSaving(true);
     const { data: customer } = await supabase
       .from("customers").select("id").eq("owner_user_id", user!.id).maybeSingle();
@@ -107,6 +110,8 @@ function ComprasPage() {
       qtd_parcelas: Number(form.qtd_parcelas) || 1,
       data_compra: form.data_compra,
       data_primeira_parcela: form.data_primeira_parcela,
+      etapa_id: form.etapa_id,
+      subetapa_id: form.subetapa_id,
       created_by: user!.id,
     }).select("id").single();
     setSaving(false);
