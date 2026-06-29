@@ -844,6 +844,8 @@ async function executeTool(
     }
     case "create_compra": {
       const obra = await findObra(supabase, customerId, args.obra_nome);
+      const etapa = await findEtapa(supabase, obra.id, args.etapa_nome);
+      const sub = await findSubetapa(supabase, etapa.id, args.subetapa_nome);
       let fornecedor_id: string | null = null;
       if (args.fornecedor_nome) {
         const f = await findOrCreateFornecedor(supabase, customerId, userId, args.fornecedor_nome);
@@ -855,6 +857,8 @@ async function executeTool(
         .insert({
           customer_id: customerId,
           obra_id: obra.id,
+          etapa_id: etapa.id,
+          subetapa_id: sub.id,
           fornecedor_id,
           descricao: args.descricao,
           forma_pagamento: args.forma_pagamento,
@@ -869,7 +873,7 @@ async function executeTool(
       if (error) throw new Error(error.message);
       return {
         ok: true,
-        summary: `Compra "${data.descricao}" registrada em ${obra.name} (R$ ${brl(data.valor_total)}).`,
+        summary: `Compra "${data.descricao}" registrada em ${obra.name} › ${etapa.nome} › ${sub.nome} (R$ ${brl(data.valor_total)}).`,
         data,
       };
     }
