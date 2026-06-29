@@ -125,15 +125,17 @@ const TOOLS = [
   T("get_compra", "Detalhes de uma compra (itens, parcelas, recebimentos).", {
     compra_id: { type: "string", description: "UUID da compra" },
   }, ["compra_id"]),
-  T("create_compra", "Registra uma compra para uma obra.", {
+  T("create_compra", "Registra uma compra para uma obra. SEMPRE exige etapa e subetapa do orçamento — pergunte ao usuário antes de chamar se não souber.", {
     obra_nome: { type: "string" },
+    etapa_nome: { type: "string", description: "Nome da etapa do orçamento da obra (obrigatório)" },
+    subetapa_nome: { type: "string", description: "Nome da subetapa dentro da etapa (obrigatório)" },
     fornecedor_nome: { type: "string" },
     descricao: { type: "string" },
     valor_total: { type: "number" },
     forma_pagamento: { type: "string", enum: ["dinheiro", "pix", "boleto", "cartao", "transferencia"] },
     qtd_parcelas: { type: "integer", minimum: 1 },
     data_compra: { type: "string", description: "YYYY-MM-DD; default hoje" },
-  }, ["obra_nome", "descricao", "valor_total", "forma_pagamento"]),
+  }, ["obra_nome", "etapa_nome", "subetapa_nome", "descricao", "valor_total", "forma_pagamento"]),
   T("cancel_compra", "Cancela uma compra (status=cancelada).", {
     compra_id: { type: "string" },
   }, ["compra_id"]),
@@ -436,7 +438,14 @@ Seu papel:
 - Antes de criar coisas com valores ou para a obra errada, prefira confirmar com o usuário se ambíguo.
 - Se faltar uma informação obrigatória, pergunte antes de chamar a função.
 - Para buscar nomes (obras, fornecedores, produtos, contas), as funções fazem busca por similaridade. Tente o que o usuário disse.
-- Pode encadear chamadas: ex.: list_obras para descobrir nomes, depois create_etapa.`;
+- Pode encadear chamadas: ex.: list_obras para descobrir nomes, depois create_etapa.
+
+REGRA CRÍTICA DE COMPRAS:
+- Toda compra é obrigatoriamente vinculada a uma etapa e subetapa do orçamento da obra.
+- Antes de chamar create_compra, GUIE o usuário passo a passo:
+  1) confirme a obra; 2) pergunte a etapa do orçamento; 3) pergunte a subetapa.
+- Se o usuário não souber, use list_etapas/list_subetapas (ou peça que liste) para mostrar as opções existentes antes de prosseguir.
+- Nunca chame create_compra sem etapa_nome e subetapa_nome — peça essas informações primeiro.`;
 
 // ---------- Helpers ----------
 async function getCustomerId(supabase: any, userId: string): Promise<string> {
@@ -842,6 +851,8 @@ async function executeTool(
     }
     case "create_compra": {
       const obra = await findObra(supabase, customerId, args.obra_nome);
+      const etapa = await findEtapa(supabase, obra.id, args.etapa_nome);
+      const sub = await findSubetapa(supabase, etapa.id, args.subetapa_nome);
       let fornecedor_id: string | null = null;
       if (args.fornecedor_nome) {
         const f = await findOrCreateFornecedor(supabase, customerId, userId, args.fornecedor_nome);
@@ -853,6 +864,8 @@ async function executeTool(
         .insert({
           customer_id: customerId,
           obra_id: obra.id,
+          etapa_id: etapa.id,
+          subetapa_id: sub.id,
           fornecedor_id,
           descricao: args.descricao,
           forma_pagamento: args.forma_pagamento,
@@ -867,7 +880,7 @@ async function executeTool(
       if (error) throw new Error(error.message);
       return {
         ok: true,
-        summary: `Compra "${data.descricao}" registrada em ${obra.name} (R$ ${brl(data.valor_total)}).`,
+        summary: `Compra "${data.descricao}" registrada em ${obra.name} › ${etapa.nome} › ${sub.nome} (R$ ${brl(data.valor_total)}).`,
         data,
       };
     }

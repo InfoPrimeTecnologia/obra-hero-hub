@@ -1,6 +1,6 @@
 import { createFileRoute, Link, useNavigate } from "@tanstack/react-router";
 import { useEffect, useMemo, useState, type FormEvent } from "react";
-import { Plus, ArrowLeft, ShoppingCart, Eye, UserPlus, ChevronRight, ChevronDown, Trash2 } from "lucide-react";
+import { Plus, ArrowLeft, ShoppingCart, Eye, UserPlus, ChevronRight, ChevronDown, Trash2, Pencil } from "lucide-react";
 import { PageHeader } from "@/components/admin/PageHeader";
 import { Card, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
@@ -90,6 +90,63 @@ function ComprasPage() {
     etapa_id: "",
     subetapa_id: "",
   });
+  const [editing, setEditing] = useState<Compra | null>(null);
+  const [savingEdit, setSavingEdit] = useState(false);
+  const [editForm, setEditForm] = useState({
+    fornecedor_id: "",
+    descricao: "",
+    forma_pagamento: "dinheiro",
+    cartao_id: "",
+    qtd_parcelas: "1",
+    data_compra: new Date().toISOString().slice(0, 10),
+    etapa_id: "",
+    subetapa_id: "",
+  });
+
+  const abrirEdicao = (c: Compra) => {
+    setEditing(c);
+    setEditForm({
+      fornecedor_id: c.fornecedor_id ?? "",
+      descricao: c.descricao ?? "",
+      forma_pagamento: c.forma_pagamento,
+      cartao_id: c.cartao_id ?? "",
+      qtd_parcelas: String(c.qtd_parcelas),
+      data_compra: c.data_compra,
+      etapa_id: c.etapa_id ?? "",
+      subetapa_id: c.subetapa_id ?? "",
+    });
+  };
+
+  const salvarEdicao = async (e: FormEvent) => {
+    e.preventDefault();
+    if (!editing) return;
+    if (!editForm.etapa_id || !editForm.subetapa_id) {
+      return toast.error("Selecione a etapa e a subetapa do orçamento");
+    }
+    setSavingEdit(true);
+    const { error } = await supabase.from("compras").update({
+      fornecedor_id: editForm.fornecedor_id || null,
+      descricao: editForm.descricao || null,
+      forma_pagamento: editForm.forma_pagamento,
+      cartao_id: editForm.forma_pagamento === "cartao" ? (editForm.cartao_id || null) : null,
+      qtd_parcelas: Number(editForm.qtd_parcelas) || 1,
+      data_compra: editForm.data_compra,
+      etapa_id: editForm.etapa_id,
+      subetapa_id: editForm.subetapa_id,
+    }).eq("id", editing.id);
+    // propaga etapa/subetapa para todos os itens da compra
+    await supabase.from("compra_itens").update({
+      etapa_id: editForm.etapa_id,
+      subetapa_id: editForm.subetapa_id,
+    }).eq("compra_id", editing.id);
+    setSavingEdit(false);
+    if (error) return toast.error("Erro", { description: error.message });
+    toast.success("Compra atualizada");
+    setEditing(null);
+    void carregar();
+  };
+
+  const subsEdit = subetapas.filter((s) => s.etapa_id === editForm.etapa_id);
 
   const carregar = async () => {
     const [{ data: cs }, { data: fs }, { data: ks }, { data: es }, { data: ss }] = await Promise.all([
@@ -429,6 +486,9 @@ function ComprasPage() {
                                                 <Eye className="mr-2 h-4 w-4" /> Abrir
                                               </Link>
                                             </Button>
+                                            <Button variant="ghost" size="icon" title="Editar compra" onClick={() => abrirEdicao(c)}>
+                                              <Pencil className="h-4 w-4" />
+                                            </Button>
                                             <AlertDialog>
                                               <AlertDialogTrigger asChild>
                                                 <Button variant="ghost" size="icon" title="Excluir compra">
@@ -505,6 +565,9 @@ function ComprasPage() {
                                 <Eye className="mr-2 h-4 w-4" /> Abrir
                               </Link>
                             </Button>
+                            <Button variant="ghost" size="icon" title="Editar compra" onClick={() => abrirEdicao(c)}>
+                              <Pencil className="h-4 w-4" />
+                            </Button>
                             <AlertDialog>
                               <AlertDialogTrigger asChild>
                                 <Button variant="ghost" size="icon" title="Excluir compra">
@@ -535,6 +598,62 @@ function ComprasPage() {
           </div>
         )}
       </div>
+
+      <Dialog open={!!editing} onOpenChange={(v) => !v && setEditing(null)}>
+        <DialogContent>
+          <DialogHeader><DialogTitle>Editar compra</DialogTitle></DialogHeader>
+          <form onSubmit={salvarEdicao} className="space-y-3">
+            <div className="space-y-2"><Label>Fornecedor</Label>
+              <Select value={editForm.fornecedor_id} onValueChange={(v) => setEditForm({ ...editForm, fornecedor_id: v })}>
+                <SelectTrigger><SelectValue placeholder="Selecione (opcional)" /></SelectTrigger>
+                <SelectContent>{fornecedores.map((f) => <SelectItem key={f.id} value={f.id}>{f.nome}</SelectItem>)}</SelectContent>
+              </Select>
+            </div>
+            <div className="space-y-2"><Label>Descrição</Label>
+              <Textarea rows={2} value={editForm.descricao} onChange={(e) => setEditForm({ ...editForm, descricao: e.target.value })} /></div>
+            <div className="grid grid-cols-2 gap-3">
+              <div className="space-y-2"><Label>Etapa do orçamento *</Label>
+                <Select value={editForm.etapa_id} onValueChange={(v) => setEditForm({ ...editForm, etapa_id: v, subetapa_id: "" })}>
+                  <SelectTrigger><SelectValue placeholder="Selecione" /></SelectTrigger>
+                  <SelectContent>{etapas.map((e) => <SelectItem key={e.id} value={e.id}>{e.nome}</SelectItem>)}</SelectContent>
+                </Select>
+              </div>
+              <div className="space-y-2"><Label>Subetapa *</Label>
+                <Select value={editForm.subetapa_id} onValueChange={(v) => setEditForm({ ...editForm, subetapa_id: v })} disabled={!editForm.etapa_id}>
+                  <SelectTrigger><SelectValue placeholder={editForm.etapa_id ? "Selecione" : "Escolha a etapa"} /></SelectTrigger>
+                  <SelectContent>{subsEdit.map((s) => <SelectItem key={s.id} value={s.id}>{s.nome}</SelectItem>)}</SelectContent>
+                </Select>
+              </div>
+            </div>
+            <div className="grid grid-cols-2 gap-3">
+              <div className="space-y-2"><Label>Forma de pagamento *</Label>
+                <Select value={editForm.forma_pagamento} onValueChange={(v) => setEditForm({ ...editForm, forma_pagamento: v })}>
+                  <SelectTrigger><SelectValue /></SelectTrigger>
+                  <SelectContent>
+                    {Object.entries(formaLabels).map(([k, v]) => <SelectItem key={k} value={k}>{v}</SelectItem>)}
+                  </SelectContent>
+                </Select>
+              </div>
+              <div className="space-y-2"><Label>Parcelas *</Label>
+                <Input type="number" min={1} required value={editForm.qtd_parcelas}
+                  onChange={(e) => setEditForm({ ...editForm, qtd_parcelas: e.target.value })} />
+              </div>
+            </div>
+            {editForm.forma_pagamento === "cartao" && (
+              <div className="space-y-2"><Label>Cartão *</Label>
+                <Select value={editForm.cartao_id} onValueChange={(v) => setEditForm({ ...editForm, cartao_id: v })}>
+                  <SelectTrigger><SelectValue placeholder="Selecione" /></SelectTrigger>
+                  <SelectContent>{cartoes.map((c) => <SelectItem key={c.id} value={c.id}>{c.nome}</SelectItem>)}</SelectContent>
+                </Select>
+              </div>
+            )}
+            <div className="space-y-2"><Label>Data da compra *</Label>
+              <Input type="date" required value={editForm.data_compra}
+                onChange={(e) => setEditForm({ ...editForm, data_compra: e.target.value })} /></div>
+            <DialogFooter><Button type="submit" disabled={savingEdit}>{savingEdit ? "Salvando..." : "Salvar"}</Button></DialogFooter>
+          </form>
+        </DialogContent>
+      </Dialog>
     </div>
   );
 }
