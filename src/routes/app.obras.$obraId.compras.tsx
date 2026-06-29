@@ -598,6 +598,62 @@ function ComprasPage() {
           </div>
         )}
       </div>
+
+      <Dialog open={!!editing} onOpenChange={(v) => !v && setEditing(null)}>
+        <DialogContent>
+          <DialogHeader><DialogTitle>Editar compra</DialogTitle></DialogHeader>
+          <form onSubmit={salvarEdicao} className="space-y-3">
+            <div className="space-y-2"><Label>Fornecedor</Label>
+              <Select value={editForm.fornecedor_id} onValueChange={(v) => setEditForm({ ...editForm, fornecedor_id: v })}>
+                <SelectTrigger><SelectValue placeholder="Selecione (opcional)" /></SelectTrigger>
+                <SelectContent>{fornecedores.map((f) => <SelectItem key={f.id} value={f.id}>{f.nome}</SelectItem>)}</SelectContent>
+              </Select>
+            </div>
+            <div className="space-y-2"><Label>Descrição</Label>
+              <Textarea rows={2} value={editForm.descricao} onChange={(e) => setEditForm({ ...editForm, descricao: e.target.value })} /></div>
+            <div className="grid grid-cols-2 gap-3">
+              <div className="space-y-2"><Label>Etapa do orçamento *</Label>
+                <Select value={editForm.etapa_id} onValueChange={(v) => setEditForm({ ...editForm, etapa_id: v, subetapa_id: "" })}>
+                  <SelectTrigger><SelectValue placeholder="Selecione" /></SelectTrigger>
+                  <SelectContent>{etapas.map((e) => <SelectItem key={e.id} value={e.id}>{e.nome}</SelectItem>)}</SelectContent>
+                </Select>
+              </div>
+              <div className="space-y-2"><Label>Subetapa *</Label>
+                <Select value={editForm.subetapa_id} onValueChange={(v) => setEditForm({ ...editForm, subetapa_id: v })} disabled={!editForm.etapa_id}>
+                  <SelectTrigger><SelectValue placeholder={editForm.etapa_id ? "Selecione" : "Escolha a etapa"} /></SelectTrigger>
+                  <SelectContent>{subsEdit.map((s) => <SelectItem key={s.id} value={s.id}>{s.nome}</SelectItem>)}</SelectContent>
+                </Select>
+              </div>
+            </div>
+            <div className="grid grid-cols-2 gap-3">
+              <div className="space-y-2"><Label>Forma de pagamento *</Label>
+                <Select value={editForm.forma_pagamento} onValueChange={(v) => setEditForm({ ...editForm, forma_pagamento: v })}>
+                  <SelectTrigger><SelectValue /></SelectTrigger>
+                  <SelectContent>
+                    {Object.entries(formaLabels).map(([k, v]) => <SelectItem key={k} value={k}>{v}</SelectItem>)}
+                  </SelectContent>
+                </Select>
+              </div>
+              <div className="space-y-2"><Label>Parcelas *</Label>
+                <Input type="number" min={1} required value={editForm.qtd_parcelas}
+                  onChange={(e) => setEditForm({ ...editForm, qtd_parcelas: e.target.value })} />
+              </div>
+            </div>
+            {editForm.forma_pagamento === "cartao" && (
+              <div className="space-y-2"><Label>Cartão *</Label>
+                <Select value={editForm.cartao_id} onValueChange={(v) => setEditForm({ ...editForm, cartao_id: v })}>
+                  <SelectTrigger><SelectValue placeholder="Selecione" /></SelectTrigger>
+                  <SelectContent>{cartoes.map((c) => <SelectItem key={c.id} value={c.id}>{c.nome}</SelectItem>)}</SelectContent>
+                </Select>
+              </div>
+            )}
+            <div className="space-y-2"><Label>Data da compra *</Label>
+              <Input type="date" required value={editForm.data_compra}
+                onChange={(e) => setEditForm({ ...editForm, data_compra: e.target.value })} /></div>
+            <DialogFooter><Button type="submit" disabled={savingEdit}>{savingEdit ? "Salvando..." : "Salvar"}</Button></DialogFooter>
+          </form>
+        </DialogContent>
+      </Dialog>
     </div>
   );
 }
