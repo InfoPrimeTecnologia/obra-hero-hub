@@ -82,7 +82,7 @@ function summarizeArgs(tool: string, args: any): string {
     case "delete_subetapa":
       return `${args.subetapa_nome} (${args.etapa_nome})`;
     case "create_compra":
-      return `${args.descricao} — R$ ${brl(args.valor_total)} (${args.forma_pagamento}) em ${args.obra_nome}`;
+      return `${args.descricao} — R$ ${brl(args.valor_total)} (${args.forma_pagamento}) em ${args.obra_nome} › ${args.etapa_nome ?? "?"} › ${args.subetapa_nome ?? "?"}`;
     case "cancel_compra":
       return `Compra ${args.compra_id}`;
     case "create_rdo":
