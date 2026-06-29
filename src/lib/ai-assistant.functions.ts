@@ -125,15 +125,17 @@ const TOOLS = [
   T("get_compra", "Detalhes de uma compra (itens, parcelas, recebimentos).", {
     compra_id: { type: "string", description: "UUID da compra" },
   }, ["compra_id"]),
-  T("create_compra", "Registra uma compra para uma obra.", {
+  T("create_compra", "Registra uma compra para uma obra. SEMPRE exige etapa e subetapa do orçamento — pergunte ao usuário antes de chamar se não souber.", {
     obra_nome: { type: "string" },
+    etapa_nome: { type: "string", description: "Nome da etapa do orçamento da obra (obrigatório)" },
+    subetapa_nome: { type: "string", description: "Nome da subetapa dentro da etapa (obrigatório)" },
     fornecedor_nome: { type: "string" },
     descricao: { type: "string" },
     valor_total: { type: "number" },
     forma_pagamento: { type: "string", enum: ["dinheiro", "pix", "boleto", "cartao", "transferencia"] },
     qtd_parcelas: { type: "integer", minimum: 1 },
     data_compra: { type: "string", description: "YYYY-MM-DD; default hoje" },
-  }, ["obra_nome", "descricao", "valor_total", "forma_pagamento"]),
+  }, ["obra_nome", "etapa_nome", "subetapa_nome", "descricao", "valor_total", "forma_pagamento"]),
   T("cancel_compra", "Cancela uma compra (status=cancelada).", {
     compra_id: { type: "string" },
   }, ["compra_id"]),
