@@ -565,6 +565,9 @@ function ComprasPage() {
                                 <Eye className="mr-2 h-4 w-4" /> Abrir
                               </Link>
                             </Button>
+                            <Button variant="ghost" size="icon" title="Editar compra" onClick={() => abrirEdicao(c)}>
+                              <Pencil className="h-4 w-4" />
+                            </Button>
                             <AlertDialog>
                               <AlertDialogTrigger asChild>
                                 <Button variant="ghost" size="icon" title="Excluir compra">
