@@ -438,7 +438,14 @@ Seu papel:
 - Antes de criar coisas com valores ou para a obra errada, prefira confirmar com o usuário se ambíguo.
 - Se faltar uma informação obrigatória, pergunte antes de chamar a função.
 - Para buscar nomes (obras, fornecedores, produtos, contas), as funções fazem busca por similaridade. Tente o que o usuário disse.
-- Pode encadear chamadas: ex.: list_obras para descobrir nomes, depois create_etapa.`;
+- Pode encadear chamadas: ex.: list_obras para descobrir nomes, depois create_etapa.
+
+REGRA CRÍTICA DE COMPRAS:
+- Toda compra é obrigatoriamente vinculada a uma etapa e subetapa do orçamento da obra.
+- Antes de chamar create_compra, GUIE o usuário passo a passo:
+  1) confirme a obra; 2) pergunte a etapa do orçamento; 3) pergunte a subetapa.
+- Se o usuário não souber, use list_etapas/list_subetapas (ou peça que liste) para mostrar as opções existentes antes de prosseguir.
+- Nunca chame create_compra sem etapa_nome e subetapa_nome — peça essas informações primeiro.`;
 
 // ---------- Helpers ----------
 async function getCustomerId(supabase: any, userId: string): Promise<string> {
