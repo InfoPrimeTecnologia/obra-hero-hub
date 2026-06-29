@@ -1,6 +1,6 @@
 import { createFileRoute, Link, useNavigate } from "@tanstack/react-router";
-import { useEffect, useState, type FormEvent } from "react";
-import { Plus, ArrowLeft, ShoppingCart, Eye, UserPlus } from "lucide-react";
+import { useEffect, useMemo, useState, type FormEvent } from "react";
+import { Plus, ArrowLeft, ShoppingCart, Eye, UserPlus, ChevronRight, ChevronDown, Trash2 } from "lucide-react";
 import { PageHeader } from "@/components/admin/PageHeader";
 import { Card, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
@@ -11,6 +11,10 @@ import { Textarea } from "@/components/ui/textarea";
 import {
   Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger, DialogFooter,
 } from "@/components/ui/dialog";
+import {
+  AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent,
+  AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle, AlertDialogTrigger,
+} from "@/components/ui/alert-dialog";
 import {
   Select, SelectContent, SelectItem, SelectTrigger, SelectValue,
 } from "@/components/ui/select";
@@ -36,21 +40,33 @@ type Compra = {
   etapa_id: string | null;
   subetapa_id: string | null;
 };
+type Item = {
+  id: string;
+  compra_id: string;
+  descricao: string;
+  unidade: string | null;
+  quantidade: number;
+  valor_unitario: number;
+  valor_total: number;
+};
 type Fornecedor = { id: string; nome: string };
 type Cartao = { id: string; nome: string };
-type Etapa = { id: string; nome: string };
-type Subetapa = { id: string; etapa_id: string; nome: string };
+type Etapa = { id: string; nome: string; ordem: number };
+type Subetapa = { id: string; etapa_id: string; nome: string; ordem: number };
 
 const formaLabels: Record<string, string> = {
   dinheiro: "Dinheiro", pix: "PIX", boleto: "Boleto",
   cartao: "Cartão", transferencia: "Transferência",
 };
 
+const brl = (n: number) => n.toLocaleString("pt-BR", { style: "currency", currency: "BRL" });
+
 function ComprasPage() {
   const { obraId } = Route.useParams();
   const { user } = useAuth();
   const navigate = useNavigate();
   const [items, setItems] = useState<Compra[]>([]);
+  const [itens, setItens] = useState<Item[]>([]);
   const [fornecedores, setFornecedores] = useState<Fornecedor[]>([]);
   const [cartoes, setCartoes] = useState<Cartao[]>([]);
   const [etapas, setEtapas] = useState<Etapa[]>([]);
@@ -60,6 +76,9 @@ function ComprasPage() {
   const [novoFornOpen, setNovoFornOpen] = useState(false);
   const [savingForn, setSavingForn] = useState(false);
   const [novoForn, setNovoForn] = useState({ nome: "", cpf_cnpj: "", telefone: "", email: "" });
+  const [expEtapa, setExpEtapa] = useState<Record<string, boolean>>({});
+  const [expSub, setExpSub] = useState<Record<string, boolean>>({});
+  const [expCompra, setExpCompra] = useState<Record<string, boolean>>({});
   const [form, setForm] = useState({
     fornecedor_id: "",
     descricao: "",
@@ -77,14 +96,26 @@ function ComprasPage() {
       supabase.from("compras").select("*").eq("obra_id", obraId).order("data_compra", { ascending: false }),
       supabase.from("fornecedores").select("id,nome").eq("ativo", true).order("nome"),
       supabase.from("cartoes").select("id,nome").eq("ativo", true).order("nome"),
-      supabase.from("orcamento_etapas").select("id,nome").eq("obra_id", obraId).order("ordem"),
-      supabase.from("orcamento_subetapas").select("id,etapa_id,nome").order("ordem"),
+      supabase.from("orcamento_etapas").select("id,nome,ordem").eq("obra_id", obraId).order("ordem"),
+      supabase.from("orcamento_subetapas").select("id,etapa_id,nome,ordem").order("ordem"),
     ]);
-    setItems((cs ?? []) as Compra[]);
+    const compras = (cs ?? []) as Compra[];
+    setItems(compras);
     setFornecedores((fs ?? []) as Fornecedor[]);
     setCartoes((ks ?? []) as Cartao[]);
     setEtapas((es ?? []) as Etapa[]);
     setSubetapas((ss ?? []) as Subetapa[]);
+    // buscar itens das compras
+    if (compras.length) {
+      const ids = compras.map((c) => c.id);
+      const { data: its } = await supabase
+        .from("compra_itens")
+        .select("id,compra_id,descricao,unidade,quantidade,valor_unitario,valor_total")
+        .in("compra_id", ids);
+      setItens((its ?? []) as Item[]);
+    } else {
+      setItens([]);
+    }
   };
 
   useEffect(() => { void carregar(); }, [obraId]);
@@ -121,6 +152,32 @@ function ComprasPage() {
     navigate({ to: "/app/obras/$obraId/compras/$compraId", params: { obraId, compraId: data!.id } });
   };
 
+  const excluirCompra = async (c: Compra) => {
+    // remove dependências e a compra
+    const { error: e1 } = await supabase.from("compra_parcelas").delete().eq("compra_id", c.id);
+    if (e1) return toast.error("Erro ao remover parcelas", { description: e1.message });
+    // medições e seus itens
+    const { data: meds } = await supabase.from("medicoes").select("id").eq("compra_id", c.id);
+    if (meds?.length) {
+      const mids = meds.map((m: any) => m.id);
+      await supabase.from("medicao_itens").delete().in("medicao_id", mids);
+      await supabase.from("medicoes").delete().in("id", mids);
+    }
+    // recebimentos e itens de recebimento
+    const { data: recs } = await supabase.from("recebimentos").select("id").eq("compra_id", c.id);
+    if (recs?.length) {
+      const rids = recs.map((r: any) => r.id);
+      await supabase.from("recebimento_itens").delete().in("recebimento_id", rids);
+      await supabase.from("recebimentos").delete().in("id", rids);
+    }
+    await supabase.from("compra_itens").delete().eq("compra_id", c.id);
+    await supabase.from("compra_notas_fiscais").delete().eq("compra_id", c.id);
+    const { error } = await supabase.from("compras").delete().eq("id", c.id);
+    if (error) return toast.error("Erro", { description: error.message });
+    toast.success("Compra excluída");
+    void carregar();
+  };
+
   const cadastrarFornecedor = async (e: FormEvent) => {
     e.preventDefault();
     if (!novoForn.nome.trim()) return toast.error("Informe o nome do fornecedor");
@@ -145,11 +202,27 @@ function ComprasPage() {
     setNovoFornOpen(false);
   };
 
+  // ===== Árvore Etapa → Subetapa → Compra → Itens =====
+  const tree = useMemo(() => {
+    const semEtapa: Compra[] = [];
+    const byEtapa = new Map<string, Compra[]>();
+    for (const c of items) {
+      if (!c.etapa_id) { semEtapa.push(c); continue; }
+      const list = byEtapa.get(c.etapa_id) ?? [];
+      list.push(c);
+      byEtapa.set(c.etapa_id, list);
+    }
+    return { byEtapa, semEtapa };
+  }, [items]);
+
+  const totalGeral = items.reduce((s, c) => s + Number(c.valor_total), 0);
+  const itensDaCompra = (cid: string) => itens.filter((i) => i.compra_id === cid);
+
   return (
     <div>
       <PageHeader
         title="Compras"
-        description="Pedidos de compra desta obra"
+        description="Árvore: Etapa › Subetapa › Compra › Itens"
         actions={
           <div className="flex gap-2">
             <Button asChild variant="ghost" size="sm">
@@ -251,47 +324,216 @@ function ComprasPage() {
         }
       />
       <div className="space-y-3 p-8">
+        <Card>
+          <CardContent className="flex items-center justify-between p-4">
+            <div>
+              <p className="text-xs text-muted-foreground">Total geral (compras)</p>
+              <p className="text-2xl font-bold tabular-nums">{brl(totalGeral)}</p>
+            </div>
+            <p className="text-xs text-muted-foreground">Árvore: Etapa → Subetapa → Compra → Itens</p>
+          </CardContent>
+        </Card>
+
         {items.length === 0 ? (
           <Card><CardContent className="p-8 text-center text-sm text-muted-foreground">
             Nenhuma compra registrada.
           </CardContent></Card>
-        ) : items.map((c) => {
-          const f = fornecedores.find((x) => x.id === c.fornecedor_id);
-          const et = etapas.find((x) => x.id === c.etapa_id);
-          const sb = subetapas.find((x) => x.id === c.subetapa_id);
-          return (
-            <Card key={c.id}>
-              <CardContent className="flex flex-wrap items-center justify-between gap-3 p-4">
-                <div className="flex items-center gap-3">
-                  <ShoppingCart className="h-5 w-5 text-primary" />
-                  <div>
-                    <p className="font-medium">
-                      {c.descricao || "Compra"} {c.numero && <span className="text-muted-foreground">#{c.numero}</span>}
-                    </p>
-                    <p className="text-xs text-muted-foreground">
-                      {new Date(c.data_compra).toLocaleDateString("pt-BR")} ·
-                      {f ? ` ${f.nome} · ` : " "}{formaLabels[c.forma_pagamento]} · {c.qtd_parcelas}x ·
-                      {" "}R$ {Number(c.valor_total).toLocaleString("pt-BR", { minimumFractionDigits: 2 })}
-                    </p>
-                    {(et || sb) && (
-                      <p className="text-xs text-muted-foreground">
-                        {et?.nome}{sb ? ` › ${sb.nome}` : ""}
-                      </p>
+        ) : (
+          <div className="space-y-2">
+            {etapas.map((et) => {
+              const compras = tree.byEtapa.get(et.id) ?? [];
+              if (compras.length === 0) return null;
+              const totalEt = compras.reduce((s, c) => s + Number(c.valor_total), 0);
+              const isOpenEt = expEtapa[et.id] ?? true;
+              const subsDessaEtapa = subetapas.filter((s) => s.etapa_id === et.id);
+              return (
+                <Card key={et.id}>
+                  <CardContent className="p-0">
+                    <button
+                      type="button"
+                      className="flex w-full items-center justify-between gap-3 p-4 hover:bg-accent/40"
+                      onClick={() => setExpEtapa({ ...expEtapa, [et.id]: !isOpenEt })}
+                    >
+                      <div className="flex items-center gap-2">
+                        {isOpenEt ? <ChevronDown className="h-4 w-4" /> : <ChevronRight className="h-4 w-4" />}
+                        <div className="text-left">
+                          <p className="text-xs text-muted-foreground">Etapa</p>
+                          <p className="font-semibold">{et.nome}</p>
+                        </div>
+                      </div>
+                      <div className="text-right">
+                        <p className="text-xs text-muted-foreground">Total</p>
+                        <p className="font-semibold tabular-nums">{brl(totalEt)}</p>
+                      </div>
+                    </button>
+
+                    {isOpenEt && (
+                      <div className="border-t">
+                        {subsDessaEtapa.map((sb) => {
+                          const cs = compras.filter((c) => c.subetapa_id === sb.id);
+                          if (cs.length === 0) return null;
+                          const totalSb = cs.reduce((s, c) => s + Number(c.valor_total), 0);
+                          const isOpenSb = expSub[sb.id] ?? true;
+                          return (
+                            <div key={sb.id} className="border-b last:border-b-0">
+                              <button
+                                type="button"
+                                className="flex w-full items-center justify-between gap-3 bg-muted/30 px-4 py-3 pl-10 hover:bg-accent/40"
+                                onClick={() => setExpSub({ ...expSub, [sb.id]: !isOpenSb })}
+                              >
+                                <div className="flex items-center gap-2">
+                                  {isOpenSb ? <ChevronDown className="h-4 w-4" /> : <ChevronRight className="h-4 w-4" />}
+                                  <div className="text-left">
+                                    <p className="text-[10px] uppercase tracking-wide text-muted-foreground">Subetapa</p>
+                                    <p className="text-sm font-medium">{sb.nome}</p>
+                                  </div>
+                                </div>
+                                <div className="text-right">
+                                  <p className="text-[10px] text-muted-foreground">Total</p>
+                                  <p className="text-sm font-semibold tabular-nums">{brl(totalSb)}</p>
+                                </div>
+                              </button>
+
+                              {isOpenSb && (
+                                <div className="divide-y">
+                                  {cs.map((c) => {
+                                    const f = fornecedores.find((x) => x.id === c.fornecedor_id);
+                                    const isOpenC = expCompra[c.id] ?? false;
+                                    const its = itensDaCompra(c.id);
+                                    return (
+                                      <div key={c.id} className="pl-16 pr-4 py-3">
+                                        <div className="flex flex-wrap items-center justify-between gap-3">
+                                          <button
+                                            type="button"
+                                            className="flex flex-1 items-center gap-3 text-left"
+                                            onClick={() => setExpCompra({ ...expCompra, [c.id]: !isOpenC })}
+                                          >
+                                            {isOpenC ? <ChevronDown className="h-4 w-4" /> : <ChevronRight className="h-4 w-4" />}
+                                            <ShoppingCart className="h-4 w-4 text-primary" />
+                                            <div className="min-w-0">
+                                              <p className="truncate text-sm font-medium">
+                                                {c.descricao || "Compra"}
+                                                {c.numero && <span className="ml-1 text-muted-foreground">#{c.numero}</span>}
+                                              </p>
+                                              <p className="truncate text-xs text-muted-foreground">
+                                                {new Date(c.data_compra).toLocaleDateString("pt-BR")}
+                                                {f ? ` · ${f.nome}` : ""} · {formaLabels[c.forma_pagamento]} · {c.qtd_parcelas}x
+                                              </p>
+                                            </div>
+                                          </button>
+                                          <div className="flex items-center gap-2">
+                                            <span className="text-sm font-semibold tabular-nums">{brl(Number(c.valor_total))}</span>
+                                            <Badge variant={c.status === "recebida" ? "default" : "secondary"}>{c.status}</Badge>
+                                            <Button asChild variant="outline" size="sm">
+                                              <Link to="/app/obras/$obraId/compras/$compraId" params={{ obraId, compraId: c.id }}>
+                                                <Eye className="mr-2 h-4 w-4" /> Abrir
+                                              </Link>
+                                            </Button>
+                                            <AlertDialog>
+                                              <AlertDialogTrigger asChild>
+                                                <Button variant="ghost" size="icon" title="Excluir compra">
+                                                  <Trash2 className="h-4 w-4 text-destructive" />
+                                                </Button>
+                                              </AlertDialogTrigger>
+                                              <AlertDialogContent>
+                                                <AlertDialogHeader>
+                                                  <AlertDialogTitle>Excluir compra?</AlertDialogTitle>
+                                                  <AlertDialogDescription>
+                                                    Esta ação remove a compra, seus itens, parcelas, recebimentos e medições. Não pode ser desfeita.
+                                                  </AlertDialogDescription>
+                                                </AlertDialogHeader>
+                                                <AlertDialogFooter>
+                                                  <AlertDialogCancel>Cancelar</AlertDialogCancel>
+                                                  <AlertDialogAction onClick={() => void excluirCompra(c)}>Excluir</AlertDialogAction>
+                                                </AlertDialogFooter>
+                                              </AlertDialogContent>
+                                            </AlertDialog>
+                                          </div>
+                                        </div>
+                                        {isOpenC && (
+                                          <div className="mt-2 ml-7 rounded-md border bg-muted/20 p-2">
+                                            {its.length === 0 ? (
+                                              <p className="text-xs text-muted-foreground">Sem itens nesta compra.</p>
+                                            ) : (
+                                              <div className="space-y-1">
+                                                {its.map((it) => (
+                                                  <div key={it.id} className="flex items-center justify-between text-xs">
+                                                    <span className="truncate">
+                                                      {it.descricao}
+                                                      <span className="ml-2 text-muted-foreground">
+                                                        {Number(it.quantidade)} {it.unidade ?? ""} × {brl(Number(it.valor_unitario))}
+                                                      </span>
+                                                    </span>
+                                                    <span className="font-medium tabular-nums">{brl(Number(it.valor_total))}</span>
+                                                  </div>
+                                                ))}
+                                              </div>
+                                            )}
+                                          </div>
+                                        )}
+                                      </div>
+                                    );
+                                  })}
+                                </div>
+                              )}
+                            </div>
+                          );
+                        })}
+                      </div>
                     )}
+                  </CardContent>
+                </Card>
+              );
+            })}
+
+            {tree.semEtapa.length > 0 && (
+              <Card>
+                <CardContent className="p-4">
+                  <p className="mb-2 text-sm font-semibold text-muted-foreground">Sem etapa vinculada</p>
+                  <div className="space-y-1">
+                    {tree.semEtapa.map((c) => {
+                      const f = fornecedores.find((x) => x.id === c.fornecedor_id);
+                      return (
+                        <div key={c.id} className="flex items-center justify-between gap-2 text-sm">
+                          <span className="truncate">
+                            {c.descricao || "Compra"}{f ? ` · ${f.nome}` : ""}
+                          </span>
+                          <div className="flex items-center gap-2">
+                            <span className="font-medium tabular-nums">{brl(Number(c.valor_total))}</span>
+                            <Button asChild variant="outline" size="sm">
+                              <Link to="/app/obras/$obraId/compras/$compraId" params={{ obraId, compraId: c.id }}>
+                                <Eye className="mr-2 h-4 w-4" /> Abrir
+                              </Link>
+                            </Button>
+                            <AlertDialog>
+                              <AlertDialogTrigger asChild>
+                                <Button variant="ghost" size="icon" title="Excluir compra">
+                                  <Trash2 className="h-4 w-4 text-destructive" />
+                                </Button>
+                              </AlertDialogTrigger>
+                              <AlertDialogContent>
+                                <AlertDialogHeader>
+                                  <AlertDialogTitle>Excluir compra?</AlertDialogTitle>
+                                  <AlertDialogDescription>
+                                    Esta ação remove a compra, seus itens, parcelas, recebimentos e medições. Não pode ser desfeita.
+                                  </AlertDialogDescription>
+                                </AlertDialogHeader>
+                                <AlertDialogFooter>
+                                  <AlertDialogCancel>Cancelar</AlertDialogCancel>
+                                  <AlertDialogAction onClick={() => void excluirCompra(c)}>Excluir</AlertDialogAction>
+                                </AlertDialogFooter>
+                              </AlertDialogContent>
+                            </AlertDialog>
+                          </div>
+                        </div>
+                      );
+                    })}
                   </div>
-                </div>
-                <div className="flex items-center gap-2">
-                  <Badge variant={c.status === "recebida" ? "default" : "secondary"}>{c.status}</Badge>
-                  <Button asChild variant="outline" size="sm">
-                    <Link to="/app/obras/$obraId/compras/$compraId" params={{ obraId, compraId: c.id }}>
-                      <Eye className="mr-2 h-4 w-4" /> Abrir
-                    </Link>
-                  </Button>
-                </div>
-              </CardContent>
-            </Card>
-          );
-        })}
+                </CardContent>
+              </Card>
+            )}
+          </div>
+        )}
       </div>
     </div>
   );
