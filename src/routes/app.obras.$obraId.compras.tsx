@@ -90,6 +90,63 @@ function ComprasPage() {
     etapa_id: "",
     subetapa_id: "",
   });
+  const [editing, setEditing] = useState<Compra | null>(null);
+  const [savingEdit, setSavingEdit] = useState(false);
+  const [editForm, setEditForm] = useState({
+    fornecedor_id: "",
+    descricao: "",
+    forma_pagamento: "dinheiro",
+    cartao_id: "",
+    qtd_parcelas: "1",
+    data_compra: new Date().toISOString().slice(0, 10),
+    etapa_id: "",
+    subetapa_id: "",
+  });
+
+  const abrirEdicao = (c: Compra) => {
+    setEditing(c);
+    setEditForm({
+      fornecedor_id: c.fornecedor_id ?? "",
+      descricao: c.descricao ?? "",
+      forma_pagamento: c.forma_pagamento,
+      cartao_id: c.cartao_id ?? "",
+      qtd_parcelas: String(c.qtd_parcelas),
+      data_compra: c.data_compra,
+      etapa_id: c.etapa_id ?? "",
+      subetapa_id: c.subetapa_id ?? "",
+    });
+  };
+
+  const salvarEdicao = async (e: FormEvent) => {
+    e.preventDefault();
+    if (!editing) return;
+    if (!editForm.etapa_id || !editForm.subetapa_id) {
+      return toast.error("Selecione a etapa e a subetapa do orçamento");
+    }
+    setSavingEdit(true);
+    const { error } = await supabase.from("compras").update({
+      fornecedor_id: editForm.fornecedor_id || null,
+      descricao: editForm.descricao || null,
+      forma_pagamento: editForm.forma_pagamento,
+      cartao_id: editForm.forma_pagamento === "cartao" ? (editForm.cartao_id || null) : null,
+      qtd_parcelas: Number(editForm.qtd_parcelas) || 1,
+      data_compra: editForm.data_compra,
+      etapa_id: editForm.etapa_id,
+      subetapa_id: editForm.subetapa_id,
+    }).eq("id", editing.id);
+    // propaga etapa/subetapa para todos os itens da compra
+    await supabase.from("compra_itens").update({
+      etapa_id: editForm.etapa_id,
+      subetapa_id: editForm.subetapa_id,
+    }).eq("compra_id", editing.id);
+    setSavingEdit(false);
+    if (error) return toast.error("Erro", { description: error.message });
+    toast.success("Compra atualizada");
+    setEditing(null);
+    void carregar();
+  };
+
+  const subsEdit = subetapas.filter((s) => s.etapa_id === editForm.etapa_id);
 
   const carregar = async () => {
     const [{ data: cs }, { data: fs }, { data: ks }, { data: es }, { data: ss }] = await Promise.all([
