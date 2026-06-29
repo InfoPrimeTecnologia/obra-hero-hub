@@ -1,6 +1,6 @@
 import { createFileRoute, Link, useNavigate } from "@tanstack/react-router";
 import { useEffect, useMemo, useState, type FormEvent } from "react";
-import { Plus, ArrowLeft, ShoppingCart, Eye, UserPlus, ChevronRight, ChevronDown, Trash2 } from "lucide-react";
+import { Plus, ArrowLeft, ShoppingCart, Eye, UserPlus, ChevronRight, ChevronDown, Trash2, Pencil } from "lucide-react";
 import { PageHeader } from "@/components/admin/PageHeader";
 import { Card, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
