@@ -1,6 +1,9 @@
 import { createFileRoute, Link, useNavigate } from "@tanstack/react-router";
 import { useEffect, useMemo, useState, type FormEvent } from "react";
-import { Plus, ArrowLeft, ShoppingCart, Eye, UserPlus, ChevronRight, ChevronDown, Trash2, Pencil } from "lucide-react";
+import {
+  Plus, ArrowLeft, ShoppingCart, Eye, UserPlus,
+  ChevronRight, ChevronDown, Trash2, Pencil, FolderPlus,
+} from "lucide-react";
 import { PageHeader } from "@/components/admin/PageHeader";
 import { Card, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
@@ -9,7 +12,7 @@ import { Label } from "@/components/ui/label";
 import { Badge } from "@/components/ui/badge";
 import { Textarea } from "@/components/ui/textarea";
 import {
-  Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger, DialogFooter,
+  Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter,
 } from "@/components/ui/dialog";
 import {
   AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent,
@@ -61,6 +64,18 @@ const formaLabels: Record<string, string> = {
 
 const brl = (n: number) => n.toLocaleString("pt-BR", { style: "currency", currency: "BRL" });
 
+const emptyForm = (etapaId = "", subetapaId = "") => ({
+  fornecedor_id: "",
+  descricao: "",
+  forma_pagamento: "dinheiro",
+  cartao_id: "",
+  qtd_parcelas: "1",
+  data_compra: new Date().toISOString().slice(0, 10),
+  data_primeira_parcela: new Date().toISOString().slice(0, 10),
+  etapa_id: etapaId,
+  subetapa_id: subetapaId,
+});
+
 function ComprasPage() {
   const { obraId } = Route.useParams();
   const { user } = useAuth();
@@ -71,49 +86,42 @@ function ComprasPage() {
   const [cartoes, setCartoes] = useState<Cartao[]>([]);
   const [etapas, setEtapas] = useState<Etapa[]>([]);
   const [subetapas, setSubetapas] = useState<Subetapa[]>([]);
+  const [customerId, setCustomerId] = useState<string | null>(null);
   const [open, setOpen] = useState(false);
   const [saving, setSaving] = useState(false);
+
   const [novoFornOpen, setNovoFornOpen] = useState(false);
   const [savingForn, setSavingForn] = useState(false);
   const [novoForn, setNovoForn] = useState({ nome: "", cpf_cnpj: "", telefone: "", email: "" });
+
+  const [novaSubOpen, setNovaSubOpen] = useState<null | { etapa_id: string; etapaNome: string }>(null);
+  const [novaSub, setNovaSub] = useState({ nome: "", tipo: "material", valor_orcado: "0" });
+  const [savingSub, setSavingSub] = useState(false);
+
   const [expEtapa, setExpEtapa] = useState<Record<string, boolean>>({});
   const [expSub, setExpSub] = useState<Record<string, boolean>>({});
   const [expCompra, setExpCompra] = useState<Record<string, boolean>>({});
-  const [form, setForm] = useState({
-    fornecedor_id: "",
-    descricao: "",
-    forma_pagamento: "dinheiro",
-    cartao_id: "",
-    qtd_parcelas: "1",
-    data_compra: new Date().toISOString().slice(0, 10),
-    data_primeira_parcela: new Date().toISOString().slice(0, 10),
-    etapa_id: "",
-    subetapa_id: "",
-  });
+  const [form, setForm] = useState(emptyForm());
+
   const [editing, setEditing] = useState<Compra | null>(null);
   const [savingEdit, setSavingEdit] = useState(false);
-  const [editForm, setEditForm] = useState({
-    fornecedor_id: "",
-    descricao: "",
-    forma_pagamento: "dinheiro",
-    cartao_id: "",
-    qtd_parcelas: "1",
-    data_compra: new Date().toISOString().slice(0, 10),
-    etapa_id: "",
-    subetapa_id: "",
-  });
+  const [editForm, setEditForm] = useState(emptyForm());
+
+  const abrirNovaCompra = (etapaId: string, subetapaId: string) => {
+    setForm(emptyForm(etapaId, subetapaId));
+    setOpen(true);
+  };
 
   const abrirEdicao = (c: Compra) => {
     setEditing(c);
     setEditForm({
+      ...emptyForm(c.etapa_id ?? "", c.subetapa_id ?? ""),
       fornecedor_id: c.fornecedor_id ?? "",
       descricao: c.descricao ?? "",
       forma_pagamento: c.forma_pagamento,
       cartao_id: c.cartao_id ?? "",
       qtd_parcelas: String(c.qtd_parcelas),
       data_compra: c.data_compra,
-      etapa_id: c.etapa_id ?? "",
-      subetapa_id: c.subetapa_id ?? "",
     });
   };
 
@@ -134,7 +142,6 @@ function ComprasPage() {
       etapa_id: editForm.etapa_id,
       subetapa_id: editForm.subetapa_id,
     }).eq("id", editing.id);
-    // propaga etapa/subetapa para todos os itens da compra
     await supabase.from("compra_itens").update({
       etapa_id: editForm.etapa_id,
       subetapa_id: editForm.subetapa_id,
@@ -147,22 +154,24 @@ function ComprasPage() {
   };
 
   const subsEdit = subetapas.filter((s) => s.etapa_id === editForm.etapa_id);
+  const subsDoForm = subetapas.filter((s) => s.etapa_id === form.etapa_id);
 
   const carregar = async () => {
-    const [{ data: cs }, { data: fs }, { data: ks }, { data: es }, { data: ss }] = await Promise.all([
+    const [{ data: cust }, { data: cs }, { data: fs }, { data: ks }, { data: es }, { data: ss }] = await Promise.all([
+      supabase.from("customers").select("id").eq("owner_user_id", user!.id).maybeSingle(),
       supabase.from("compras").select("*").eq("obra_id", obraId).order("data_compra", { ascending: false }),
       supabase.from("fornecedores").select("id,nome").eq("ativo", true).order("nome"),
       supabase.from("cartoes").select("id,nome").eq("ativo", true).order("nome"),
       supabase.from("orcamento_etapas").select("id,nome,ordem").eq("obra_id", obraId).order("ordem"),
       supabase.from("orcamento_subetapas").select("id,etapa_id,nome,ordem").order("ordem"),
     ]);
+    setCustomerId(cust?.id ?? null);
     const compras = (cs ?? []) as Compra[];
     setItems(compras);
     setFornecedores((fs ?? []) as Fornecedor[]);
     setCartoes((ks ?? []) as Cartao[]);
     setEtapas((es ?? []) as Etapa[]);
     setSubetapas((ss ?? []) as Subetapa[]);
-    // buscar itens das compras
     if (compras.length) {
       const ids = compras.map((c) => c.id);
       const { data: its } = await supabase
@@ -177,19 +186,15 @@ function ComprasPage() {
 
   useEffect(() => { void carregar(); }, [obraId]);
 
-  const subsDoForm = subetapas.filter((s) => s.etapa_id === form.etapa_id);
-
   const criar = async (e: FormEvent) => {
     e.preventDefault();
     if (!form.etapa_id || !form.subetapa_id) {
       return toast.error("Selecione a etapa e a subetapa do orçamento");
     }
     setSaving(true);
-    const { data: customer } = await supabase
-      .from("customers").select("id").eq("owner_user_id", user!.id).maybeSingle();
-    if (!customer) { setSaving(false); return toast.error("Conta não identificada"); }
+    if (!customerId) { setSaving(false); return toast.error("Conta não identificada"); }
     const { data, error } = await supabase.from("compras").insert({
-      customer_id: customer.id,
+      customer_id: customerId,
       obra_id: obraId,
       fornecedor_id: form.fornecedor_id || null,
       descricao: form.descricao || null,
@@ -204,23 +209,20 @@ function ComprasPage() {
     }).select("id").single();
     setSaving(false);
     if (error) return toast.error("Erro", { description: error.message });
-    toast.success("Compra criada. Adicione itens.");
+    toast.success("Compra criada. Adicione os itens.");
     setOpen(false);
     navigate({ to: "/app/obras/$obraId/compras/$compraId", params: { obraId, compraId: data!.id } });
   };
 
   const excluirCompra = async (c: Compra) => {
-    // remove dependências e a compra
     const { error: e1 } = await supabase.from("compra_parcelas").delete().eq("compra_id", c.id);
     if (e1) return toast.error("Erro ao remover parcelas", { description: e1.message });
-    // medições e seus itens
     const { data: meds } = await supabase.from("medicoes").select("id").eq("compra_id", c.id);
     if (meds?.length) {
       const mids = meds.map((m: any) => m.id);
       await supabase.from("medicao_itens").delete().in("medicao_id", mids);
       await supabase.from("medicoes").delete().in("id", mids);
     }
-    // recebimentos e itens de recebimento
     const { data: recs } = await supabase.from("recebimentos").select("id").eq("compra_id", c.id);
     if (recs?.length) {
       const rids = recs.map((r: any) => r.id);
@@ -239,11 +241,9 @@ function ComprasPage() {
     e.preventDefault();
     if (!novoForn.nome.trim()) return toast.error("Informe o nome do fornecedor");
     setSavingForn(true);
-    const { data: customer } = await supabase
-      .from("customers").select("id").eq("owner_user_id", user!.id).maybeSingle();
-    if (!customer) { setSavingForn(false); return toast.error("Conta não identificada"); }
+    if (!customerId) { setSavingForn(false); return toast.error("Conta não identificada"); }
     const { data, error } = await supabase.from("fornecedores").insert({
-      customer_id: customer.id,
+      customer_id: customerId,
       created_by: user!.id,
       nome: novoForn.nome.trim(),
       cpf_cnpj: novoForn.cpf_cnpj || null,
@@ -259,7 +259,38 @@ function ComprasPage() {
     setNovoFornOpen(false);
   };
 
-  // ===== Árvore Etapa → Subetapa → Compra → Itens =====
+  const abrirNovaSubetapa = (etapa_id: string, etapaNome: string) => {
+    setNovaSub({ nome: "", tipo: "material", valor_orcado: "0" });
+    setNovaSubOpen({ etapa_id, etapaNome });
+  };
+
+  const criarSubetapa = async (e: FormEvent) => {
+    e.preventDefault();
+    if (!novaSubOpen) return;
+    if (!novaSub.nome.trim()) return toast.error("Informe o nome da subetapa");
+    if (!customerId) return toast.error("Conta não identificada");
+    setSavingSub(true);
+    const ordem = (subetapas.filter((s) => s.etapa_id === novaSubOpen.etapa_id)
+      .reduce((m, s) => Math.max(m, s.ordem), 0)) + 1;
+    const { data, error } = await supabase.from("orcamento_subetapas").insert({
+      customer_id: customerId,
+      created_by: user!.id,
+      etapa_id: novaSubOpen.etapa_id,
+      nome: novaSub.nome.trim(),
+      tipo: novaSub.tipo,
+      valor_orcado: Number(novaSub.valor_orcado) || 0,
+      ordem,
+    }).select("id,etapa_id,nome,ordem").single();
+    setSavingSub(false);
+    if (error) return toast.error("Erro", { description: error.message });
+    toast.success("Subetapa criada");
+    setSubetapas((prev) => [...prev, data as Subetapa]);
+    setExpEtapa((p) => ({ ...p, [novaSubOpen.etapa_id]: true }));
+    setExpSub((p) => ({ ...p, [(data as Subetapa).id]: true }));
+    setNovaSubOpen(null);
+  };
+
+  // ===== Tree =====
   const tree = useMemo(() => {
     const semEtapa: Compra[] = [];
     const byEtapa = new Map<string, Compra[]>();
@@ -279,105 +310,11 @@ function ComprasPage() {
     <div>
       <PageHeader
         title="Compras"
-        description="Árvore: Etapa › Subetapa › Compra › Itens"
+        description="Lance compras dentro de cada subetapa do orçamento"
         actions={
-          <div className="flex gap-2">
-            <Button asChild variant="ghost" size="sm">
-              <Link to="/app/obras"><ArrowLeft className="mr-2 h-4 w-4" /> Voltar</Link>
-            </Button>
-            <Dialog open={open} onOpenChange={setOpen}>
-              <DialogTrigger asChild>
-                <Button><Plus className="mr-2 h-4 w-4" /> Nova compra</Button>
-              </DialogTrigger>
-              <DialogContent>
-                <DialogHeader><DialogTitle>Nova compra</DialogTitle></DialogHeader>
-                <form onSubmit={criar} className="space-y-3">
-                  <div className="space-y-2"><Label>Fornecedor</Label>
-                    <div className="flex gap-2">
-                      <Select value={form.fornecedor_id} onValueChange={(v) => setForm({ ...form, fornecedor_id: v })}>
-                        <SelectTrigger className="flex-1"><SelectValue placeholder={fornecedores.length ? "Selecione (opcional)" : "Nenhum cadastrado"} /></SelectTrigger>
-                        <SelectContent>{fornecedores.map((f) => <SelectItem key={f.id} value={f.id}>{f.nome}</SelectItem>)}</SelectContent>
-                      </Select>
-                      <Button type="button" variant="outline" size="sm" onClick={() => setNovoFornOpen(true)}>
-                        <UserPlus className="mr-2 h-4 w-4" /> Novo
-                      </Button>
-                    </div>
-                  </div>
-                  <div className="space-y-2"><Label>Descrição</Label>
-                    <Textarea rows={2} value={form.descricao} onChange={(e) => setForm({ ...form, descricao: e.target.value })} /></div>
-                  <div className="grid grid-cols-2 gap-3">
-                    <div className="space-y-2"><Label>Etapa do orçamento *</Label>
-                      <Select value={form.etapa_id} onValueChange={(v) => setForm({ ...form, etapa_id: v, subetapa_id: "" })}>
-                        <SelectTrigger><SelectValue placeholder={etapas.length ? "Selecione" : "Cadastre no orçamento"} /></SelectTrigger>
-                        <SelectContent>{etapas.map((e) => <SelectItem key={e.id} value={e.id}>{e.nome}</SelectItem>)}</SelectContent>
-                      </Select>
-                    </div>
-                    <div className="space-y-2"><Label>Subetapa *</Label>
-                      <Select value={form.subetapa_id} onValueChange={(v) => setForm({ ...form, subetapa_id: v })} disabled={!form.etapa_id}>
-                        <SelectTrigger><SelectValue placeholder={form.etapa_id ? (subsDoForm.length ? "Selecione" : "Sem subetapas") : "Escolha a etapa"} /></SelectTrigger>
-                        <SelectContent>{subsDoForm.map((s) => <SelectItem key={s.id} value={s.id}>{s.nome}</SelectItem>)}</SelectContent>
-                      </Select>
-                    </div>
-                  </div>
-                  <div className="grid grid-cols-2 gap-3">
-                    <div className="space-y-2"><Label>Forma de pagamento *</Label>
-                      <Select value={form.forma_pagamento} onValueChange={(v) => setForm({ ...form, forma_pagamento: v })}>
-                        <SelectTrigger><SelectValue /></SelectTrigger>
-                        <SelectContent>
-                          {Object.entries(formaLabels).map(([k, v]) => <SelectItem key={k} value={k}>{v}</SelectItem>)}
-                        </SelectContent>
-                      </Select>
-                    </div>
-                    <div className="space-y-2"><Label>Parcelas *</Label>
-                      <Input type="number" min={1} required value={form.qtd_parcelas}
-                        onChange={(e) => setForm({ ...form, qtd_parcelas: e.target.value })} />
-                    </div>
-                  </div>
-                  {form.forma_pagamento === "cartao" && (
-                    <div className="space-y-2"><Label>Cartão *</Label>
-                      <Select value={form.cartao_id} onValueChange={(v) => setForm({ ...form, cartao_id: v })}>
-                        <SelectTrigger><SelectValue placeholder="Selecione" /></SelectTrigger>
-                        <SelectContent>{cartoes.map((c) => <SelectItem key={c.id} value={c.id}>{c.nome}</SelectItem>)}</SelectContent>
-                      </Select>
-                    </div>
-                  )}
-                  <div className="grid grid-cols-2 gap-3">
-                    <div className="space-y-2"><Label>Data da compra *</Label>
-                      <Input type="date" required value={form.data_compra}
-                        onChange={(e) => setForm({ ...form, data_compra: e.target.value })} /></div>
-                    <div className="space-y-2"><Label>1ª parcela *</Label>
-                      <Input type="date" required value={form.data_primeira_parcela}
-                        onChange={(e) => setForm({ ...form, data_primeira_parcela: e.target.value })} /></div>
-                  </div>
-                  <DialogFooter><Button type="submit" disabled={saving}>{saving ? "Salvando..." : "Criar"}</Button></DialogFooter>
-                </form>
-              </DialogContent>
-            </Dialog>
-            <Dialog open={novoFornOpen} onOpenChange={setNovoFornOpen}>
-              <DialogContent>
-                <DialogHeader><DialogTitle>Cadastrar fornecedor</DialogTitle></DialogHeader>
-                <form onSubmit={cadastrarFornecedor} className="space-y-3">
-                  <div className="space-y-2"><Label>Nome *</Label>
-                    <Input required value={novoForn.nome}
-                      onChange={(e) => setNovoForn({ ...novoForn, nome: e.target.value })} /></div>
-                  <div className="grid grid-cols-2 gap-3">
-                    <div className="space-y-2"><Label>CPF/CNPJ</Label>
-                      <Input value={novoForn.cpf_cnpj}
-                        onChange={(e) => setNovoForn({ ...novoForn, cpf_cnpj: e.target.value })} /></div>
-                    <div className="space-y-2"><Label>Telefone</Label>
-                      <Input value={novoForn.telefone}
-                        onChange={(e) => setNovoForn({ ...novoForn, telefone: e.target.value })} /></div>
-                  </div>
-                  <div className="space-y-2"><Label>E-mail</Label>
-                    <Input type="email" value={novoForn.email}
-                      onChange={(e) => setNovoForn({ ...novoForn, email: e.target.value })} /></div>
-                  <DialogFooter>
-                    <Button type="submit" disabled={savingForn}>{savingForn ? "Salvando..." : "Salvar"}</Button>
-                  </DialogFooter>
-                </form>
-              </DialogContent>
-            </Dialog>
-          </div>
+          <Button asChild variant="ghost" size="sm">
+            <Link to="/app/obras"><ArrowLeft className="mr-2 h-4 w-4" /> Voltar</Link>
+          </Button>
         }
       />
       <div className="space-y-3 p-8">
@@ -387,73 +324,101 @@ function ComprasPage() {
               <p className="text-xs text-muted-foreground">Total geral (compras)</p>
               <p className="text-2xl font-bold tabular-nums">{brl(totalGeral)}</p>
             </div>
-            <p className="text-xs text-muted-foreground">Árvore: Etapa → Subetapa → Compra → Itens</p>
+            <p className="text-xs text-muted-foreground">Árvore: Etapa › Subetapa › Compra › Itens</p>
           </CardContent>
         </Card>
 
-        {items.length === 0 ? (
-          <Card><CardContent className="p-8 text-center text-sm text-muted-foreground">
-            Nenhuma compra registrada.
-          </CardContent></Card>
+        {etapas.length === 0 ? (
+          <Card>
+            <CardContent className="p-8 text-center text-sm text-muted-foreground">
+              Esta obra ainda não tem orçamento.{" "}
+              <Link to="/app/obras/$obraId/orcamento" params={{ obraId }} className="text-primary underline">
+                Cadastre as etapas do orçamento
+              </Link>{" "}
+              para começar a lançar compras.
+            </CardContent>
+          </Card>
         ) : (
           <div className="space-y-2">
             {etapas.map((et) => {
-              const compras = tree.byEtapa.get(et.id) ?? [];
-              if (compras.length === 0) return null;
-              const totalEt = compras.reduce((s, c) => s + Number(c.valor_total), 0);
-              const isOpenEt = expEtapa[et.id] ?? true;
               const subsDessaEtapa = subetapas.filter((s) => s.etapa_id === et.id);
+              const comprasDaEtapa = tree.byEtapa.get(et.id) ?? [];
+              const totalEt = comprasDaEtapa.reduce((s, c) => s + Number(c.valor_total), 0);
+              const isOpenEt = expEtapa[et.id] ?? true;
               return (
                 <Card key={et.id}>
                   <CardContent className="p-0">
-                    <button
-                      type="button"
-                      className="flex w-full items-center justify-between gap-3 p-4 hover:bg-accent/40"
-                      onClick={() => setExpEtapa({ ...expEtapa, [et.id]: !isOpenEt })}
-                    >
-                      <div className="flex items-center gap-2">
-                        {isOpenEt ? <ChevronDown className="h-4 w-4" /> : <ChevronRight className="h-4 w-4" />}
-                        <div className="text-left">
-                          <p className="text-xs text-muted-foreground">Etapa</p>
-                          <p className="font-semibold">{et.nome}</p>
+                    <div className="flex items-stretch">
+                      <button
+                        type="button"
+                        className="flex flex-1 items-center justify-between gap-3 p-4 text-left hover:bg-accent/40"
+                        onClick={() => setExpEtapa({ ...expEtapa, [et.id]: !isOpenEt })}
+                      >
+                        <div className="flex items-center gap-2">
+                          {isOpenEt ? <ChevronDown className="h-4 w-4" /> : <ChevronRight className="h-4 w-4" />}
+                          <div>
+                            <p className="text-xs text-muted-foreground">Etapa</p>
+                            <p className="font-semibold">{et.nome}</p>
+                          </div>
                         </div>
+                        <div className="text-right">
+                          <p className="text-xs text-muted-foreground">Total compras</p>
+                          <p className="font-semibold tabular-nums">{brl(totalEt)}</p>
+                        </div>
+                      </button>
+                      <div className="flex items-center pr-4">
+                        <Button variant="outline" size="sm" onClick={() => abrirNovaSubetapa(et.id, et.nome)}>
+                          <FolderPlus className="mr-2 h-4 w-4" /> Nova subetapa
+                        </Button>
                       </div>
-                      <div className="text-right">
-                        <p className="text-xs text-muted-foreground">Total</p>
-                        <p className="font-semibold tabular-nums">{brl(totalEt)}</p>
-                      </div>
-                    </button>
+                    </div>
 
                     {isOpenEt && (
                       <div className="border-t">
-                        {subsDessaEtapa.map((sb) => {
-                          const cs = compras.filter((c) => c.subetapa_id === sb.id);
-                          if (cs.length === 0) return null;
+                        {subsDessaEtapa.length === 0 ? (
+                          <p className="px-10 py-3 text-xs text-muted-foreground">
+                            Nenhuma subetapa nesta etapa. Use "Nova subetapa".
+                          </p>
+                        ) : subsDessaEtapa.map((sb) => {
+                          const cs = comprasDaEtapa.filter((c) => c.subetapa_id === sb.id);
                           const totalSb = cs.reduce((s, c) => s + Number(c.valor_total), 0);
                           const isOpenSb = expSub[sb.id] ?? true;
                           return (
                             <div key={sb.id} className="border-b last:border-b-0">
-                              <button
-                                type="button"
-                                className="flex w-full items-center justify-between gap-3 bg-muted/30 px-4 py-3 pl-10 hover:bg-accent/40"
-                                onClick={() => setExpSub({ ...expSub, [sb.id]: !isOpenSb })}
-                              >
-                                <div className="flex items-center gap-2">
-                                  {isOpenSb ? <ChevronDown className="h-4 w-4" /> : <ChevronRight className="h-4 w-4" />}
-                                  <div className="text-left">
-                                    <p className="text-[10px] uppercase tracking-wide text-muted-foreground">Subetapa</p>
-                                    <p className="text-sm font-medium">{sb.nome}</p>
+                              <div className="flex items-stretch bg-muted/30">
+                                <button
+                                  type="button"
+                                  className="flex flex-1 items-center justify-between gap-3 px-4 py-3 pl-10 text-left hover:bg-accent/40"
+                                  onClick={() => setExpSub({ ...expSub, [sb.id]: !isOpenSb })}
+                                >
+                                  <div className="flex items-center gap-2">
+                                    {isOpenSb ? <ChevronDown className="h-4 w-4" /> : <ChevronRight className="h-4 w-4" />}
+                                    <div>
+                                      <p className="text-[10px] uppercase tracking-wide text-muted-foreground">Subetapa</p>
+                                      <p className="text-sm font-medium">{sb.nome}</p>
+                                    </div>
                                   </div>
+                                  <div className="text-right">
+                                    <p className="text-[10px] text-muted-foreground">
+                                      {cs.length} {cs.length === 1 ? "compra" : "compras"}
+                                    </p>
+                                    <p className="text-sm font-semibold tabular-nums">{brl(totalSb)}</p>
+                                  </div>
+                                </button>
+                                <div className="flex items-center pr-4">
+                                  <Button size="sm" onClick={() => abrirNovaCompra(et.id, sb.id)}>
+                                    <Plus className="mr-2 h-4 w-4" /> Nova compra
+                                  </Button>
                                 </div>
-                                <div className="text-right">
-                                  <p className="text-[10px] text-muted-foreground">Total</p>
-                                  <p className="text-sm font-semibold tabular-nums">{brl(totalSb)}</p>
-                                </div>
-                              </button>
+                              </div>
 
                               {isOpenSb && (
                                 <div className="divide-y">
-                                  {cs.map((c) => {
+                                  {cs.length === 0 ? (
+                                    <p className="px-16 py-3 text-xs text-muted-foreground">
+                                      Nenhuma compra nesta subetapa.
+                                    </p>
+                                  ) : cs.map((c) => {
                                     const f = fornecedores.find((x) => x.id === c.fornecedor_id);
                                     const isOpenC = expCompra[c.id] ?? false;
                                     const its = itensDaCompra(c.id);
@@ -481,17 +446,22 @@ function ComprasPage() {
                                           <div className="flex items-center gap-2">
                                             <span className="text-sm font-semibold tabular-nums">{brl(Number(c.valor_total))}</span>
                                             <Badge variant={c.status === "recebida" ? "default" : "secondary"}>{c.status}</Badge>
-                                            <Button asChild variant="outline" size="sm">
-                                              <Link to="/app/obras/$obraId/compras/$compraId" params={{ obraId, compraId: c.id }}>
-                                                <Eye className="mr-2 h-4 w-4" /> Abrir
-                                              </Link>
+                                            <Button
+                                              variant="outline"
+                                              size="sm"
+                                              onClick={() => navigate({
+                                                to: "/app/obras/$obraId/compras/$compraId",
+                                                params: { obraId, compraId: c.id },
+                                              })}
+                                            >
+                                              <Eye className="mr-2 h-4 w-4" /> Abrir
                                             </Button>
-                                            <Button variant="ghost" size="icon" title="Editar compra" onClick={() => abrirEdicao(c)}>
+                                            <Button variant="ghost" size="icon" title="Editar" onClick={() => abrirEdicao(c)}>
                                               <Pencil className="h-4 w-4" />
                                             </Button>
                                             <AlertDialog>
                                               <AlertDialogTrigger asChild>
-                                                <Button variant="ghost" size="icon" title="Excluir compra">
+                                                <Button variant="ghost" size="icon" title="Excluir">
                                                   <Trash2 className="h-4 w-4 text-destructive" />
                                                 </Button>
                                               </AlertDialogTrigger>
@@ -549,7 +519,7 @@ function ComprasPage() {
             {tree.semEtapa.length > 0 && (
               <Card>
                 <CardContent className="p-4">
-                  <p className="mb-2 text-sm font-semibold text-muted-foreground">Sem etapa vinculada</p>
+                  <p className="mb-2 text-sm font-semibold text-muted-foreground">Sem etapa vinculada (legado)</p>
                   <div className="space-y-1">
                     {tree.semEtapa.map((c) => {
                       const f = fornecedores.find((x) => x.id === c.fornecedor_id);
@@ -560,17 +530,22 @@ function ComprasPage() {
                           </span>
                           <div className="flex items-center gap-2">
                             <span className="font-medium tabular-nums">{brl(Number(c.valor_total))}</span>
-                            <Button asChild variant="outline" size="sm">
-                              <Link to="/app/obras/$obraId/compras/$compraId" params={{ obraId, compraId: c.id }}>
-                                <Eye className="mr-2 h-4 w-4" /> Abrir
-                              </Link>
+                            <Button
+                              variant="outline"
+                              size="sm"
+                              onClick={() => navigate({
+                                to: "/app/obras/$obraId/compras/$compraId",
+                                params: { obraId, compraId: c.id },
+                              })}
+                            >
+                              <Eye className="mr-2 h-4 w-4" /> Abrir
                             </Button>
-                            <Button variant="ghost" size="icon" title="Editar compra" onClick={() => abrirEdicao(c)}>
+                            <Button variant="ghost" size="icon" title="Editar" onClick={() => abrirEdicao(c)}>
                               <Pencil className="h-4 w-4" />
                             </Button>
                             <AlertDialog>
                               <AlertDialogTrigger asChild>
-                                <Button variant="ghost" size="icon" title="Excluir compra">
+                                <Button variant="ghost" size="icon" title="Excluir">
                                   <Trash2 className="h-4 w-4 text-destructive" />
                                 </Button>
                               </AlertDialogTrigger>
@@ -599,6 +574,160 @@ function ComprasPage() {
         )}
       </div>
 
+      {/* Nova compra (inline a partir da subetapa) */}
+      <Dialog open={open} onOpenChange={setOpen}>
+        <DialogContent>
+          <DialogHeader>
+            <DialogTitle>Nova compra</DialogTitle>
+            <p className="text-xs text-muted-foreground">
+              {etapas.find((e) => e.id === form.etapa_id)?.nome}
+              {" › "}
+              {subetapas.find((s) => s.id === form.subetapa_id)?.nome}
+            </p>
+          </DialogHeader>
+          <form onSubmit={criar} className="space-y-3">
+            <div className="space-y-2"><Label>Fornecedor</Label>
+              <div className="flex gap-2">
+                <Select value={form.fornecedor_id} onValueChange={(v) => setForm({ ...form, fornecedor_id: v })}>
+                  <SelectTrigger className="flex-1"><SelectValue placeholder={fornecedores.length ? "Selecione (opcional)" : "Nenhum cadastrado"} /></SelectTrigger>
+                  <SelectContent>{fornecedores.map((f) => <SelectItem key={f.id} value={f.id}>{f.nome}</SelectItem>)}</SelectContent>
+                </Select>
+                <Button type="button" variant="outline" size="sm" onClick={() => setNovoFornOpen(true)}>
+                  <UserPlus className="mr-2 h-4 w-4" /> Novo
+                </Button>
+              </div>
+            </div>
+            <div className="space-y-2"><Label>Descrição</Label>
+              <Textarea rows={2} value={form.descricao} onChange={(e) => setForm({ ...form, descricao: e.target.value })} /></div>
+
+            {/* Permite trocar subetapa caso o usuário tenha errado, e oferece criar nova */}
+            <div className="grid grid-cols-2 gap-3">
+              <div className="space-y-2"><Label>Etapa *</Label>
+                <Select value={form.etapa_id} onValueChange={(v) => setForm({ ...form, etapa_id: v, subetapa_id: "" })}>
+                  <SelectTrigger><SelectValue /></SelectTrigger>
+                  <SelectContent>{etapas.map((e) => <SelectItem key={e.id} value={e.id}>{e.nome}</SelectItem>)}</SelectContent>
+                </Select>
+              </div>
+              <div className="space-y-2">
+                <div className="flex items-center justify-between">
+                  <Label>Subetapa *</Label>
+                  {form.etapa_id && (
+                    <button
+                      type="button"
+                      className="text-xs text-primary hover:underline"
+                      onClick={() => {
+                        const et = etapas.find((e) => e.id === form.etapa_id);
+                        if (et) abrirNovaSubetapa(et.id, et.nome);
+                      }}
+                    >
+                      + Nova subetapa
+                    </button>
+                  )}
+                </div>
+                <Select value={form.subetapa_id} onValueChange={(v) => setForm({ ...form, subetapa_id: v })} disabled={!form.etapa_id}>
+                  <SelectTrigger><SelectValue placeholder={form.etapa_id ? (subsDoForm.length ? "Selecione" : "Sem subetapas") : "Escolha a etapa"} /></SelectTrigger>
+                  <SelectContent>{subsDoForm.map((s) => <SelectItem key={s.id} value={s.id}>{s.nome}</SelectItem>)}</SelectContent>
+                </Select>
+              </div>
+            </div>
+
+            <div className="grid grid-cols-2 gap-3">
+              <div className="space-y-2"><Label>Forma de pagamento *</Label>
+                <Select value={form.forma_pagamento} onValueChange={(v) => setForm({ ...form, forma_pagamento: v })}>
+                  <SelectTrigger><SelectValue /></SelectTrigger>
+                  <SelectContent>
+                    {Object.entries(formaLabels).map(([k, v]) => <SelectItem key={k} value={k}>{v}</SelectItem>)}
+                  </SelectContent>
+                </Select>
+              </div>
+              <div className="space-y-2"><Label>Parcelas *</Label>
+                <Input type="number" min={1} required value={form.qtd_parcelas}
+                  onChange={(e) => setForm({ ...form, qtd_parcelas: e.target.value })} />
+              </div>
+            </div>
+            {form.forma_pagamento === "cartao" && (
+              <div className="space-y-2"><Label>Cartão *</Label>
+                <Select value={form.cartao_id} onValueChange={(v) => setForm({ ...form, cartao_id: v })}>
+                  <SelectTrigger><SelectValue placeholder="Selecione" /></SelectTrigger>
+                  <SelectContent>{cartoes.map((c) => <SelectItem key={c.id} value={c.id}>{c.nome}</SelectItem>)}</SelectContent>
+                </Select>
+              </div>
+            )}
+            <div className="grid grid-cols-2 gap-3">
+              <div className="space-y-2"><Label>Data da compra *</Label>
+                <Input type="date" required value={form.data_compra}
+                  onChange={(e) => setForm({ ...form, data_compra: e.target.value })} /></div>
+              <div className="space-y-2"><Label>1ª parcela *</Label>
+                <Input type="date" required value={form.data_primeira_parcela}
+                  onChange={(e) => setForm({ ...form, data_primeira_parcela: e.target.value })} /></div>
+            </div>
+            <DialogFooter><Button type="submit" disabled={saving}>{saving ? "Salvando..." : "Criar"}</Button></DialogFooter>
+          </form>
+        </DialogContent>
+      </Dialog>
+
+      {/* Cadastrar fornecedor */}
+      <Dialog open={novoFornOpen} onOpenChange={setNovoFornOpen}>
+        <DialogContent>
+          <DialogHeader><DialogTitle>Cadastrar fornecedor</DialogTitle></DialogHeader>
+          <form onSubmit={cadastrarFornecedor} className="space-y-3">
+            <div className="space-y-2"><Label>Nome *</Label>
+              <Input required value={novoForn.nome}
+                onChange={(e) => setNovoForn({ ...novoForn, nome: e.target.value })} /></div>
+            <div className="grid grid-cols-2 gap-3">
+              <div className="space-y-2"><Label>CPF/CNPJ</Label>
+                <Input value={novoForn.cpf_cnpj}
+                  onChange={(e) => setNovoForn({ ...novoForn, cpf_cnpj: e.target.value })} /></div>
+              <div className="space-y-2"><Label>Telefone</Label>
+                <Input value={novoForn.telefone}
+                  onChange={(e) => setNovoForn({ ...novoForn, telefone: e.target.value })} /></div>
+            </div>
+            <div className="space-y-2"><Label>E-mail</Label>
+              <Input type="email" value={novoForn.email}
+                onChange={(e) => setNovoForn({ ...novoForn, email: e.target.value })} /></div>
+            <DialogFooter>
+              <Button type="submit" disabled={savingForn}>{savingForn ? "Salvando..." : "Salvar"}</Button>
+            </DialogFooter>
+          </form>
+        </DialogContent>
+      </Dialog>
+
+      {/* Cadastrar subetapa nova */}
+      <Dialog open={!!novaSubOpen} onOpenChange={(v) => !v && setNovaSubOpen(null)}>
+        <DialogContent>
+          <DialogHeader>
+            <DialogTitle>Nova subetapa</DialogTitle>
+            <p className="text-xs text-muted-foreground">Etapa: {novaSubOpen?.etapaNome}</p>
+          </DialogHeader>
+          <form onSubmit={criarSubetapa} className="space-y-3">
+            <div className="space-y-2"><Label>Nome *</Label>
+              <Input required value={novaSub.nome}
+                onChange={(e) => setNovaSub({ ...novaSub, nome: e.target.value })} /></div>
+            <div className="grid grid-cols-2 gap-3">
+              <div className="space-y-2"><Label>Tipo</Label>
+                <Select value={novaSub.tipo} onValueChange={(v) => setNovaSub({ ...novaSub, tipo: v })}>
+                  <SelectTrigger><SelectValue /></SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="material">Material</SelectItem>
+                    <SelectItem value="servico">Serviço</SelectItem>
+                    <SelectItem value="mao_obra">Mão de obra</SelectItem>
+                    <SelectItem value="outro">Outro</SelectItem>
+                  </SelectContent>
+                </Select>
+              </div>
+              <div className="space-y-2"><Label>Valor orçado (R$)</Label>
+                <Input type="number" step="0.01" min={0} value={novaSub.valor_orcado}
+                  onChange={(e) => setNovaSub({ ...novaSub, valor_orcado: e.target.value })} />
+              </div>
+            </div>
+            <DialogFooter>
+              <Button type="submit" disabled={savingSub}>{savingSub ? "Salvando..." : "Salvar"}</Button>
+            </DialogFooter>
+          </form>
+        </DialogContent>
+      </Dialog>
+
+      {/* Editar compra */}
       <Dialog open={!!editing} onOpenChange={(v) => !v && setEditing(null)}>
         <DialogContent>
           <DialogHeader><DialogTitle>Editar compra</DialogTitle></DialogHeader>
@@ -612,7 +741,7 @@ function ComprasPage() {
             <div className="space-y-2"><Label>Descrição</Label>
               <Textarea rows={2} value={editForm.descricao} onChange={(e) => setEditForm({ ...editForm, descricao: e.target.value })} /></div>
             <div className="grid grid-cols-2 gap-3">
-              <div className="space-y-2"><Label>Etapa do orçamento *</Label>
+              <div className="space-y-2"><Label>Etapa *</Label>
                 <Select value={editForm.etapa_id} onValueChange={(v) => setEditForm({ ...editForm, etapa_id: v, subetapa_id: "" })}>
                   <SelectTrigger><SelectValue placeholder="Selecione" /></SelectTrigger>
                   <SelectContent>{etapas.map((e) => <SelectItem key={e.id} value={e.id}>{e.nome}</SelectItem>)}</SelectContent>
