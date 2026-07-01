@@ -57,8 +57,7 @@ function PortalError({ error }: { error: Error }) {
 }
 
 function PortalPage() {
-  const { token } = Route.useParams();
-  const { data } = useSuspenseQuery(portalQuery(token));
+  const data = Route.useLoaderData();
 
   if (!data?.obra) return <PortalNotFound />;
 
