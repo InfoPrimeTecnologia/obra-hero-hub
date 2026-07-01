@@ -246,6 +246,14 @@ function MedicoesPage() {
                         <Button
                           variant="ghost"
                           size="sm"
+                          onClick={() => { void exportMedicaoPdf(m.id).catch((e) => toast.error(e.message ?? "Erro ao gerar PDF")); }}
+                          title="Exportar PDF"
+                        >
+                          <FileDown className="h-4 w-4" />
+                        </Button>
+                        <Button
+                          variant="ghost"
+                          size="sm"
                           onClick={() => excluir(m.id)}
                           className="text-destructive"
                         >
