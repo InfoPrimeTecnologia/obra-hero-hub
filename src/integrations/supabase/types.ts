@@ -2096,6 +2096,59 @@ export type Database = {
         }
         Relationships: []
       }
+      obra_documentos: {
+        Row: {
+          created_at: string
+          customer_id: string
+          descricao: string | null
+          file_path: string
+          file_size: number | null
+          id: string
+          mime_type: string | null
+          nome: string
+          obra_id: string
+          tags: string[]
+          updated_at: string
+          uploaded_by: string | null
+        }
+        Insert: {
+          created_at?: string
+          customer_id: string
+          descricao?: string | null
+          file_path: string
+          file_size?: number | null
+          id?: string
+          mime_type?: string | null
+          nome: string
+          obra_id: string
+          tags?: string[]
+          updated_at?: string
+          uploaded_by?: string | null
+        }
+        Update: {
+          created_at?: string
+          customer_id?: string
+          descricao?: string | null
+          file_path?: string
+          file_size?: number | null
+          id?: string
+          mime_type?: string | null
+          nome?: string
+          obra_id?: string
+          tags?: string[]
+          updated_at?: string
+          uploaded_by?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "obra_documentos_obra_id_fkey"
+            columns: ["obra_id"]
+            isOneToOne: false
+            referencedRelation: "obras"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       obras: {
         Row: {
           address_city: string | null
