@@ -156,6 +156,32 @@ export function useNotifications() {
       });
     }
 
+    // Compras pendentes de aprovação (para quem pode aprovar)
+    const [{ data: owned }, { data: memberOf }] = await Promise.all([
+      supabase.from("customers").select("id").eq("owner_user_id", user.id).maybeSingle(),
+      supabase.from("customer_members").select("customer_id,pode_aprovar_compras").eq("user_id", user.id).eq("status", "ativo").maybeSingle(),
+    ]);
+    const isApprover = !!owned || !!memberOf?.pode_aprovar_compras;
+    if (isApprover) {
+      const { data: pend } = await supabase
+        .from("compras")
+        .select("id,descricao,valor_total,obra_id,data_compra")
+        .eq("aprovacao_status", "pendente")
+        .order("data_compra", { ascending: false })
+        .limit(20);
+      (pend ?? []).forEach((c: any) => {
+        out.push({
+          id: `apr-${c.id}`,
+          type: "compra_pendente_aprovacao",
+          title: "Compra pendente de aprovação",
+          description: `${c.descricao ?? "Compra"} — R$ ${Number(c.valor_total).toLocaleString("pt-BR", { minimumFractionDigits: 2 })}`,
+          href: `/app/obras/${c.obra_id}/compras`,
+          severity: "warning",
+          date: c.data_compra,
+        });
+      });
+    }
+
     setItems(out);
     setLoading(false);
   };
