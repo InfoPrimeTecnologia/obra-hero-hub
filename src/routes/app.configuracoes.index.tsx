@@ -31,6 +31,7 @@ type Empresa = {
   address_state?: string | null;
   address_zip?: string | null;
   notes?: string | null;
+  limite_aprovacao_compra?: number | null;
 };
 
 function ConfiguracoesPage() {
