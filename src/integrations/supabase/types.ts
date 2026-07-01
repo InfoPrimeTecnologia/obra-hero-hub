@@ -1247,6 +1247,7 @@ export type Database = {
           address_state: string | null
           address_street: string | null
           address_zip: string | null
+          alerta_subetapa_pct: number
           asaas_customer_id: string | null
           company_name: string | null
           cpf_cnpj: string | null
@@ -1272,6 +1273,7 @@ export type Database = {
           address_state?: string | null
           address_street?: string | null
           address_zip?: string | null
+          alerta_subetapa_pct?: number
           asaas_customer_id?: string | null
           company_name?: string | null
           cpf_cnpj?: string | null
@@ -1297,6 +1299,7 @@ export type Database = {
           address_state?: string | null
           address_street?: string | null
           address_zip?: string | null
+          alerta_subetapa_pct?: number
           asaas_customer_id?: string | null
           company_name?: string | null
           cpf_cnpj?: string | null
