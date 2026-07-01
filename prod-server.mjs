@@ -44,7 +44,7 @@ function serveFile(res, filePath, statusCode = 200) {
 }
 
 async function loadWorkerHandler() {
-  const candidates = ['./dist/server/server.js', './dist/server/index.js'];
+  const candidates = ['./dist/server/index.mjs', './dist/server/server.js', './dist/server/index.js'];
 
   for (const candidate of candidates) {
     const absolutePath = join(__dirname, candidate);
