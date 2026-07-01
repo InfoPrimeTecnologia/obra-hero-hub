@@ -1,13 +1,26 @@
 import http from 'node:http';
 import { existsSync, readFileSync } from 'node:fs';
-import { dirname, join, extname } from 'node:path';
-import { fileURLToPath } from 'node:url';
+import { dirname, join, extname, resolve } from 'node:path';
+import { fileURLToPath, pathToFileURL } from 'node:url';
 import { config as loadEnv } from 'dotenv';
 
 const __dirname = dirname(fileURLToPath(import.meta.url));
 
 loadEnv({ path: join(__dirname, '.env') });
 loadEnv({ path: join(__dirname, '.env.production.local'), override: true });
+
+const CLIENT_DIR_CANDIDATES = [
+  join(__dirname, 'dist/client'),
+  join(__dirname, '.output/public'),
+  join(__dirname, 'dist/public'),
+];
+
+const FALLBACK_SERVER_ENTRY_CANDIDATES = [
+  join(__dirname, 'dist/server/index.mjs'),
+  join(__dirname, 'dist/server/server.js'),
+  join(__dirname, 'dist/server/index.js'),
+  join(__dirname, '.output/server/index.mjs'),
+];
 
 const MIME_TYPES = {
   '.html': 'text/html',
@@ -43,21 +56,71 @@ function serveFile(res, filePath, statusCode = 200) {
   }
 }
 
-async function loadWorkerHandler() {
-  const candidates = ['./dist/server/index.mjs', './dist/server/server.js', './dist/server/index.js'];
+function getClientDir() {
+  return CLIENT_DIR_CANDIDATES.find((path) => existsSync(path)) || CLIENT_DIR_CANDIDATES[0];
+}
 
-  for (const candidate of candidates) {
-    const absolutePath = join(__dirname, candidate);
-    if (!existsSync(absolutePath)) continue;
+function getWorkerEnv() {
+  return {
+    SUPABASE_URL: process.env.SUPABASE_URL,
+    SUPABASE_PUBLISHABLE_KEY: process.env.SUPABASE_PUBLISHABLE_KEY,
+    SUPABASE_SERVICE_ROLE_KEY: process.env.SUPABASE_SERVICE_ROLE_KEY,
+    ASAAS_API_KEY: process.env.ASAAS_API_KEY,
+    ASAAS_ENV: process.env.ASAAS_ENV,
+    ASAAS_WEBHOOK_TOKEN: process.env.ASAAS_WEBHOOK_TOKEN,
+    APP_URL: process.env.APP_URL,
+    CRON_SECRET: process.env.CRON_SECRET,
+    SEND_EMAIL_HOOK_SECRET: process.env.SEND_EMAIL_HOOK_SECRET,
+    RESEND_API_KEY: process.env.RESEND_API_KEY,
+    PRIMESYNC_TOKEN: process.env.PRIMESYNC_TOKEN,
+    PRIMESYNC_URL: process.env.PRIMESYNC_URL,
+  };
+}
+
+function getWorkerContext() {
+  return {
+    waitUntil: () => {},
+    passThroughOnException: () => {},
+  };
+}
+
+function getServerEntryCandidates() {
+  const candidates = [];
+
+  for (const manifestPath of [join(__dirname, 'dist/nitro.json'), join(__dirname, '.output/nitro.json')]) {
+    if (!existsSync(manifestPath)) continue;
 
     try {
-      const workerModule = await import(candidate);
-      const workerHandler = workerModule.default?.fetch;
+      const manifest = JSON.parse(readFileSync(manifestPath, 'utf8'));
+      if (manifest.serverEntry) {
+        candidates.push(resolve(dirname(manifestPath), manifest.serverEntry));
+      }
+    } catch (e) {
+      console.warn(`Could not read ${manifestPath}:`, e.message);
+    }
+  }
+
+  candidates.push(...FALLBACK_SERVER_ENTRY_CANDIDATES);
+  return [...new Set(candidates)];
+}
+
+async function loadWorkerHandler() {
+  const candidates = getServerEntryCandidates();
+
+  for (const candidate of candidates) {
+    if (!existsSync(candidate)) continue;
+
+    try {
+      const workerModule = await import(pathToFileURL(candidate).href);
+      const workerHandler = typeof workerModule.default === 'function'
+        ? workerModule.default
+        : workerModule.default?.fetch?.bind(workerModule.default) || workerModule.fetch;
+
       if (typeof workerHandler === 'function') {
         console.log(`Worker handler loaded successfully from ${candidate}`);
         return workerHandler;
       }
-      console.warn(`Worker default.fetch is not a function in ${candidate}`);
+      console.warn(`Worker fetch handler is not a function in ${candidate}`);
     } catch (e) {
       console.warn(`Could not load worker handler from ${candidate}:`, e.message);
     }
@@ -69,6 +132,7 @@ async function loadWorkerHandler() {
 
 async function startServer() {
   const workerHandler = await loadWorkerHandler();
+  const clientDir = getClientDir();
 
   const server = http.createServer(async (req, res) => {
     res.setHeader('Access-Control-Allow-Origin', '*');
@@ -103,28 +167,11 @@ async function startServer() {
           body: req.method !== 'GET' && req.method !== 'HEAD' ? body : undefined,
         });
 
-        const response = await workerHandler(request, {
-          waitUntil: () => {},
-          passThroughOnException: () => {},
-          env: {
-            SUPABASE_URL: process.env.SUPABASE_URL,
-            SUPABASE_PUBLISHABLE_KEY: process.env.SUPABASE_PUBLISHABLE_KEY,
-            SUPABASE_SERVICE_ROLE_KEY: process.env.SUPABASE_SERVICE_ROLE_KEY,
-            ASAAS_API_KEY: process.env.ASAAS_API_KEY,
-            ASAAS_ENV: process.env.ASAAS_ENV,
-            ASAAS_WEBHOOK_TOKEN: process.env.ASAAS_WEBHOOK_TOKEN,
-            APP_URL: process.env.APP_URL,
-            CRON_SECRET: process.env.CRON_SECRET,
-            SEND_EMAIL_HOOK_SECRET: process.env.SEND_EMAIL_HOOK_SECRET,
-            RESEND_API_KEY: process.env.RESEND_API_KEY,
-            PRIMESYNC_TOKEN: process.env.PRIMESYNC_TOKEN,
-            PRIMESYNC_URL: process.env.PRIMESYNC_URL,
-          },
-        });
+        const response = await workerHandler(request, getWorkerEnv(), getWorkerContext());
 
         // SPA fallback: se worker retornar 404 para uma pagina, serve index.html
         if (response.status === 404 && !isStaticAsset) {
-          const indexPath = join(__dirname, 'dist/client/index.html');
+          const indexPath = join(clientDir, 'index.html');
           if (serveFile(res, indexPath, 200)) return;
         }
 
@@ -145,13 +192,13 @@ async function startServer() {
 
     // 2. Static file serving
     const urlPath = url.pathname === '/' ? '/index.html' : url.pathname;
-    const filePath = join(__dirname, 'dist/client', urlPath.split('?')[0]);
+    const filePath = join(clientDir, urlPath.split('?')[0]);
 
     if (serveFile(res, filePath)) return;
 
     // 3. SPA fallback: if HTML page not found, serve index.html for client-side routing
     if (!isStaticAsset) {
-      const indexPath = join(__dirname, 'dist/client/index.html');
+      const indexPath = join(clientDir, 'index.html');
       if (serveFile(res, indexPath, 200)) return;
     }
 
