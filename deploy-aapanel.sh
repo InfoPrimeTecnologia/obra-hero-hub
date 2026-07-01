@@ -34,7 +34,9 @@ echo "[3/5] Build de producao..."
 $BUILD_CMD
 
 echo "[4/5] Preparando entrypoint do PM2..."
-cp prod-server.mjs server.js
+# Remove server.js legado no root — Nitro o interpreta como rota e quebra o build
+rm -f server.js
+cp prod-server.mjs pm2-server.mjs
 
 echo "[5/5] Gerando index.html para SPA fallback..."
 node --input-type=module -e "
