@@ -1,6 +1,9 @@
 import { createFileRoute } from "@tanstack/react-router";
 import { useEffect, useMemo, useState } from "react";
-import { ListTree, TrendingUp } from "lucide-react";
+import { ListTree, TrendingUp, FileDown } from "lucide-react";
+import { Button } from "@/components/ui/button";
+import { exportOrcadoRealizadoPdf } from "@/lib/pdf-reports";
+import { toast } from "sonner";
 import {
   LineChart,
   Line,
