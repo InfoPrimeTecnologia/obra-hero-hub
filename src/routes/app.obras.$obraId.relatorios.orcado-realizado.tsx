@@ -148,6 +148,11 @@ function RelOrcadoReal() {
       <PageHeader
         title="Orçado x Realizado"
         description="Compare o orçamento com as compras lançadas na obra"
+        actions={
+          <Button variant="outline" onClick={() => { void exportOrcadoRealizadoPdf(obraId).catch((e) => toast.error(e.message ?? "Erro ao gerar PDF")); }}>
+            <FileDown className="mr-2 h-4 w-4" /> Exportar PDF
+          </Button>
+        }
       />
       <div className="space-y-4 p-8">
         <div className="grid gap-3 md:grid-cols-3">
