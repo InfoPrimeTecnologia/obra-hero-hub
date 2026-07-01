@@ -101,6 +101,11 @@ function ObrasPage() {
   const [obraParaExcluir, setObraParaExcluir] = useState<Obra | null>(null);
   const [confirmName, setConfirmName] = useState("");
   const [excluindo, setExcluindo] = useState(false);
+  const [obraParaDuplicar, setObraParaDuplicar] = useState<Obra | null>(null);
+  const [duplicandoNome, setDuplicandoNome] = useState("");
+  const [duplicandoIncPlan, setDuplicandoIncPlan] = useState(false);
+  const [duplicando, setDuplicando] = useState(false);
+  const runDuplicate = useServerFn(duplicateObra);
   const [open, setOpen] = useState(false);
   const [saving, setSaving] = useState(false);
 
@@ -249,6 +254,31 @@ function ObrasPage() {
     toast.success("Obra excluída");
     setObraParaExcluir(null);
     void carregar();
+  };
+
+  const duplicarObraConfirmar = async () => {
+    if (!obraParaDuplicar) return;
+    setDuplicando(true);
+    try {
+      const res = await runDuplicate({
+        data: {
+          sourceObraId: obraParaDuplicar.id,
+          newName: duplicandoNome.trim() || `${obraParaDuplicar.name} (cópia)`,
+          includePlanejamento: duplicandoIncPlan,
+        },
+      });
+      toast.success("Obra duplicada", {
+        description: `${res.etapasCount} etapas e ${res.subetapasCount} subetapas copiadas`,
+      });
+      setObraParaDuplicar(null);
+      setDuplicandoNome("");
+      setDuplicandoIncPlan(false);
+      void carregar();
+    } catch (e: any) {
+      toast.error("Erro ao duplicar", { description: e?.message });
+    } finally {
+      setDuplicando(false);
+    }
   };
 
   const obrasFiltradas = obras.filter((o) => {
