@@ -42,6 +42,8 @@ type Compra = {
   cartao_id: string | null;
   etapa_id: string | null;
   subetapa_id: string | null;
+  aprovacao_status: "nao_requer" | "pendente" | "aprovada" | "rejeitada";
+  rejeicao_motivo: string | null;
 };
 type Item = {
   id: string;
