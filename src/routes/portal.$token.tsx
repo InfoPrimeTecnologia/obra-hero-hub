@@ -204,7 +204,7 @@ function PortalPage() {
                     )}
                     {rFotos.length > 0 && (
                       <div className="mt-3 grid grid-cols-2 gap-2 sm:grid-cols-4">
-                        {rFotos.slice(0, 8).map((f) => (
+                        {rFotos.slice(0, 8).map((f: any) => (
                           <a
                             key={f.id}
                             href={f.url}
