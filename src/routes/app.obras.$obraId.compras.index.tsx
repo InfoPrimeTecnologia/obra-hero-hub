@@ -297,11 +297,54 @@ function ComprasPage() {
       subetapa_id: form.subetapa_id,
       created_by: user!.id,
     }).select("id").single();
+    if (error) { setSaving(false); return toast.error("Erro", { description: error.message }); }
+    const compraId = data!.id;
+
+    // Se veio de NF importada: cria itens, upload do arquivo e registro em compra_notas_fiscais
+    if (parsedNf) {
+      if (parsedNf.itens.length > 0) {
+        const rows = parsedNf.itens.map((i: NfItem) => ({
+          customer_id: customerId,
+          compra_id: compraId,
+          etapa_id: form.etapa_id,
+          subetapa_id: form.subetapa_id,
+          descricao: i.descricao,
+          unidade: i.unidade ?? null,
+          quantidade: i.quantidade,
+          valor_unitario: i.valor_unitario,
+          valor_total: i.valor_total,
+        }));
+        const { error: eIt } = await supabase.from("compra_itens").insert(rows);
+        if (eIt) toast.error("Itens da NF não importados", { description: eIt.message });
+      }
+      let arquivoUrl: string | null = null;
+      if (nfFile) {
+        const bin = Uint8Array.from(atob(nfFile.base64), (c) => c.charCodeAt(0));
+        const path = `${customerId}/${compraId}/${Date.now()}-${nfFile.filename}`;
+        const { error: eUp } = await supabase.storage.from("notas-fiscais").upload(path, bin, {
+          contentType: nfFile.mimeType, upsert: false,
+        });
+        if (!eUp) arquivoUrl = path;
+      }
+      await supabase.from("compra_notas_fiscais").insert({
+        customer_id: customerId,
+        compra_id: compraId,
+        numero: parsedNf.numero,
+        serie: parsedNf.serie,
+        chave: parsedNf.chave,
+        valor: parsedNf.valor_total,
+        emitida_em: parsedNf.emissao,
+        arquivo_url: arquivoUrl,
+        arquivo_nome: nfFile?.filename ?? null,
+        created_by: user!.id,
+      });
+    }
+
     setSaving(false);
-    if (error) return toast.error("Erro", { description: error.message });
-    toast.success("Compra criada. Adicione os itens.");
+    toast.success(parsedNf ? "Compra criada com itens da NF" : "Compra criada. Adicione os itens.");
     setOpen(false);
-    navigate({ to: "/app/obras/$obraId/compras/$compraId", params: { obraId, compraId: data!.id } });
+    setParsedNf(null); setNfFile(null);
+    navigate({ to: "/app/obras/$obraId/compras/$compraId", params: { obraId, compraId } });
   };
 
   const excluirCompra = async (c: Compra) => {
