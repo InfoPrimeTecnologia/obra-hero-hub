@@ -12,9 +12,8 @@ export type Notification = {
   date?: string;
 };
 
-// Limite (%) de aviso de estouro de orçamento por subetapa.
-// TODO: mover para tabela de configurações da empresa.
-const BUDGET_ALERT_THRESHOLD = 0.85;
+// Fallback quando a empresa ainda não tem configuração.
+const DEFAULT_BUDGET_THRESHOLD_PCT = 90;
 
 function addDays(d: Date, n: number) {
   const r = new Date(d);
