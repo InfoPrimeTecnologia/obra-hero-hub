@@ -43,21 +43,32 @@ function serveFile(res, filePath, statusCode = 200) {
   }
 }
 
-async function startServer() {
-  let workerHandler = null;
-  try {
-    const workerModule = await import('./dist/server/server.js');
-    workerHandler = workerModule.default?.fetch;
-    if (typeof workerHandler !== 'function') {
-      console.warn('Worker default.fetch is not a function');
-      workerHandler = null;
-    } else {
-      console.log('Worker handler loaded successfully');
+async function loadWorkerHandler() {
+  const candidates = ['./dist/server/server.js', './dist/server/index.js'];
+
+  for (const candidate of candidates) {
+    const absolutePath = join(__dirname, candidate);
+    if (!existsSync(absolutePath)) continue;
+
+    try {
+      const workerModule = await import(candidate);
+      const workerHandler = workerModule.default?.fetch;
+      if (typeof workerHandler === 'function') {
+        console.log(`Worker handler loaded successfully from ${candidate}`);
+        return workerHandler;
+      }
+      console.warn(`Worker default.fetch is not a function in ${candidate}`);
+    } catch (e) {
+      console.warn(`Could not load worker handler from ${candidate}:`, e.message);
     }
-  } catch (e) {
-    console.warn('Could not load worker handler:', e.message);
-    console.warn('Falling back to static-only mode (SSR will not work)');
   }
+
+  console.warn('Falling back to static-only mode (SSR will not work)');
+  return null;
+}
+
+async function startServer() {
+  const workerHandler = await loadWorkerHandler();
 
   const server = http.createServer(async (req, res) => {
     res.setHeader('Access-Control-Allow-Origin', '*');

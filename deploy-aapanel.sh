@@ -24,26 +24,53 @@ fi
 echo "Gerenciador: $PKG_MGR"
 
 # Build
-echo "[1/4] Limpando..."
-rm -rf dist/
+echo "[1/5] Limpando..."
+rm -rf dist/ .vite node_modules/.vite .output
 
-echo "[2/4] Instalando dependencias..."
+echo "[2/5] Instalando dependencias..."
 $INSTALL_CMD
 
-echo "[3/4] Build de producao..."
+echo "[3/5] Build de producao..."
 $BUILD_CMD
 
-echo "[4/4] Gerando index.html para SPA fallback..."
-node -e "
-const m = await import('./dist/server/index.js');
-const handler = m.default.fetch;
-const req = new Request('http://localhost/');
-handler(req, { waitUntil: () => {}, passThroughOnException: () => {}, env: {} }).then(async res => {
-  const fs = require('fs');
-  const html = await res.text();
-  fs.writeFileSync('./dist/client/index.html', html);
-  console.log('index.html gerado (' + html.length + ' bytes)');
+echo "[4/5] Preparando entrypoint do PM2..."
+cp prod-server.mjs server.js
+
+echo "[5/5] Gerando index.html para SPA fallback..."
+node --input-type=module -e "
+import { existsSync, writeFileSync } from 'node:fs';
+
+const candidates = ['./dist/server/server.js', './dist/server/index.js'];
+const entry = candidates.find((path) => existsSync(path));
+if (!entry) throw new Error('Nenhum bundle de servidor encontrado em dist/server');
+
+const m = await import(entry);
+const handler = m.default?.fetch;
+if (typeof handler !== 'function') throw new Error('Bundle de servidor sem default.fetch');
+
+const req = new Request(process.env.APP_URL || 'http://localhost/');
+const res = await handler(req, {
+  waitUntil: () => {},
+  passThroughOnException: () => {},
+  env: {
+    SUPABASE_URL: process.env.SUPABASE_URL,
+    SUPABASE_PUBLISHABLE_KEY: process.env.SUPABASE_PUBLISHABLE_KEY,
+    SUPABASE_SERVICE_ROLE_KEY: process.env.SUPABASE_SERVICE_ROLE_KEY,
+    ASAAS_API_KEY: process.env.ASAAS_API_KEY,
+    ASAAS_ENV: process.env.ASAAS_ENV,
+    ASAAS_WEBHOOK_TOKEN: process.env.ASAAS_WEBHOOK_TOKEN,
+    APP_URL: process.env.APP_URL,
+    CRON_SECRET: process.env.CRON_SECRET,
+    SEND_EMAIL_HOOK_SECRET: process.env.SEND_EMAIL_HOOK_SECRET,
+    RESEND_API_KEY: process.env.RESEND_API_KEY,
+    PRIMESYNC_TOKEN: process.env.PRIMESYNC_TOKEN,
+    PRIMESYNC_URL: process.env.PRIMESYNC_URL,
+  },
 });
+
+const html = await res.text();
+writeFileSync('./dist/client/index.html', html);
+console.log('index.html gerado (' + html.length + ' bytes) usando ' + entry);
 " || echo "Aviso: index.html nao gerado automaticamente"
 
 if [ ! -d "dist" ]; then
