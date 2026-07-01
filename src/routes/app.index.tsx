@@ -69,13 +69,18 @@ type Kpis = {
   colaboradores: number;
   produtosBaixo: number;
   aPagar30: number;
+  aPagar7: number;
   aReceber30: number;
   vencidasPagar: number;
+  avancoFisicoMedio: number;
+  faturamentoPrevistoMes: number;
+  faturamentoRealizadoMes: number;
 };
 
 type FluxoPonto = { mes: string; pagar: number; receber: number };
 type RdoRecente = { id: string; data: string; obra: string };
 type AlertaConta = { id: string; descricao: string; vencimento: string; valor: number };
+type ObraEstourada = { id: string; nome: string; orcado: number; realizado: number; pct: number };
 
 function ClienteDashboard() {
   const { user } = useAuth();
@@ -90,9 +95,14 @@ function ClienteDashboard() {
     colaboradores: 0,
     produtosBaixo: 0,
     aPagar30: 0,
+    aPagar7: 0,
     aReceber30: 0,
     vencidasPagar: 0,
+    avancoFisicoMedio: 0,
+    faturamentoPrevistoMes: 0,
+    faturamentoRealizadoMes: 0,
   });
+  const [obrasEstouradas, setObrasEstouradas] = useState<ObraEstourada[]>([]);
   const [fluxo, setFluxo] = useState<FluxoPonto[]>([]);
   const [obrasStatus, setObrasStatus] = useState<{ name: string; value: number }[]>([]);
   const [rdosRecentes, setRdosRecentes] = useState<RdoRecente[]>([]);
