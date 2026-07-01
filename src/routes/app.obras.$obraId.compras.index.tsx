@@ -240,7 +240,7 @@ function ComprasPage() {
 
     const [{ data: cs }, { data: fs }, { data: ks }, { data: es }, { data: ss }] = await Promise.all([
       supabase.from("compras").select("*").eq("obra_id", obraId).order("data_compra", { ascending: false }),
-      supabase.from("fornecedores").select("id,nome").eq("ativo", true).order("nome"),
+      supabase.from("fornecedores").select("id,nome,cpf_cnpj").eq("ativo", true).order("nome"),
       supabase.from("cartoes").select("id,nome").eq("ativo", true).order("nome"),
       supabase.from("orcamento_etapas").select("id,nome,ordem").eq("obra_id", obraId).order("ordem"),
       supabase.from("orcamento_subetapas").select("id,etapa_id,nome,ordem").order("ordem"),
