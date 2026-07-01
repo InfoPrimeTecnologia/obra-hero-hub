@@ -3,7 +3,10 @@ import { useEffect, useMemo, useState, type FormEvent } from "react";
 import {
   Plus, ShoppingCart, Eye, UserPlus,
   ChevronRight, ChevronDown, Trash2, Pencil, FolderPlus,
+  FileUp, Loader2,
 } from "lucide-react";
+import { useServerFn } from "@tanstack/react-start";
+import { parseNotaFiscal, type NfParsed, type NfItem } from "@/lib/nota-fiscal.functions";
 import { PageHeader } from "@/components/admin/PageHeader";
 import { Card, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
