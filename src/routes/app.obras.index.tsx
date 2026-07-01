@@ -1,6 +1,9 @@
 import { createFileRoute, Link, useNavigate } from "@tanstack/react-router";
 import { useEffect, useRef, useState, type FormEvent } from "react";
-import { Plus, FolderOpen, CheckCircle2, ListTree, Building2, Camera, Loader2, ImageIcon, Archive, ArchiveRestore, Trash2 } from "lucide-react";
+import { Plus, FolderOpen, CheckCircle2, ListTree, Building2, Camera, Loader2, ImageIcon, Archive, ArchiveRestore, Trash2, Copy } from "lucide-react";
+import { useServerFn } from "@tanstack/react-start";
+import { duplicateObra } from "@/lib/obra-duplicate.functions";
+import { Checkbox } from "@/components/ui/checkbox";
 import {
   AlertDialog,
   AlertDialogAction,
@@ -98,6 +101,11 @@ function ObrasPage() {
   const [obraParaExcluir, setObraParaExcluir] = useState<Obra | null>(null);
   const [confirmName, setConfirmName] = useState("");
   const [excluindo, setExcluindo] = useState(false);
+  const [obraParaDuplicar, setObraParaDuplicar] = useState<Obra | null>(null);
+  const [duplicandoNome, setDuplicandoNome] = useState("");
+  const [duplicandoIncPlan, setDuplicandoIncPlan] = useState(false);
+  const [duplicando, setDuplicando] = useState(false);
+  const runDuplicate = useServerFn(duplicateObra);
   const [open, setOpen] = useState(false);
   const [saving, setSaving] = useState(false);
 
@@ -246,6 +254,31 @@ function ObrasPage() {
     toast.success("Obra excluída");
     setObraParaExcluir(null);
     void carregar();
+  };
+
+  const duplicarObraConfirmar = async () => {
+    if (!obraParaDuplicar) return;
+    setDuplicando(true);
+    try {
+      const res = await runDuplicate({
+        data: {
+          sourceObraId: obraParaDuplicar.id,
+          newName: duplicandoNome.trim() || `${obraParaDuplicar.name} (cópia)`,
+          includePlanejamento: duplicandoIncPlan,
+        },
+      });
+      toast.success("Obra duplicada", {
+        description: `${res.etapasCount} etapas e ${res.subetapasCount} subetapas copiadas`,
+      });
+      setObraParaDuplicar(null);
+      setDuplicandoNome("");
+      setDuplicandoIncPlan(false);
+      void carregar();
+    } catch (e: any) {
+      toast.error("Erro ao duplicar", { description: e?.message });
+    } finally {
+      setDuplicando(false);
+    }
   };
 
   const obrasFiltradas = obras.filter((o) => {
@@ -471,6 +504,17 @@ function ObrasPage() {
                     <Button
                       variant="ghost"
                       size="sm"
+                      onClick={() => {
+                        setObraParaDuplicar(o);
+                        setDuplicandoNome(`${o.name} (cópia)`);
+                      }}
+                      title="Duplicar obra"
+                    >
+                      <Copy className="mr-2 h-4 w-4" /> Duplicar
+                    </Button>
+                    <Button
+                      variant="ghost"
+                      size="sm"
                       onClick={() => arquivarObra(o, !arquivada)}
                       title={arquivada ? "Reativar" : "Arquivar"}
                     >
@@ -545,6 +589,39 @@ function ObrasPage() {
           </AlertDialogFooter>
         </AlertDialogContent>
       </AlertDialog>
+
+      <Dialog open={!!obraParaDuplicar} onOpenChange={(o) => { if (!o) { setObraParaDuplicar(null); setDuplicandoNome(""); setDuplicandoIncPlan(false); } }}>
+        <DialogContent>
+          <DialogHeader>
+            <DialogTitle>Duplicar "{obraParaDuplicar?.name}"</DialogTitle>
+          </DialogHeader>
+          <div className="space-y-3">
+            <div className="space-y-2">
+              <Label>Nome da nova obra</Label>
+              <Input value={duplicandoNome} onChange={(e) => setDuplicandoNome(e.target.value)} disabled={duplicando} />
+            </div>
+            <label className="flex items-center gap-2 text-sm">
+              <Checkbox
+                checked={duplicandoIncPlan}
+                onCheckedChange={(v) => setDuplicandoIncPlan(v === true)}
+                disabled={duplicando}
+              />
+              Copiar também datas previstas e % de avanço das etapas
+            </label>
+            <p className="text-xs text-muted-foreground">
+              Serão copiados: dados cadastrais (endereço, contato), etapas e subetapas do orçamento
+              (com valores). Compras, RDOs, medições e financeiro <b>não</b> são copiados.
+            </p>
+          </div>
+          <DialogFooter>
+            <Button variant="ghost" onClick={() => setObraParaDuplicar(null)} disabled={duplicando}>Cancelar</Button>
+            <Button onClick={() => void duplicarObraConfirmar()} disabled={duplicando || !duplicandoNome.trim()}>
+              {duplicando ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : <Copy className="mr-2 h-4 w-4" />}
+              Duplicar
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
     </div>
   );
 }
