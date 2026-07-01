@@ -24,8 +24,8 @@ export const Route = createFileRoute("/portal/$token")({
       ],
     };
   },
-  loader: async ({ context, params }) => {
-    const data = await context.queryClient.ensureQueryData(portalQuery(params.token));
+  loader: async ({ params }) => {
+    const data = await getPortalData({ data: { token: params.token } });
     if (!data?.obra) throw notFound();
     return data;
   },
