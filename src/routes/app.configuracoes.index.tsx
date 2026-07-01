@@ -182,6 +182,28 @@ function ConfiguracoesPage() {
         <TabsContent value="preferencias" className="space-y-4">
           <Card>
             <CardHeader>
+              <CardTitle>Aprovação de compras</CardTitle>
+              <CardDescription>
+                Compras acima do limite abaixo ficam pendentes até que o dono ou um usuário
+                marcado como aprovador aprove. Use <b>0</b> para desativar o fluxo.
+              </CardDescription>
+            </CardHeader>
+            <CardContent className="grid gap-4 md:grid-cols-2">
+              <div className="space-y-2">
+                <Label>Limite de aprovação (R$)</Label>
+                <Input
+                  type="number"
+                  min={0}
+                  step="0.01"
+                  value={empresa.limite_aprovacao_compra ?? 0}
+                  onChange={(e) => set("limite_aprovacao_compra", e.target.value === "" ? 0 : Number(e.target.value))}
+                />
+              </div>
+            </CardContent>
+          </Card>
+
+          <Card>
+            <CardHeader>
               <CardTitle>Observações e preferências</CardTitle>
               <CardDescription>Notas internas da empresa</CardDescription>
             </CardHeader>
