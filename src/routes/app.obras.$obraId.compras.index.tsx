@@ -3,7 +3,10 @@ import { useEffect, useMemo, useState, type FormEvent } from "react";
 import {
   Plus, ShoppingCart, Eye, UserPlus,
   ChevronRight, ChevronDown, Trash2, Pencil, FolderPlus,
+  FileUp, Loader2,
 } from "lucide-react";
+import { useServerFn } from "@tanstack/react-start";
+import { parseNotaFiscal, type NfParsed, type NfItem } from "@/lib/nota-fiscal.functions";
 import { PageHeader } from "@/components/admin/PageHeader";
 import { Card, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
@@ -54,7 +57,7 @@ type Item = {
   valor_unitario: number;
   valor_total: number;
 };
-type Fornecedor = { id: string; nome: string };
+type Fornecedor = { id: string; nome: string; cpf_cnpj?: string | null };
 type Cartao = { id: string; nome: string };
 type Etapa = { id: string; nome: string; ordem: number };
 type Subetapa = { id: string; etapa_id: string; nome: string; ordem: number };
@@ -113,9 +116,63 @@ function ComprasPage() {
   const [savingEdit, setSavingEdit] = useState(false);
   const [editForm, setEditForm] = useState(emptyForm());
 
+  // ===== Importação de NF =====
+  const parseNf = useServerFn(parseNotaFiscal);
+  const [importing, setImporting] = useState(false);
+  const [parsedNf, setParsedNf] = useState<NfParsed | null>(null);
+  const [nfFile, setNfFile] = useState<{ base64: string; mimeType: string; filename: string } | null>(null);
+
   const abrirNovaCompra = (etapaId: string, subetapaId: string) => {
     setForm(emptyForm(etapaId, subetapaId));
+    setParsedNf(null);
+    setNfFile(null);
     setOpen(true);
+  };
+
+  const handleImportNf = async (file: File) => {
+    setImporting(true);
+    try {
+      const buf = await file.arrayBuffer();
+      let binary = "";
+      const bytes = new Uint8Array(buf);
+      for (let i = 0; i < bytes.length; i++) binary += String.fromCharCode(bytes[i]);
+      const base64 = btoa(binary);
+      const mimeType = file.type || (file.name.toLowerCase().endsWith(".xml") ? "application/xml" : "application/octet-stream");
+      const parsed = await parseNf({ data: { fileBase64: base64, mimeType, filename: file.name } });
+      setParsedNf(parsed);
+      setNfFile({ base64, mimeType, filename: file.name });
+
+      // Match/create fornecedor por CNPJ
+      let fornecedorId = form.fornecedor_id;
+      if (parsed.fornecedor.cnpj) {
+        const match = fornecedores.find((f) => (f.cpf_cnpj ?? "").replace(/\D/g, "") === parsed.fornecedor.cnpj);
+        if (match) {
+          fornecedorId = match.id;
+        } else if (customerId) {
+          const { data: novo } = await supabase.from("fornecedores").insert({
+            customer_id: customerId,
+            created_by: user!.id,
+            nome: parsed.fornecedor.nome,
+            cpf_cnpj: parsed.fornecedor.cnpj,
+          }).select("id,nome,cpf_cnpj").single();
+          if (novo) {
+            setFornecedores((prev) => [...prev, novo as Fornecedor].sort((a, b) => a.nome.localeCompare(b.nome)));
+            fornecedorId = (novo as any).id;
+          }
+        }
+      }
+      setForm((f) => ({
+        ...f,
+        fornecedor_id: fornecedorId,
+        descricao: `NF ${parsed.numero ?? ""}${parsed.serie ? "/" + parsed.serie : ""} — ${parsed.fornecedor.nome}`.trim(),
+        data_compra: parsed.emissao ?? f.data_compra,
+      }));
+      toast.success(`Nota lida (${parsed.itens.length} itens, ${parsed.fonte === "xml" ? "XML" : "OCR"})`);
+    } catch (e: any) {
+      toast.error("Falha ao ler nota", { description: e?.message ?? String(e) });
+    } finally {
+      setImporting(false);
+    }
   };
 
   const abrirEdicao = (c: Compra) => {
@@ -183,7 +240,7 @@ function ComprasPage() {
 
     const [{ data: cs }, { data: fs }, { data: ks }, { data: es }, { data: ss }] = await Promise.all([
       supabase.from("compras").select("*").eq("obra_id", obraId).order("data_compra", { ascending: false }),
-      supabase.from("fornecedores").select("id,nome").eq("ativo", true).order("nome"),
+      supabase.from("fornecedores").select("id,nome,cpf_cnpj").eq("ativo", true).order("nome"),
       supabase.from("cartoes").select("id,nome").eq("ativo", true).order("nome"),
       supabase.from("orcamento_etapas").select("id,nome,ordem").eq("obra_id", obraId).order("ordem"),
       supabase.from("orcamento_subetapas").select("id,etapa_id,nome,ordem").order("ordem"),
@@ -240,11 +297,54 @@ function ComprasPage() {
       subetapa_id: form.subetapa_id,
       created_by: user!.id,
     }).select("id").single();
+    if (error) { setSaving(false); return toast.error("Erro", { description: error.message }); }
+    const compraId = data!.id;
+
+    // Se veio de NF importada: cria itens, upload do arquivo e registro em compra_notas_fiscais
+    if (parsedNf) {
+      if (parsedNf.itens.length > 0) {
+        const rows = parsedNf.itens.map((i: NfItem) => ({
+          customer_id: customerId,
+          compra_id: compraId,
+          etapa_id: form.etapa_id,
+          subetapa_id: form.subetapa_id,
+          descricao: i.descricao,
+          unidade: i.unidade ?? null,
+          quantidade: i.quantidade,
+          valor_unitario: i.valor_unitario,
+          valor_total: i.valor_total,
+        }));
+        const { error: eIt } = await supabase.from("compra_itens").insert(rows);
+        if (eIt) toast.error("Itens da NF não importados", { description: eIt.message });
+      }
+      let arquivoUrl: string | null = null;
+      if (nfFile) {
+        const bin = Uint8Array.from(atob(nfFile.base64), (c) => c.charCodeAt(0));
+        const path = `${customerId}/${compraId}/${Date.now()}-${nfFile.filename}`;
+        const { error: eUp } = await supabase.storage.from("notas-fiscais").upload(path, bin, {
+          contentType: nfFile.mimeType, upsert: false,
+        });
+        if (!eUp) arquivoUrl = path;
+      }
+      await supabase.from("compra_notas_fiscais").insert({
+        customer_id: customerId,
+        compra_id: compraId,
+        numero: parsedNf.numero,
+        serie: parsedNf.serie,
+        chave: parsedNf.chave,
+        valor: parsedNf.valor_total,
+        emitida_em: parsedNf.emissao,
+        arquivo_url: arquivoUrl,
+        arquivo_nome: nfFile?.filename ?? null,
+        created_by: user!.id,
+      });
+    }
+
     setSaving(false);
-    if (error) return toast.error("Erro", { description: error.message });
-    toast.success("Compra criada. Adicione os itens.");
+    toast.success(parsedNf ? "Compra criada com itens da NF" : "Compra criada. Adicione os itens.");
     setOpen(false);
-    navigate({ to: "/app/obras/$obraId/compras/$compraId", params: { obraId, compraId: data!.id } });
+    setParsedNf(null); setNfFile(null);
+    navigate({ to: "/app/obras/$obraId/compras/$compraId", params: { obraId, compraId } });
   };
 
   const excluirCompra = async (c: Compra) => {
@@ -633,6 +733,41 @@ function ComprasPage() {
             </p>
           </DialogHeader>
           <form onSubmit={criar} className="space-y-3">
+            {/* Importar Nota Fiscal (XML / PDF / foto) */}
+            <div className="rounded-md border border-dashed border-border/70 bg-muted/30 p-3">
+              <div className="flex items-center justify-between gap-2">
+                <div className="text-sm">
+                  <p className="font-medium">Importar Nota Fiscal</p>
+                  <p className="text-xs text-muted-foreground">XML da NFe, PDF do DANFE ou foto — preenche fornecedor e itens.</p>
+                </div>
+                <label className="inline-flex items-center">
+                  <input
+                    type="file"
+                    accept=".xml,application/xml,text/xml,application/pdf,image/*"
+                    className="hidden"
+                    onChange={(e) => { const f = e.target.files?.[0]; if (f) void handleImportNf(f); e.target.value = ""; }}
+                  />
+                  <Button type="button" variant="outline" size="sm" disabled={importing} asChild>
+                    <span>
+                      {importing
+                        ? <><Loader2 className="mr-2 h-4 w-4 animate-spin" /> Lendo...</>
+                        : <><FileUp className="mr-2 h-4 w-4" /> Enviar arquivo</>}
+                    </span>
+                  </Button>
+                </label>
+              </div>
+              {parsedNf && (
+                <div className="mt-3 rounded bg-background/60 p-2 text-xs">
+                  <p><strong>{parsedNf.fornecedor.nome}</strong>{parsedNf.fornecedor.cnpj ? ` · CNPJ ${parsedNf.fornecedor.cnpj}` : ""}</p>
+                  <p className="text-muted-foreground">
+                    NF {parsedNf.numero ?? "—"}{parsedNf.serie ? "/" + parsedNf.serie : ""}
+                    {" · "}{parsedNf.emissao ?? "sem data"}
+                    {" · "}{parsedNf.itens.length} itens
+                    {" · "}R$ {Number(parsedNf.valor_total).toLocaleString("pt-BR", { minimumFractionDigits: 2 })}
+                  </p>
+                </div>
+              )}
+            </div>
             <div className="space-y-2"><Label>Fornecedor</Label>
               <div className="flex gap-2">
                 <Select value={form.fornecedor_id} onValueChange={(v) => setForm({ ...form, fornecedor_id: v })}>
