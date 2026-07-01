@@ -1,7 +1,7 @@
 import { createFileRoute, Link, useNavigate } from "@tanstack/react-router";
 import { useEffect, useMemo, useState, type FormEvent } from "react";
 import {
-  Plus, ArrowLeft, ShoppingCart, Eye, UserPlus,
+  Plus, ShoppingCart, Eye, UserPlus,
   ChevronRight, ChevronDown, Trash2, Pencil, FolderPlus,
 } from "lucide-react";
 import { PageHeader } from "@/components/admin/PageHeader";
@@ -344,11 +344,6 @@ function ComprasPage() {
       <PageHeader
         title="Compras"
         description="Lance compras dentro de cada subetapa do orçamento"
-        actions={
-          <Button asChild variant="ghost" size="sm">
-            <Link to="/app/obras"><ArrowLeft className="mr-2 h-4 w-4" /> Voltar</Link>
-          </Button>
-        }
       />
       <div className="space-y-3 p-8">
         <Card>
