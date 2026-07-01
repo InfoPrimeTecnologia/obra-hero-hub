@@ -479,6 +479,25 @@ function ComprasPage() {
                                           <div className="flex items-center gap-2">
                                             <span className="text-sm font-semibold tabular-nums">{brl(Number(c.valor_total))}</span>
                                             <Badge variant={c.status === "recebida" ? "default" : "secondary"}>{c.status}</Badge>
+                                            {c.aprovacao_status === "pendente" && (
+                                              <Badge className="bg-amber-500 text-white hover:bg-amber-500/90">Pend. aprovação</Badge>
+                                            )}
+                                            {c.aprovacao_status === "aprovada" && (
+                                              <Badge className="bg-emerald-600 text-white hover:bg-emerald-600/90">Aprovada</Badge>
+                                            )}
+                                            {c.aprovacao_status === "rejeitada" && (
+                                              <Badge variant="destructive" title={c.rejeicao_motivo ?? undefined}>Rejeitada</Badge>
+                                            )}
+                                            {canApprove && c.aprovacao_status === "pendente" && (
+                                              <>
+                                                <Button size="sm" variant="default" onClick={() => void decidir(c, true)}>
+                                                  Aprovar
+                                                </Button>
+                                                <Button size="sm" variant="outline" onClick={() => { setRejectDialog(c); setRejectMotivo(""); }}>
+                                                  Rejeitar
+                                                </Button>
+                                              </>
+                                            )}
                                             <Button
                                               variant="outline"
                                               size="sm"
