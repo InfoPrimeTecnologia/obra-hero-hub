@@ -42,6 +42,8 @@ type Compra = {
   cartao_id: string | null;
   etapa_id: string | null;
   subetapa_id: string | null;
+  aprovacao_status: "nao_requer" | "pendente" | "aprovada" | "rejeitada";
+  rejeicao_motivo: string | null;
 };
 type Item = {
   id: string;
@@ -87,6 +89,10 @@ function ComprasPage() {
   const [etapas, setEtapas] = useState<Etapa[]>([]);
   const [subetapas, setSubetapas] = useState<Subetapa[]>([]);
   const [customerId, setCustomerId] = useState<string | null>(null);
+  const [canApprove, setCanApprove] = useState(false);
+  const [limiteAprovacao, setLimiteAprovacao] = useState<number>(0);
+  const [rejectDialog, setRejectDialog] = useState<Compra | null>(null);
+  const [rejectMotivo, setRejectMotivo] = useState("");
   const [open, setOpen] = useState(false);
   const [saving, setSaving] = useState(false);
 
@@ -157,15 +163,31 @@ function ComprasPage() {
   const subsDoForm = subetapas.filter((s) => s.etapa_id === form.etapa_id);
 
   const carregar = async () => {
-    const [{ data: cust }, { data: cs }, { data: fs }, { data: ks }, { data: es }, { data: ss }] = await Promise.all([
-      supabase.from("customers").select("id").eq("owner_user_id", user!.id).maybeSingle(),
+    // Descobre customer atual (dono ou membro)
+    const [{ data: owned }, { data: memberOf }] = await Promise.all([
+      supabase.from("customers").select("id,limite_aprovacao_compra,owner_user_id").eq("owner_user_id", user!.id).maybeSingle(),
+      supabase.from("customer_members").select("customer_id,pode_aprovar_compras").eq("user_id", user!.id).eq("status", "ativo").maybeSingle(),
+    ]);
+    let cid: string | null = owned?.id ?? null;
+    let approve = !!owned;
+    let limite = Number(owned?.limite_aprovacao_compra ?? 0);
+    if (!cid && memberOf?.customer_id) {
+      cid = memberOf.customer_id;
+      approve = !!memberOf.pode_aprovar_compras;
+      const { data: cust } = await supabase.from("customers").select("limite_aprovacao_compra").eq("id", cid).maybeSingle();
+      limite = Number(cust?.limite_aprovacao_compra ?? 0);
+    }
+    setCustomerId(cid);
+    setCanApprove(approve);
+    setLimiteAprovacao(limite);
+
+    const [{ data: cs }, { data: fs }, { data: ks }, { data: es }, { data: ss }] = await Promise.all([
       supabase.from("compras").select("*").eq("obra_id", obraId).order("data_compra", { ascending: false }),
       supabase.from("fornecedores").select("id,nome").eq("ativo", true).order("nome"),
       supabase.from("cartoes").select("id,nome").eq("ativo", true).order("nome"),
       supabase.from("orcamento_etapas").select("id,nome,ordem").eq("obra_id", obraId).order("ordem"),
       supabase.from("orcamento_subetapas").select("id,etapa_id,nome,ordem").order("ordem"),
     ]);
-    setCustomerId(cust?.id ?? null);
     const compras = (cs ?? []) as Compra[];
     setItems(compras);
     setFornecedores((fs ?? []) as Fornecedor[]);
@@ -182,6 +204,17 @@ function ComprasPage() {
     } else {
       setItens([]);
     }
+  };
+
+  const decidir = async (compra: Compra, aprovar: boolean, motivo?: string) => {
+    const { error } = await supabase.rpc("decidir_compra" as never, {
+      _compra_id: compra.id,
+      _aprovar: aprovar,
+      _motivo: motivo ?? null,
+    } as never);
+    if (error) return toast.error("Erro", { description: error.message });
+    toast.success(aprovar ? "Compra aprovada" : "Compra rejeitada");
+    void carregar();
   };
 
   useEffect(() => { void carregar(); }, [obraId]);
@@ -446,6 +479,25 @@ function ComprasPage() {
                                           <div className="flex items-center gap-2">
                                             <span className="text-sm font-semibold tabular-nums">{brl(Number(c.valor_total))}</span>
                                             <Badge variant={c.status === "recebida" ? "default" : "secondary"}>{c.status}</Badge>
+                                            {c.aprovacao_status === "pendente" && (
+                                              <Badge className="bg-amber-500 text-white hover:bg-amber-500/90">Pend. aprovação</Badge>
+                                            )}
+                                            {c.aprovacao_status === "aprovada" && (
+                                              <Badge className="bg-emerald-600 text-white hover:bg-emerald-600/90">Aprovada</Badge>
+                                            )}
+                                            {c.aprovacao_status === "rejeitada" && (
+                                              <Badge variant="destructive" title={c.rejeicao_motivo ?? undefined}>Rejeitada</Badge>
+                                            )}
+                                            {canApprove && c.aprovacao_status === "pendente" && (
+                                              <>
+                                                <Button size="sm" variant="default" onClick={() => void decidir(c, true)}>
+                                                  Aprovar
+                                                </Button>
+                                                <Button size="sm" variant="outline" onClick={() => { setRejectDialog(c); setRejectMotivo(""); }}>
+                                                  Rejeitar
+                                                </Button>
+                                              </>
+                                            )}
                                             <Button
                                               variant="outline"
                                               size="sm"
@@ -781,6 +833,31 @@ function ComprasPage() {
                 onChange={(e) => setEditForm({ ...editForm, data_compra: e.target.value })} /></div>
             <DialogFooter><Button type="submit" disabled={savingEdit}>{savingEdit ? "Salvando..." : "Salvar"}</Button></DialogFooter>
           </form>
+        </DialogContent>
+      </Dialog>
+
+      <Dialog open={!!rejectDialog} onOpenChange={(o) => !o && setRejectDialog(null)}>
+        <DialogContent>
+          <DialogHeader>
+            <DialogTitle>Rejeitar compra</DialogTitle>
+          </DialogHeader>
+          <div className="space-y-2">
+            <Label>Motivo (opcional)</Label>
+            <Textarea rows={3} value={rejectMotivo} onChange={(e) => setRejectMotivo(e.target.value)} />
+          </div>
+          <DialogFooter>
+            <Button variant="outline" onClick={() => setRejectDialog(null)}>Cancelar</Button>
+            <Button
+              variant="destructive"
+              onClick={() => {
+                const c = rejectDialog;
+                setRejectDialog(null);
+                if (c) void decidir(c, false, rejectMotivo.trim() || undefined);
+              }}
+            >
+              Rejeitar
+            </Button>
+          </DialogFooter>
         </DialogContent>
       </Dialog>
     </div>

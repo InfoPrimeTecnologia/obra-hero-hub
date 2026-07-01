@@ -94,6 +94,12 @@ function UsuariosPage() {
     onSuccess: () => { qc.invalidateQueries({ queryKey: ["team"] }); },
     onError: (e: any) => toast.error(e.message),
   });
+  const aprovadorMut = useMutation({
+    mutationFn: (v: { memberId: string; pode_aprovar_compras: boolean }) =>
+      updateFn({ data: v }),
+    onSuccess: () => { qc.invalidateQueries({ queryKey: ["team"] }); toast.success("Permissão atualizada"); },
+    onError: (e: any) => toast.error(e.message),
+  });
 
   const data = list.data;
   const used = (data?.members?.length ?? 0) + 1;
@@ -140,9 +146,17 @@ function UsuariosPage() {
                       <p className="truncate font-medium">{m.full_name || m.email}</p>
                       <Badge variant={m.role === "admin" ? "default" : "secondary"}>{m.role}</Badge>
                       {m.status === "suspenso" && <Badge variant="destructive">Suspenso</Badge>}
+                      {m.pode_aprovar_compras && <Badge className="bg-emerald-600 hover:bg-emerald-600/90">Aprovador</Badge>}
                     </div>
                     <p className="truncate text-xs text-muted-foreground">{m.email}</p>
                   </div>
+                  <label className="flex items-center gap-2 text-xs">
+                    <Checkbox
+                      checked={!!m.pode_aprovar_compras}
+                      onCheckedChange={(v) => aprovadorMut.mutate({ memberId: m.id, pode_aprovar_compras: !!v })}
+                    />
+                    Aprovar compras
+                  </label>
                   <Button
                     size="sm"
                     variant="outline"

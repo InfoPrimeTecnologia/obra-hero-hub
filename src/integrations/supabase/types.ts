@@ -545,6 +545,9 @@ export type Database = {
       }
       compras: {
         Row: {
+          aprovacao_status: string
+          aprovado_em: string | null
+          aprovado_por: string | null
           cartao_id: string | null
           created_at: string
           created_by: string | null
@@ -560,12 +563,16 @@ export type Database = {
           obra_id: string
           observacoes: string | null
           qtd_parcelas: number
+          rejeicao_motivo: string | null
           status: string
           subetapa_id: string | null
           updated_at: string
           valor_total: number
         }
         Insert: {
+          aprovacao_status?: string
+          aprovado_em?: string | null
+          aprovado_por?: string | null
           cartao_id?: string | null
           created_at?: string
           created_by?: string | null
@@ -581,12 +588,16 @@ export type Database = {
           obra_id: string
           observacoes?: string | null
           qtd_parcelas?: number
+          rejeicao_motivo?: string | null
           status?: string
           subetapa_id?: string | null
           updated_at?: string
           valor_total?: number
         }
         Update: {
+          aprovacao_status?: string
+          aprovado_em?: string | null
+          aprovado_por?: string | null
           cartao_id?: string | null
           created_at?: string
           created_by?: string | null
@@ -602,6 +613,7 @@ export type Database = {
           obra_id?: string
           observacoes?: string | null
           qtd_parcelas?: number
+          rejeicao_motivo?: string | null
           status?: string
           subetapa_id?: string | null
           updated_at?: string
@@ -1178,6 +1190,7 @@ export type Database = {
           full_name: string | null
           id: string
           permissions: Json
+          pode_aprovar_compras: boolean
           role: string
           status: string
           updated_at: string
@@ -1193,6 +1206,7 @@ export type Database = {
           full_name?: string | null
           id?: string
           permissions?: Json
+          pode_aprovar_compras?: boolean
           role?: string
           status?: string
           updated_at?: string
@@ -1208,6 +1222,7 @@ export type Database = {
           full_name?: string | null
           id?: string
           permissions?: Json
+          pode_aprovar_compras?: boolean
           role?: string
           status?: string
           updated_at?: string
@@ -1239,6 +1254,7 @@ export type Database = {
           created_by: string | null
           email: string
           id: string
+          limite_aprovacao_compra: number
           name: string
           notes: string | null
           onboarding_completed_at: string | null
@@ -1263,6 +1279,7 @@ export type Database = {
           created_by?: string | null
           email: string
           id?: string
+          limite_aprovacao_compra?: number
           name: string
           notes?: string | null
           onboarding_completed_at?: string | null
@@ -1287,6 +1304,7 @@ export type Database = {
           created_by?: string | null
           email?: string
           id?: string
+          limite_aprovacao_compra?: number
           name?: string
           notes?: string | null
           onboarding_completed_at?: string | null
@@ -3303,6 +3321,10 @@ export type Database = {
         }[]
       }
       current_user_customer_id: { Args: never; Returns: string }
+      decidir_compra: {
+        Args: { _aprovar: boolean; _compra_id: string; _motivo?: string }
+        Returns: undefined
+      }
       delete_email: {
         Args: { message_id: number; queue_name: string }
         Returns: boolean
@@ -3326,6 +3348,10 @@ export type Database = {
           source_queue: string
         }
         Returns: number
+      }
+      pode_aprovar_compra: {
+        Args: { _customer_id: string; _user_id: string }
+        Returns: boolean
       }
       read_email_batch: {
         Args: { batch_size: number; queue_name: string; vt: number }
