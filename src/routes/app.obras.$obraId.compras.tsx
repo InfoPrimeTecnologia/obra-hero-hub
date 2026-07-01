@@ -835,6 +835,31 @@ function ComprasPage() {
           </form>
         </DialogContent>
       </Dialog>
+
+      <Dialog open={!!rejectDialog} onOpenChange={(o) => !o && setRejectDialog(null)}>
+        <DialogContent>
+          <DialogHeader>
+            <DialogTitle>Rejeitar compra</DialogTitle>
+          </DialogHeader>
+          <div className="space-y-2">
+            <Label>Motivo (opcional)</Label>
+            <Textarea rows={3} value={rejectMotivo} onChange={(e) => setRejectMotivo(e.target.value)} />
+          </div>
+          <DialogFooter>
+            <Button variant="outline" onClick={() => setRejectDialog(null)}>Cancelar</Button>
+            <Button
+              variant="destructive"
+              onClick={() => {
+                const c = rejectDialog;
+                setRejectDialog(null);
+                if (c) void decidir(c, false, rejectMotivo.trim() || undefined);
+              }}
+            >
+              Rejeitar
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
     </div>
   );
 }
