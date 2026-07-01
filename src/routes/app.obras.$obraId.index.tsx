@@ -207,6 +207,8 @@ function ObraDashboard() {
             />
           </CardContent>
         </Card>
+
+        <PortalClienteCard obraId={obraId} />
       </div>
     </div>
   );
