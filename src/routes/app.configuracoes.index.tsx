@@ -32,6 +32,7 @@ type Empresa = {
   address_zip?: string | null;
   notes?: string | null;
   limite_aprovacao_compra?: number | null;
+  alerta_subetapa_pct?: number | null;
 };
 
 function ConfiguracoesPage() {
