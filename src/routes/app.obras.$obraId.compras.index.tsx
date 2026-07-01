@@ -116,9 +116,63 @@ function ComprasPage() {
   const [savingEdit, setSavingEdit] = useState(false);
   const [editForm, setEditForm] = useState(emptyForm());
 
+  // ===== Importação de NF =====
+  const parseNf = useServerFn(parseNotaFiscal);
+  const [importing, setImporting] = useState(false);
+  const [parsedNf, setParsedNf] = useState<NfParsed | null>(null);
+  const [nfFile, setNfFile] = useState<{ base64: string; mimeType: string; filename: string } | null>(null);
+
   const abrirNovaCompra = (etapaId: string, subetapaId: string) => {
     setForm(emptyForm(etapaId, subetapaId));
+    setParsedNf(null);
+    setNfFile(null);
     setOpen(true);
+  };
+
+  const handleImportNf = async (file: File) => {
+    setImporting(true);
+    try {
+      const buf = await file.arrayBuffer();
+      let binary = "";
+      const bytes = new Uint8Array(buf);
+      for (let i = 0; i < bytes.length; i++) binary += String.fromCharCode(bytes[i]);
+      const base64 = btoa(binary);
+      const mimeType = file.type || (file.name.toLowerCase().endsWith(".xml") ? "application/xml" : "application/octet-stream");
+      const parsed = await parseNf({ data: { fileBase64: base64, mimeType, filename: file.name } });
+      setParsedNf(parsed);
+      setNfFile({ base64, mimeType, filename: file.name });
+
+      // Match/create fornecedor por CNPJ
+      let fornecedorId = form.fornecedor_id;
+      if (parsed.fornecedor.cnpj) {
+        const match = fornecedores.find((f) => (f.cpf_cnpj ?? "").replace(/\D/g, "") === parsed.fornecedor.cnpj);
+        if (match) {
+          fornecedorId = match.id;
+        } else if (customerId) {
+          const { data: novo } = await supabase.from("fornecedores").insert({
+            customer_id: customerId,
+            created_by: user!.id,
+            nome: parsed.fornecedor.nome,
+            cpf_cnpj: parsed.fornecedor.cnpj,
+          }).select("id,nome,cpf_cnpj").single();
+          if (novo) {
+            setFornecedores((prev) => [...prev, novo as Fornecedor].sort((a, b) => a.nome.localeCompare(b.nome)));
+            fornecedorId = (novo as any).id;
+          }
+        }
+      }
+      setForm((f) => ({
+        ...f,
+        fornecedor_id: fornecedorId,
+        descricao: `NF ${parsed.numero ?? ""}${parsed.serie ? "/" + parsed.serie : ""} — ${parsed.fornecedor.nome}`.trim(),
+        data_compra: parsed.emissao ?? f.data_compra,
+      }));
+      toast.success(`Nota lida (${parsed.itens.length} itens, ${parsed.fonte === "xml" ? "XML" : "OCR"})`);
+    } catch (e: any) {
+      toast.error("Falha ao ler nota", { description: e?.message ?? String(e) });
+    } finally {
+      setImporting(false);
+    }
   };
 
   const abrirEdicao = (c: Compra) => {
