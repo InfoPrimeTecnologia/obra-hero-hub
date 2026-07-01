@@ -18,6 +18,7 @@ import {
   FileBarChart2,
   ChevronDown,
   ImageIcon,
+  FolderArchive,
   LogOut,
 } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
@@ -57,7 +58,10 @@ export function ObraSidebar({ obraId }: { obraId: string }) {
   const groups: Group[] = [
     {
       label: "Visão geral",
-      items: [{ to: base, label: "Dashboard", icon: LayoutDashboard, exact: true }],
+      items: [
+        { to: base, label: "Dashboard", icon: LayoutDashboard, exact: true },
+        { to: `${base}/documentos`, label: "Documentos", icon: FolderArchive },
+      ],
     },
     {
       label: "Administração",
