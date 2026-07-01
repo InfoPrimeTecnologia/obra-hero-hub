@@ -2170,6 +2170,8 @@ export type Database = {
           foto_url: string | null
           id: string
           name: string
+          portal_ativo: boolean
+          portal_token: string | null
           start_date: string | null
           status: string
           updated_at: string
@@ -2194,6 +2196,8 @@ export type Database = {
           foto_url?: string | null
           id?: string
           name: string
+          portal_ativo?: boolean
+          portal_token?: string | null
           start_date?: string | null
           status?: string
           updated_at?: string
@@ -2218,6 +2222,8 @@ export type Database = {
           foto_url?: string | null
           id?: string
           name?: string
+          portal_ativo?: boolean
+          portal_token?: string | null
           start_date?: string | null
           status?: string
           updated_at?: string
