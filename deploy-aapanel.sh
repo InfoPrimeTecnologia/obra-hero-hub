@@ -34,7 +34,9 @@ echo "[3/5] Build de producao..."
 $BUILD_CMD
 
 echo "[4/5] Preparando entrypoint do PM2..."
-cp prod-server.mjs server.js
+# Remove server.js legado no root — Nitro o interpreta como rota e quebra o build
+rm -f server.js
+cp prod-server.mjs pm2-server.mjs
 
 echo "[5/5] Gerando index.html para SPA fallback..."
 node --input-type=module -e "
@@ -84,5 +86,5 @@ echo "  BUILD FINALIZADO!"
 echo "===================================="
 echo ""
 echo "Para rodar localmente: npm start"
-echo "Para deploy: envie os arquivos para o servidor e rode 'npm install --production && pm2 start server.js --name mestre360'"
+echo "Para deploy: envie os arquivos para o servidor e rode 'npm install --production && pm2 start pm2-server.mjs --name mestre360'"
 echo ""
