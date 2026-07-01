@@ -163,15 +163,31 @@ function ComprasPage() {
   const subsDoForm = subetapas.filter((s) => s.etapa_id === form.etapa_id);
 
   const carregar = async () => {
-    const [{ data: cust }, { data: cs }, { data: fs }, { data: ks }, { data: es }, { data: ss }] = await Promise.all([
-      supabase.from("customers").select("id").eq("owner_user_id", user!.id).maybeSingle(),
+    // Descobre customer atual (dono ou membro)
+    const [{ data: owned }, { data: memberOf }] = await Promise.all([
+      supabase.from("customers").select("id,limite_aprovacao_compra,owner_user_id").eq("owner_user_id", user!.id).maybeSingle(),
+      supabase.from("customer_members").select("customer_id,pode_aprovar_compras").eq("user_id", user!.id).eq("status", "ativo").maybeSingle(),
+    ]);
+    let cid: string | null = owned?.id ?? null;
+    let approve = !!owned;
+    let limite = Number(owned?.limite_aprovacao_compra ?? 0);
+    if (!cid && memberOf?.customer_id) {
+      cid = memberOf.customer_id;
+      approve = !!memberOf.pode_aprovar_compras;
+      const { data: cust } = await supabase.from("customers").select("limite_aprovacao_compra").eq("id", cid).maybeSingle();
+      limite = Number(cust?.limite_aprovacao_compra ?? 0);
+    }
+    setCustomerId(cid);
+    setCanApprove(approve);
+    setLimiteAprovacao(limite);
+
+    const [{ data: cs }, { data: fs }, { data: ks }, { data: es }, { data: ss }] = await Promise.all([
       supabase.from("compras").select("*").eq("obra_id", obraId).order("data_compra", { ascending: false }),
       supabase.from("fornecedores").select("id,nome").eq("ativo", true).order("nome"),
       supabase.from("cartoes").select("id,nome").eq("ativo", true).order("nome"),
       supabase.from("orcamento_etapas").select("id,nome,ordem").eq("obra_id", obraId).order("ordem"),
       supabase.from("orcamento_subetapas").select("id,etapa_id,nome,ordem").order("ordem"),
     ]);
-    setCustomerId(cust?.id ?? null);
     const compras = (cs ?? []) as Compra[];
     setItems(compras);
     setFornecedores((fs ?? []) as Fornecedor[]);
@@ -188,6 +204,17 @@ function ComprasPage() {
     } else {
       setItens([]);
     }
+  };
+
+  const decidir = async (compra: Compra, aprovar: boolean, motivo?: string) => {
+    const { error } = await supabase.rpc("decidir_compra" as never, {
+      _compra_id: compra.id,
+      _aprovar: aprovar,
+      _motivo: motivo ?? null,
+    } as never);
+    if (error) return toast.error("Erro", { description: error.message });
+    toast.success(aprovar ? "Compra aprovada" : "Compra rejeitada");
+    void carregar();
   };
 
   useEffect(() => { void carregar(); }, [obraId]);
