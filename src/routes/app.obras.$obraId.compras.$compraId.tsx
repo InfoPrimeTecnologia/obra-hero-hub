@@ -164,22 +164,14 @@ function CompraDetalhePage() {
     });
     setOpenItem(true);
   };
-  const salvarItem = async (e: FormEvent) => {
-    e.preventDefault();
+  const persistirItem = async (
+    payload: Record<string, unknown>,
+    isEdit: boolean,
+    editingId?: string,
+  ) => {
     if (!compra) return;
-    if (!itemForm.etapa_id || !itemForm.subetapa_id) {
-      return toast.error("Selecione a etapa e a subetapa do item");
-    }
-    const qtd = Number(itemForm.quantidade) || 0;
-    const vu = Number(itemForm.valor_unitario) || 0;
-    const payload = {
-      descricao: itemForm.descricao, unidade: itemForm.unidade || null,
-      quantidade: qtd, valor_unitario: vu, valor_total: qtd * vu,
-      etapa_id: itemForm.etapa_id,
-      subetapa_id: itemForm.subetapa_id,
-    };
-    if (editingItem) {
-      const { error } = await supabase.from("compra_itens").update(payload).eq("id", editingItem.id);
+    if (isEdit && editingId) {
+      const { error } = await supabase.from("compra_itens").update(payload).eq("id", editingId);
       if (error) return toast.error("Erro", { description: error.message });
     } else {
       const { error } = await supabase.from("compra_itens").insert({
@@ -189,6 +181,43 @@ function CompraDetalhePage() {
     }
     await recalcularTotalCompra();
     resetItemForm(); setOpenItem(false); toast.success("Item salvo"); void carregar();
+  };
+
+  const salvarItem = async (e: FormEvent) => {
+    e.preventDefault();
+    if (!compra) return;
+    if (!itemForm.etapa_id || !itemForm.subetapa_id) {
+      return toast.error("Selecione a etapa e a subetapa do item");
+    }
+    const qtd = Number(itemForm.quantidade) || 0;
+    const vu = Number(itemForm.valor_unitario) || 0;
+    const valorItem = qtd * vu;
+    const payload = {
+      descricao: itemForm.descricao, unidade: itemForm.unidade || null,
+      quantidade: qtd, valor_unitario: vu, valor_total: valorItem,
+      etapa_id: itemForm.etapa_id,
+      subetapa_id: itemForm.subetapa_id,
+    };
+
+    // Delta do lançamento: se editando, subtrai o valor antigo (se subetapa é a mesma)
+    let delta = valorItem;
+    if (editingItem) {
+      const mesmaSub = editingItem.subetapa_id === itemForm.subetapa_id;
+      if (mesmaSub) delta = valorItem - Number(editingItem.valor_total ?? 0);
+    }
+    if (delta > 0) {
+      const check = await checkOrcamentoAlert(
+        itemForm.subetapa_id,
+        delta,
+        compra.customer_id,
+      );
+      if (check.shouldWarn) {
+        setAlertOrc(check);
+        setPendingItemPayload({ payload, isEdit: !!editingItem, editingId: editingItem?.id });
+        return;
+      }
+    }
+    await persistirItem(payload, !!editingItem, editingItem?.id);
   };
 
   const criarSubetapaInline = async () => {
