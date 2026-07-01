@@ -42,7 +42,7 @@ echo "[5/5] Gerando index.html para SPA fallback..."
 node --input-type=module -e "
 import { existsSync, writeFileSync } from 'node:fs';
 
-const candidates = ['./dist/server/server.js', './dist/server/index.js'];
+const candidates = ['./dist/server/index.mjs', './dist/server/server.js', './dist/server/index.js'];
 const entry = candidates.find((path) => existsSync(path));
 if (!entry) throw new Error('Nenhum bundle de servidor encontrado em dist/server');
 
