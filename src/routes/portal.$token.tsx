@@ -1,17 +1,9 @@
 import { createFileRoute, notFound } from "@tanstack/react-router";
-import { useSuspenseQuery, queryOptions } from "@tanstack/react-query";
 import { Building2, MapPin, HardHat, Calendar, TrendingUp, Camera, FileText, Ruler } from "lucide-react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Progress } from "@/components/ui/progress";
 import { Badge } from "@/components/ui/badge";
 import { getPortalData } from "@/lib/portal.functions";
-
-const portalQuery = (token: string) =>
-  queryOptions({
-    queryKey: ["portal", token],
-    queryFn: () => getPortalData({ data: { token } }),
-    staleTime: 60_000,
-  });
 
 export const Route = createFileRoute("/portal/$token")({
   head: ({ loaderData }) => {
