@@ -57,7 +57,7 @@ type Item = {
   valor_unitario: number;
   valor_total: number;
 };
-type Fornecedor = { id: string; nome: string };
+type Fornecedor = { id: string; nome: string; cpf_cnpj?: string | null };
 type Cartao = { id: string; nome: string };
 type Etapa = { id: string; nome: string; ordem: number };
 type Subetapa = { id: string; etapa_id: string; nome: string; ordem: number };
