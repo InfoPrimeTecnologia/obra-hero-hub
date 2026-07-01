@@ -640,6 +640,50 @@ function CompraDetalhePage() {
         <NotasFiscaisSection compraId={compraId} customerId={compra.customer_id} />
       </div>
 
+      {/* Alerta de estouro de orçamento */}
+      <AlertDialog open={!!alertOrc} onOpenChange={(o) => { if (!o) { setAlertOrc(null); setPendingItemPayload(null); } }}>
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>
+              {alertOrc?.ultrapassa ? "Orçamento estourado" : "Orçamento próximo do limite"}
+            </AlertDialogTitle>
+            <AlertDialogDescription asChild>
+              <div className="space-y-2 text-sm">
+                <p>
+                  Este lançamento vai colocar a subetapa <strong>{alertOrc?.subetapaNome}</strong>{" "}
+                  em <strong>{alertOrc?.pctFuturo.toFixed(1)}%</strong> do orçamento
+                  (limite de alerta: {alertOrc?.threshold}%).
+                </p>
+                <div className="rounded-md border bg-muted/40 p-3 text-xs">
+                  <div>Orçado: <strong>{brlAlert(alertOrc?.orcado ?? 0)}</strong></div>
+                  <div>Gasto atual: {brlAlert(alertOrc?.gastoAtual ?? 0)} ({alertOrc?.pctAtual.toFixed(1)}%)</div>
+                  <div>Após este lançamento: <strong>{brlAlert(alertOrc?.novoGasto ?? 0)}</strong></div>
+                </div>
+                <p className="text-muted-foreground">
+                  Deseja continuar mesmo assim?
+                </p>
+              </div>
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel>Cancelar</AlertDialogCancel>
+            <AlertDialogAction
+              onClick={async () => {
+                if (pendingItemPayload) {
+                  await persistirItem(
+                    pendingItemPayload.payload,
+                    pendingItemPayload.isEdit,
+                    pendingItemPayload.editingId,
+                  );
+                }
+                setAlertOrc(null); setPendingItemPayload(null);
+              }}
+            >
+              Confirmar mesmo assim
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
     </div>
   );
 }
