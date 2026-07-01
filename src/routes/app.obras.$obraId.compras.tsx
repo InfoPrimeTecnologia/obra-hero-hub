@@ -89,6 +89,10 @@ function ComprasPage() {
   const [etapas, setEtapas] = useState<Etapa[]>([]);
   const [subetapas, setSubetapas] = useState<Subetapa[]>([]);
   const [customerId, setCustomerId] = useState<string | null>(null);
+  const [canApprove, setCanApprove] = useState(false);
+  const [limiteAprovacao, setLimiteAprovacao] = useState<number>(0);
+  const [rejectDialog, setRejectDialog] = useState<Compra | null>(null);
+  const [rejectMotivo, setRejectMotivo] = useState("");
   const [open, setOpen] = useState(false);
   const [saving, setSaving] = useState(false);
 
