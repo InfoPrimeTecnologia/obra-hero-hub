@@ -15,6 +15,7 @@ import {
 import { PageHeader } from "@/components/admin/PageHeader";
 import { Card, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
+import { PortalClienteCard } from "@/components/app/PortalClienteCard";
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
 
