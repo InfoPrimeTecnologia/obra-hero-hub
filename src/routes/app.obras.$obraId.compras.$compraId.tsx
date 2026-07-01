@@ -168,8 +168,13 @@ function CompraDetalhePage() {
     });
     setOpenItem(true);
   };
+  type ItemPayload = {
+    descricao: string; unidade: string | null;
+    quantidade: number; valor_unitario: number; valor_total: number;
+    etapa_id: string; subetapa_id: string;
+  };
   const persistirItem = async (
-    payload: Record<string, unknown>,
+    payload: ItemPayload,
     isEdit: boolean,
     editingId?: string,
   ) => {
