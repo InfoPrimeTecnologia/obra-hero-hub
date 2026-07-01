@@ -1,6 +1,9 @@
 import { createFileRoute, Link, useNavigate } from "@tanstack/react-router";
 import { useEffect, useRef, useState, type FormEvent } from "react";
-import { Plus, FolderOpen, CheckCircle2, ListTree, Building2, Camera, Loader2, ImageIcon, Archive, ArchiveRestore, Trash2 } from "lucide-react";
+import { Plus, FolderOpen, CheckCircle2, ListTree, Building2, Camera, Loader2, ImageIcon, Archive, ArchiveRestore, Trash2, Copy } from "lucide-react";
+import { useServerFn } from "@tanstack/react-start";
+import { duplicateObra } from "@/lib/obra-duplicate.functions";
+import { Checkbox } from "@/components/ui/checkbox";
 import {
   AlertDialog,
   AlertDialogAction,
