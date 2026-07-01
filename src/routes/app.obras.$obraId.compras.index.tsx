@@ -733,6 +733,41 @@ function ComprasPage() {
             </p>
           </DialogHeader>
           <form onSubmit={criar} className="space-y-3">
+            {/* Importar Nota Fiscal (XML / PDF / foto) */}
+            <div className="rounded-md border border-dashed border-border/70 bg-muted/30 p-3">
+              <div className="flex items-center justify-between gap-2">
+                <div className="text-sm">
+                  <p className="font-medium">Importar Nota Fiscal</p>
+                  <p className="text-xs text-muted-foreground">XML da NFe, PDF do DANFE ou foto — preenche fornecedor e itens.</p>
+                </div>
+                <label className="inline-flex items-center">
+                  <input
+                    type="file"
+                    accept=".xml,application/xml,text/xml,application/pdf,image/*"
+                    className="hidden"
+                    onChange={(e) => { const f = e.target.files?.[0]; if (f) void handleImportNf(f); e.target.value = ""; }}
+                  />
+                  <Button type="button" variant="outline" size="sm" disabled={importing} asChild>
+                    <span>
+                      {importing
+                        ? <><Loader2 className="mr-2 h-4 w-4 animate-spin" /> Lendo...</>
+                        : <><FileUp className="mr-2 h-4 w-4" /> Enviar arquivo</>}
+                    </span>
+                  </Button>
+                </label>
+              </div>
+              {parsedNf && (
+                <div className="mt-3 rounded bg-background/60 p-2 text-xs">
+                  <p><strong>{parsedNf.fornecedor.nome}</strong>{parsedNf.fornecedor.cnpj ? ` · CNPJ ${parsedNf.fornecedor.cnpj}` : ""}</p>
+                  <p className="text-muted-foreground">
+                    NF {parsedNf.numero ?? "—"}{parsedNf.serie ? "/" + parsedNf.serie : ""}
+                    {" · "}{parsedNf.emissao ?? "sem data"}
+                    {" · "}{parsedNf.itens.length} itens
+                    {" · "}R$ {Number(parsedNf.valor_total).toLocaleString("pt-BR", { minimumFractionDigits: 2 })}
+                  </p>
+                </div>
+              )}
+            </div>
             <div className="space-y-2"><Label>Fornecedor</Label>
               <div className="flex gap-2">
                 <Select value={form.fornecedor_id} onValueChange={(v) => setForm({ ...form, fornecedor_id: v })}>
