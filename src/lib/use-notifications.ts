@@ -4,13 +4,17 @@ import { useAuth } from "@/lib/auth-context";
 
 export type Notification = {
   id: string;
-  type: "conta_vencendo" | "fatura_fechando" | "rdo_atrasado";
+  type: "conta_vencendo" | "fatura_fechando" | "rdo_atrasado" | "orcamento_estourado";
   title: string;
   description: string;
   href: string;
   severity: "info" | "warning" | "critical";
   date?: string;
 };
+
+// Limite (%) de aviso de estouro de orçamento por subetapa.
+// TODO: mover para tabela de configurações da empresa.
+const BUDGET_ALERT_THRESHOLD = 0.85;
 
 function addDays(d: Date, n: number) {
   const r = new Date(d);
@@ -110,6 +114,45 @@ export function useNotifications() {
             date: last ?? undefined,
           });
         }
+      });
+    }
+
+    // Alertas de estouro de orçamento por subetapa
+    if (obras.length > 0) {
+      const obraIds = obras.map((o: any) => o.id);
+      const obraNameById = new Map<string, string>(obras.map((o: any) => [o.id, o.name]));
+      const [subRes, compRes] = await Promise.all([
+        supabase
+          .from("orcamento_subetapas")
+          .select("id,nome,valor_orcado,etapa_id,orcamento_etapas!inner(obra_id)")
+          .in("orcamento_etapas.obra_id", obraIds),
+        supabase
+          .from("compras")
+          .select("subetapa_id,valor_total,obra_id")
+          .in("obra_id", obraIds)
+          .not("subetapa_id", "is", null),
+      ]);
+      const gastoPorSub = new Map<string, number>();
+      (compRes.data ?? []).forEach((c: any) => {
+        gastoPorSub.set(c.subetapa_id, (gastoPorSub.get(c.subetapa_id) ?? 0) + Number(c.valor_total ?? 0));
+      });
+      (subRes.data ?? []).forEach((s: any) => {
+        const orcado = Number(s.valor_orcado ?? 0);
+        if (orcado <= 0) return;
+        const gasto = gastoPorSub.get(s.id) ?? 0;
+        const pct = gasto / orcado;
+        if (pct < BUDGET_ALERT_THRESHOLD) return;
+        const obraId = s.orcamento_etapas?.obra_id as string | undefined;
+        const obraName = obraId ? obraNameById.get(obraId) ?? "Obra" : "Obra";
+        const estourou = pct >= 1;
+        out.push({
+          id: `orc-${s.id}`,
+          type: "orcamento_estourado",
+          title: estourou ? "Orçamento estourado" : "Orçamento próximo do limite",
+          description: `${obraName} • ${s.nome} — ${(pct * 100).toFixed(0)}% (R$ ${gasto.toLocaleString("pt-BR", { minimumFractionDigits: 2 })} de R$ ${orcado.toLocaleString("pt-BR", { minimumFractionDigits: 2 })})`,
+          href: obraId ? `/app/obras/${obraId}/compras` : "/app/obras",
+          severity: estourou ? "critical" : "warning",
+        });
       });
     }
 
