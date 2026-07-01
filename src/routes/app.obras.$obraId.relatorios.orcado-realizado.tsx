@@ -1,6 +1,9 @@
 import { createFileRoute } from "@tanstack/react-router";
 import { useEffect, useMemo, useState } from "react";
-import { ListTree, TrendingUp } from "lucide-react";
+import { ListTree, TrendingUp, FileDown } from "lucide-react";
+import { Button } from "@/components/ui/button";
+import { exportOrcadoRealizadoPdf } from "@/lib/pdf-reports";
+import { toast } from "sonner";
 import {
   LineChart,
   Line,
@@ -145,6 +148,11 @@ function RelOrcadoReal() {
       <PageHeader
         title="Orçado x Realizado"
         description="Compare o orçamento com as compras lançadas na obra"
+        actions={
+          <Button variant="outline" onClick={() => { void exportOrcadoRealizadoPdf(obraId).catch((e) => toast.error(e.message ?? "Erro ao gerar PDF")); }}>
+            <FileDown className="mr-2 h-4 w-4" /> Exportar PDF
+          </Button>
+        }
       />
       <div className="space-y-4 p-8">
         <div className="grid gap-3 md:grid-cols-3">

@@ -24,10 +24,53 @@ function iso(d: Date) {
   return d.toISOString().slice(0, 10);
 }
 
+const READ_STORAGE_KEY = "mestre360:notifications:read";
+
+function loadReadIds(userId: string | undefined): Set<string> {
+  if (!userId || typeof window === "undefined") return new Set();
+  try {
+    const raw = window.localStorage.getItem(`${READ_STORAGE_KEY}:${userId}`);
+    if (!raw) return new Set();
+    const arr = JSON.parse(raw) as string[];
+    return new Set(Array.isArray(arr) ? arr : []);
+  } catch {
+    return new Set();
+  }
+}
+function saveReadIds(userId: string, ids: Set<string>) {
+  try {
+    window.localStorage.setItem(`${READ_STORAGE_KEY}:${userId}`, JSON.stringify([...ids]));
+  } catch {
+    /* ignore */
+  }
+}
+
 export function useNotifications() {
   const { user } = useAuth();
   const [items, setItems] = useState<Notification[]>([]);
+  const [readIds, setReadIds] = useState<Set<string>>(() => loadReadIds(user?.id));
   const [loading, setLoading] = useState(false);
+
+  useEffect(() => {
+    setReadIds(loadReadIds(user?.id));
+  }, [user?.id]);
+
+  const markRead = (id: string) => {
+    if (!user?.id) return;
+    setReadIds((prev) => {
+      if (prev.has(id)) return prev;
+      const next = new Set(prev);
+      next.add(id);
+      saveReadIds(user.id, next);
+      return next;
+    });
+  };
+  const markAllRead = () => {
+    if (!user?.id) return;
+    const next = new Set(items.map((n) => n.id));
+    setReadIds(next);
+    saveReadIds(user.id, next);
+  };
 
   const load = async () => {
     if (!user) return;
@@ -202,5 +245,6 @@ export function useNotifications() {
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [user?.id]);
 
-  return { items, loading, reload: load };
+  const unread = items.filter((n) => !readIds.has(n.id));
+  return { items, unread, unreadCount: unread.length, readIds, markRead, markAllRead, loading, reload: load };
 }

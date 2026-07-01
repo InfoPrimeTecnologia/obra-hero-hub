@@ -12,7 +12,9 @@ import {
   Mail,
   MessageCircle,
   Repeat,
+  FileDown,
 } from "lucide-react";
+import { exportRdoPdf } from "@/lib/pdf-reports";
 import { PageHeader } from "@/components/admin/PageHeader";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
@@ -439,6 +441,9 @@ function RdoDetailPage() {
             )}
             <Button variant="outline" onClick={enviarEmail}>
               <Mail className="mr-2 h-4 w-4" /> E-mail
+            </Button>
+            <Button variant="outline" onClick={() => { void exportRdoPdf(rdoId).catch((e) => toast.error(e.message ?? "Erro ao gerar PDF")); }}>
+              <FileDown className="mr-2 h-4 w-4" /> PDF
             </Button>
           </div>
         }

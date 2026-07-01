@@ -1,6 +1,7 @@
 import { createFileRoute } from "@tanstack/react-router";
 import { useEffect, useMemo, useState } from "react";
-import { Plus, Trash2, Save } from "lucide-react";
+import { Plus, Trash2, Save, FileDown } from "lucide-react";
+import { exportMedicaoPdf } from "@/lib/pdf-reports";
 import { PageHeader } from "@/components/admin/PageHeader";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
@@ -242,6 +243,14 @@ function MedicoesPage() {
                         {brl(Number(m.valor_total))}
                       </TableCell>
                       <TableCell className="text-right">
+                        <Button
+                          variant="ghost"
+                          size="sm"
+                          onClick={() => { void exportMedicaoPdf(m.id).catch((e) => toast.error(e.message ?? "Erro ao gerar PDF")); }}
+                          title="Exportar PDF"
+                        >
+                          <FileDown className="h-4 w-4" />
+                        </Button>
                         <Button
                           variant="ghost"
                           size="sm"
