@@ -94,6 +94,12 @@ function UsuariosPage() {
     onSuccess: () => { qc.invalidateQueries({ queryKey: ["team"] }); },
     onError: (e: any) => toast.error(e.message),
   });
+  const aprovadorMut = useMutation({
+    mutationFn: (v: { memberId: string; pode_aprovar_compras: boolean }) =>
+      updateFn({ data: v }),
+    onSuccess: () => { qc.invalidateQueries({ queryKey: ["team"] }); toast.success("Permissão atualizada"); },
+    onError: (e: any) => toast.error(e.message),
+  });
 
   const data = list.data;
   const used = (data?.members?.length ?? 0) + 1;
