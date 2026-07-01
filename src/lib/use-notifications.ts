@@ -4,13 +4,17 @@ import { useAuth } from "@/lib/auth-context";
 
 export type Notification = {
   id: string;
-  type: "conta_vencendo" | "fatura_fechando" | "rdo_atrasado";
+  type: "conta_vencendo" | "fatura_fechando" | "rdo_atrasado" | "orcamento_estourado";
   title: string;
   description: string;
   href: string;
   severity: "info" | "warning" | "critical";
   date?: string;
 };
+
+// Limite (%) de aviso de estouro de orçamento por subetapa.
+// TODO: mover para tabela de configurações da empresa.
+const BUDGET_ALERT_THRESHOLD = 0.85;
 
 function addDays(d: Date, n: number) {
   const r = new Date(d);
