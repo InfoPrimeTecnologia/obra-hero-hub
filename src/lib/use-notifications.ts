@@ -4,7 +4,7 @@ import { useAuth } from "@/lib/auth-context";
 
 export type Notification = {
   id: string;
-  type: "conta_vencendo" | "fatura_fechando" | "rdo_atrasado" | "orcamento_estourado";
+  type: "conta_vencendo" | "fatura_fechando" | "rdo_atrasado" | "orcamento_estourado" | "compra_pendente_aprovacao";
   title: string;
   description: string;
   href: string;
