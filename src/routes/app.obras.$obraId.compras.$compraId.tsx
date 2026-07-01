@@ -99,7 +99,11 @@ function CompraDetalhePage() {
 
   const [alertOrc, setAlertOrc] = useState<OrcamentoAlertResult | null>(null);
   const [pendingItemPayload, setPendingItemPayload] = useState<{
-    payload: Record<string, unknown>;
+    payload: {
+      descricao: string; unidade: string | null;
+      quantidade: number; valor_unitario: number; valor_total: number;
+      etapa_id: string; subetapa_id: string;
+    };
     isEdit: boolean;
     editingId?: string;
   } | null>(null);
