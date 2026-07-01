@@ -245,5 +245,6 @@ export function useNotifications() {
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [user?.id]);
 
-  return { items, loading, reload: load };
+  const unread = items.filter((n) => !readIds.has(n.id));
+  return { items, unread, unreadCount: unread.length, readIds, markRead, markAllRead, loading, reload: load };
 }
