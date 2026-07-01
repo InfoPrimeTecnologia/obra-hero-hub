@@ -76,6 +76,7 @@ import { Route as AppObrasObraIdFaturasRouteImport } from './routes/app.obras.$o
 import { Route as AppObrasObraIdDocumentosRouteImport } from './routes/app.obras.$obraId.documentos'
 import { Route as AppObrasObraIdContasPagarRouteImport } from './routes/app.obras.$obraId.contas-pagar'
 import { Route as AppObrasObraIdConsultaRouteImport } from './routes/app.obras.$obraId.consulta'
+import { Route as AppObrasObraIdComprasRouteImport } from './routes/app.obras.$obraId.compras'
 import { Route as AppObrasObraIdCaixaRouteImport } from './routes/app.obras.$obraId.caixa'
 import { Route as AppObrasObraIdComprasIndexRouteImport } from './routes/app.obras.$obraId.compras.index'
 import { Route as AppObrasObraIdRelatoriosPagamentosRouteImport } from './routes/app.obras.$obraId.relatorios.pagamentos'
@@ -428,6 +429,11 @@ const AppObrasObraIdConsultaRoute = AppObrasObraIdConsultaRouteImport.update({
   path: '/consulta',
   getParentRoute: () => AppObrasObraIdRoute,
 } as any)
+const AppObrasObraIdComprasRoute = AppObrasObraIdComprasRouteImport.update({
+  id: '/compras',
+  path: '/compras',
+  getParentRoute: () => AppObrasObraIdRoute,
+} as any)
 const AppObrasObraIdCaixaRoute = AppObrasObraIdCaixaRouteImport.update({
   id: '/caixa',
   path: '/caixa',
@@ -435,9 +441,9 @@ const AppObrasObraIdCaixaRoute = AppObrasObraIdCaixaRouteImport.update({
 } as any)
 const AppObrasObraIdComprasIndexRoute =
   AppObrasObraIdComprasIndexRouteImport.update({
-    id: '/compras/',
-    path: '/compras/',
-    getParentRoute: () => AppObrasObraIdRoute,
+    id: '/',
+    path: '/',
+    getParentRoute: () => AppObrasObraIdComprasRoute,
   } as any)
 const AppObrasObraIdRelatoriosPagamentosRoute =
   AppObrasObraIdRelatoriosPagamentosRouteImport.update({
@@ -464,9 +470,9 @@ const AppObrasObraIdRdoRdoIdRoute = AppObrasObraIdRdoRdoIdRouteImport.update({
 } as any)
 const AppObrasObraIdComprasCompraIdRoute =
   AppObrasObraIdComprasCompraIdRouteImport.update({
-    id: '/compras/$compraId',
-    path: '/compras/$compraId',
-    getParentRoute: () => AppObrasObraIdRoute,
+    id: '/$compraId',
+    path: '/$compraId',
+    getParentRoute: () => AppObrasObraIdComprasRoute,
   } as any)
 
 export interface FileRoutesByFullPath {
@@ -522,6 +528,7 @@ export interface FileRoutesByFullPath {
   '/app/configuracoes/': typeof AppConfiguracoesIndexRoute
   '/app/obras/': typeof AppObrasIndexRoute
   '/app/obras/$obraId/caixa': typeof AppObrasObraIdCaixaRoute
+  '/app/obras/$obraId/compras': typeof AppObrasObraIdComprasRouteWithChildren
   '/app/obras/$obraId/consulta': typeof AppObrasObraIdConsultaRoute
   '/app/obras/$obraId/contas-pagar': typeof AppObrasObraIdContasPagarRoute
   '/app/obras/$obraId/documentos': typeof AppObrasObraIdDocumentosRoute
@@ -671,6 +678,7 @@ export interface FileRoutesById {
   '/app/configuracoes/': typeof AppConfiguracoesIndexRoute
   '/app/obras/': typeof AppObrasIndexRoute
   '/app/obras/$obraId/caixa': typeof AppObrasObraIdCaixaRoute
+  '/app/obras/$obraId/compras': typeof AppObrasObraIdComprasRouteWithChildren
   '/app/obras/$obraId/consulta': typeof AppObrasObraIdConsultaRoute
   '/app/obras/$obraId/contas-pagar': typeof AppObrasObraIdContasPagarRoute
   '/app/obras/$obraId/documentos': typeof AppObrasObraIdDocumentosRoute
@@ -749,6 +757,7 @@ export interface FileRouteTypes {
     | '/app/configuracoes/'
     | '/app/obras/'
     | '/app/obras/$obraId/caixa'
+    | '/app/obras/$obraId/compras'
     | '/app/obras/$obraId/consulta'
     | '/app/obras/$obraId/contas-pagar'
     | '/app/obras/$obraId/documentos'
@@ -897,6 +906,7 @@ export interface FileRouteTypes {
     | '/app/configuracoes/'
     | '/app/obras/'
     | '/app/obras/$obraId/caixa'
+    | '/app/obras/$obraId/compras'
     | '/app/obras/$obraId/consulta'
     | '/app/obras/$obraId/contas-pagar'
     | '/app/obras/$obraId/documentos'
@@ -1410,6 +1420,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AppObrasObraIdConsultaRouteImport
       parentRoute: typeof AppObrasObraIdRoute
     }
+    '/app/obras/$obraId/compras': {
+      id: '/app/obras/$obraId/compras'
+      path: '/compras'
+      fullPath: '/app/obras/$obraId/compras'
+      preLoaderRoute: typeof AppObrasObraIdComprasRouteImport
+      parentRoute: typeof AppObrasObraIdRoute
+    }
     '/app/obras/$obraId/caixa': {
       id: '/app/obras/$obraId/caixa'
       path: '/caixa'
@@ -1419,10 +1436,10 @@ declare module '@tanstack/react-router' {
     }
     '/app/obras/$obraId/compras/': {
       id: '/app/obras/$obraId/compras/'
-      path: '/compras'
+      path: '/'
       fullPath: '/app/obras/$obraId/compras/'
       preLoaderRoute: typeof AppObrasObraIdComprasIndexRouteImport
-      parentRoute: typeof AppObrasObraIdRoute
+      parentRoute: typeof AppObrasObraIdComprasRoute
     }
     '/app/obras/$obraId/relatorios/pagamentos': {
       id: '/app/obras/$obraId/relatorios/pagamentos'
@@ -1454,10 +1471,10 @@ declare module '@tanstack/react-router' {
     }
     '/app/obras/$obraId/compras/$compraId': {
       id: '/app/obras/$obraId/compras/$compraId'
-      path: '/compras/$compraId'
+      path: '/$compraId'
       fullPath: '/app/obras/$obraId/compras/$compraId'
       preLoaderRoute: typeof AppObrasObraIdComprasCompraIdRouteImport
-      parentRoute: typeof AppObrasObraIdRoute
+      parentRoute: typeof AppObrasObraIdComprasRoute
     }
   }
 }
@@ -1501,6 +1518,21 @@ const AppConfiguracoesRouteChildren: AppConfiguracoesRouteChildren = {
 const AppConfiguracoesRouteWithChildren =
   AppConfiguracoesRoute._addFileChildren(AppConfiguracoesRouteChildren)
 
+interface AppObrasObraIdComprasRouteChildren {
+  AppObrasObraIdComprasCompraIdRoute: typeof AppObrasObraIdComprasCompraIdRoute
+  AppObrasObraIdComprasIndexRoute: typeof AppObrasObraIdComprasIndexRoute
+}
+
+const AppObrasObraIdComprasRouteChildren: AppObrasObraIdComprasRouteChildren = {
+  AppObrasObraIdComprasCompraIdRoute: AppObrasObraIdComprasCompraIdRoute,
+  AppObrasObraIdComprasIndexRoute: AppObrasObraIdComprasIndexRoute,
+}
+
+const AppObrasObraIdComprasRouteWithChildren =
+  AppObrasObraIdComprasRoute._addFileChildren(
+    AppObrasObraIdComprasRouteChildren,
+  )
+
 interface AppObrasObraIdRdoRouteChildren {
   AppObrasObraIdRdoRdoIdRoute: typeof AppObrasObraIdRdoRdoIdRoute
 }
@@ -1514,6 +1546,7 @@ const AppObrasObraIdRdoRouteWithChildren =
 
 interface AppObrasObraIdRouteChildren {
   AppObrasObraIdCaixaRoute: typeof AppObrasObraIdCaixaRoute
+  AppObrasObraIdComprasRoute: typeof AppObrasObraIdComprasRouteWithChildren
   AppObrasObraIdConsultaRoute: typeof AppObrasObraIdConsultaRoute
   AppObrasObraIdContasPagarRoute: typeof AppObrasObraIdContasPagarRoute
   AppObrasObraIdDocumentosRoute: typeof AppObrasObraIdDocumentosRoute
@@ -1527,15 +1560,14 @@ interface AppObrasObraIdRouteChildren {
   AppObrasObraIdRdoRoute: typeof AppObrasObraIdRdoRouteWithChildren
   AppObrasObraIdRhRoute: typeof AppObrasObraIdRhRoute
   AppObrasObraIdIndexRoute: typeof AppObrasObraIdIndexRoute
-  AppObrasObraIdComprasCompraIdRoute: typeof AppObrasObraIdComprasCompraIdRoute
   AppObrasObraIdRelatoriosComprasRoute: typeof AppObrasObraIdRelatoriosComprasRoute
   AppObrasObraIdRelatoriosOrcadoRealizadoRoute: typeof AppObrasObraIdRelatoriosOrcadoRealizadoRoute
   AppObrasObraIdRelatoriosPagamentosRoute: typeof AppObrasObraIdRelatoriosPagamentosRoute
-  AppObrasObraIdComprasIndexRoute: typeof AppObrasObraIdComprasIndexRoute
 }
 
 const AppObrasObraIdRouteChildren: AppObrasObraIdRouteChildren = {
   AppObrasObraIdCaixaRoute: AppObrasObraIdCaixaRoute,
+  AppObrasObraIdComprasRoute: AppObrasObraIdComprasRouteWithChildren,
   AppObrasObraIdConsultaRoute: AppObrasObraIdConsultaRoute,
   AppObrasObraIdContasPagarRoute: AppObrasObraIdContasPagarRoute,
   AppObrasObraIdDocumentosRoute: AppObrasObraIdDocumentosRoute,
@@ -1549,13 +1581,11 @@ const AppObrasObraIdRouteChildren: AppObrasObraIdRouteChildren = {
   AppObrasObraIdRdoRoute: AppObrasObraIdRdoRouteWithChildren,
   AppObrasObraIdRhRoute: AppObrasObraIdRhRoute,
   AppObrasObraIdIndexRoute: AppObrasObraIdIndexRoute,
-  AppObrasObraIdComprasCompraIdRoute: AppObrasObraIdComprasCompraIdRoute,
   AppObrasObraIdRelatoriosComprasRoute: AppObrasObraIdRelatoriosComprasRoute,
   AppObrasObraIdRelatoriosOrcadoRealizadoRoute:
     AppObrasObraIdRelatoriosOrcadoRealizadoRoute,
   AppObrasObraIdRelatoriosPagamentosRoute:
     AppObrasObraIdRelatoriosPagamentosRoute,
-  AppObrasObraIdComprasIndexRoute: AppObrasObraIdComprasIndexRoute,
 }
 
 const AppObrasObraIdRouteWithChildren = AppObrasObraIdRoute._addFileChildren(
@@ -1646,3 +1676,13 @@ const rootRouteChildren: RootRouteChildren = {
 export const routeTree = rootRouteImport
   ._addFileChildren(rootRouteChildren)
   ._addFileTypes<FileRouteTypes>()
+
+import type { getRouter } from './router.tsx'
+import type { startInstance } from './start.ts'
+declare module '@tanstack/react-start' {
+  interface Register {
+    ssr: true
+    router: Awaited<ReturnType<typeof getRouter>>
+    config: Awaited<ReturnType<typeof startInstance.getOptions>>
+  }
+}
