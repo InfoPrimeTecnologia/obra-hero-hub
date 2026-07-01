@@ -25,7 +25,7 @@ import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/lib/auth-context";
 import { toast } from "sonner";
 
-export const Route = createFileRoute("/app/obras/$obraId/compras")({
+export const Route = createFileRoute("/app/obras/$obraId/compras/")({
   component: ComprasPage,
 });
 

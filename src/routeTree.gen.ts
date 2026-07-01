@@ -76,8 +76,8 @@ import { Route as AppObrasObraIdFaturasRouteImport } from './routes/app.obras.$o
 import { Route as AppObrasObraIdDocumentosRouteImport } from './routes/app.obras.$obraId.documentos'
 import { Route as AppObrasObraIdContasPagarRouteImport } from './routes/app.obras.$obraId.contas-pagar'
 import { Route as AppObrasObraIdConsultaRouteImport } from './routes/app.obras.$obraId.consulta'
-import { Route as AppObrasObraIdComprasRouteImport } from './routes/app.obras.$obraId.compras'
 import { Route as AppObrasObraIdCaixaRouteImport } from './routes/app.obras.$obraId.caixa'
+import { Route as AppObrasObraIdComprasIndexRouteImport } from './routes/app.obras.$obraId.compras.index'
 import { Route as AppObrasObraIdRelatoriosPagamentosRouteImport } from './routes/app.obras.$obraId.relatorios.pagamentos'
 import { Route as AppObrasObraIdRelatoriosOrcadoRealizadoRouteImport } from './routes/app.obras.$obraId.relatorios.orcado-realizado'
 import { Route as AppObrasObraIdRelatoriosComprasRouteImport } from './routes/app.obras.$obraId.relatorios.compras'
@@ -428,16 +428,17 @@ const AppObrasObraIdConsultaRoute = AppObrasObraIdConsultaRouteImport.update({
   path: '/consulta',
   getParentRoute: () => AppObrasObraIdRoute,
 } as any)
-const AppObrasObraIdComprasRoute = AppObrasObraIdComprasRouteImport.update({
-  id: '/compras',
-  path: '/compras',
-  getParentRoute: () => AppObrasObraIdRoute,
-} as any)
 const AppObrasObraIdCaixaRoute = AppObrasObraIdCaixaRouteImport.update({
   id: '/caixa',
   path: '/caixa',
   getParentRoute: () => AppObrasObraIdRoute,
 } as any)
+const AppObrasObraIdComprasIndexRoute =
+  AppObrasObraIdComprasIndexRouteImport.update({
+    id: '/compras/',
+    path: '/compras/',
+    getParentRoute: () => AppObrasObraIdRoute,
+  } as any)
 const AppObrasObraIdRelatoriosPagamentosRoute =
   AppObrasObraIdRelatoriosPagamentosRouteImport.update({
     id: '/relatorios/pagamentos',
@@ -463,9 +464,9 @@ const AppObrasObraIdRdoRdoIdRoute = AppObrasObraIdRdoRdoIdRouteImport.update({
 } as any)
 const AppObrasObraIdComprasCompraIdRoute =
   AppObrasObraIdComprasCompraIdRouteImport.update({
-    id: '/$compraId',
-    path: '/$compraId',
-    getParentRoute: () => AppObrasObraIdComprasRoute,
+    id: '/compras/$compraId',
+    path: '/compras/$compraId',
+    getParentRoute: () => AppObrasObraIdRoute,
   } as any)
 
 export interface FileRoutesByFullPath {
@@ -521,7 +522,6 @@ export interface FileRoutesByFullPath {
   '/app/configuracoes/': typeof AppConfiguracoesIndexRoute
   '/app/obras/': typeof AppObrasIndexRoute
   '/app/obras/$obraId/caixa': typeof AppObrasObraIdCaixaRoute
-  '/app/obras/$obraId/compras': typeof AppObrasObraIdComprasRouteWithChildren
   '/app/obras/$obraId/consulta': typeof AppObrasObraIdConsultaRoute
   '/app/obras/$obraId/contas-pagar': typeof AppObrasObraIdContasPagarRoute
   '/app/obras/$obraId/documentos': typeof AppObrasObraIdDocumentosRoute
@@ -543,6 +543,7 @@ export interface FileRoutesByFullPath {
   '/app/obras/$obraId/relatorios/compras': typeof AppObrasObraIdRelatoriosComprasRoute
   '/app/obras/$obraId/relatorios/orcado-realizado': typeof AppObrasObraIdRelatoriosOrcadoRealizadoRoute
   '/app/obras/$obraId/relatorios/pagamentos': typeof AppObrasObraIdRelatoriosPagamentosRoute
+  '/app/obras/$obraId/compras/': typeof AppObrasObraIdComprasIndexRoute
 }
 export interface FileRoutesByTo {
   '/': typeof IndexRoute
@@ -593,7 +594,6 @@ export interface FileRoutesByTo {
   '/app/configuracoes': typeof AppConfiguracoesIndexRoute
   '/app/obras': typeof AppObrasIndexRoute
   '/app/obras/$obraId/caixa': typeof AppObrasObraIdCaixaRoute
-  '/app/obras/$obraId/compras': typeof AppObrasObraIdComprasRouteWithChildren
   '/app/obras/$obraId/consulta': typeof AppObrasObraIdConsultaRoute
   '/app/obras/$obraId/contas-pagar': typeof AppObrasObraIdContasPagarRoute
   '/app/obras/$obraId/documentos': typeof AppObrasObraIdDocumentosRoute
@@ -615,6 +615,7 @@ export interface FileRoutesByTo {
   '/app/obras/$obraId/relatorios/compras': typeof AppObrasObraIdRelatoriosComprasRoute
   '/app/obras/$obraId/relatorios/orcado-realizado': typeof AppObrasObraIdRelatoriosOrcadoRealizadoRoute
   '/app/obras/$obraId/relatorios/pagamentos': typeof AppObrasObraIdRelatoriosPagamentosRoute
+  '/app/obras/$obraId/compras': typeof AppObrasObraIdComprasIndexRoute
 }
 export interface FileRoutesById {
   __root__: typeof rootRouteImport
@@ -670,7 +671,6 @@ export interface FileRoutesById {
   '/app/configuracoes/': typeof AppConfiguracoesIndexRoute
   '/app/obras/': typeof AppObrasIndexRoute
   '/app/obras/$obraId/caixa': typeof AppObrasObraIdCaixaRoute
-  '/app/obras/$obraId/compras': typeof AppObrasObraIdComprasRouteWithChildren
   '/app/obras/$obraId/consulta': typeof AppObrasObraIdConsultaRoute
   '/app/obras/$obraId/contas-pagar': typeof AppObrasObraIdContasPagarRoute
   '/app/obras/$obraId/documentos': typeof AppObrasObraIdDocumentosRoute
@@ -692,6 +692,7 @@ export interface FileRoutesById {
   '/app/obras/$obraId/relatorios/compras': typeof AppObrasObraIdRelatoriosComprasRoute
   '/app/obras/$obraId/relatorios/orcado-realizado': typeof AppObrasObraIdRelatoriosOrcadoRealizadoRoute
   '/app/obras/$obraId/relatorios/pagamentos': typeof AppObrasObraIdRelatoriosPagamentosRoute
+  '/app/obras/$obraId/compras/': typeof AppObrasObraIdComprasIndexRoute
 }
 export interface FileRouteTypes {
   fileRoutesByFullPath: FileRoutesByFullPath
@@ -748,7 +749,6 @@ export interface FileRouteTypes {
     | '/app/configuracoes/'
     | '/app/obras/'
     | '/app/obras/$obraId/caixa'
-    | '/app/obras/$obraId/compras'
     | '/app/obras/$obraId/consulta'
     | '/app/obras/$obraId/contas-pagar'
     | '/app/obras/$obraId/documentos'
@@ -770,6 +770,7 @@ export interface FileRouteTypes {
     | '/app/obras/$obraId/relatorios/compras'
     | '/app/obras/$obraId/relatorios/orcado-realizado'
     | '/app/obras/$obraId/relatorios/pagamentos'
+    | '/app/obras/$obraId/compras/'
   fileRoutesByTo: FileRoutesByTo
   to:
     | '/'
@@ -820,7 +821,6 @@ export interface FileRouteTypes {
     | '/app/configuracoes'
     | '/app/obras'
     | '/app/obras/$obraId/caixa'
-    | '/app/obras/$obraId/compras'
     | '/app/obras/$obraId/consulta'
     | '/app/obras/$obraId/contas-pagar'
     | '/app/obras/$obraId/documentos'
@@ -842,6 +842,7 @@ export interface FileRouteTypes {
     | '/app/obras/$obraId/relatorios/compras'
     | '/app/obras/$obraId/relatorios/orcado-realizado'
     | '/app/obras/$obraId/relatorios/pagamentos'
+    | '/app/obras/$obraId/compras'
   id:
     | '__root__'
     | '/'
@@ -896,7 +897,6 @@ export interface FileRouteTypes {
     | '/app/configuracoes/'
     | '/app/obras/'
     | '/app/obras/$obraId/caixa'
-    | '/app/obras/$obraId/compras'
     | '/app/obras/$obraId/consulta'
     | '/app/obras/$obraId/contas-pagar'
     | '/app/obras/$obraId/documentos'
@@ -918,6 +918,7 @@ export interface FileRouteTypes {
     | '/app/obras/$obraId/relatorios/compras'
     | '/app/obras/$obraId/relatorios/orcado-realizado'
     | '/app/obras/$obraId/relatorios/pagamentos'
+    | '/app/obras/$obraId/compras/'
   fileRoutesById: FileRoutesById
 }
 export interface RootRouteChildren {
@@ -1409,18 +1410,18 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AppObrasObraIdConsultaRouteImport
       parentRoute: typeof AppObrasObraIdRoute
     }
-    '/app/obras/$obraId/compras': {
-      id: '/app/obras/$obraId/compras'
-      path: '/compras'
-      fullPath: '/app/obras/$obraId/compras'
-      preLoaderRoute: typeof AppObrasObraIdComprasRouteImport
-      parentRoute: typeof AppObrasObraIdRoute
-    }
     '/app/obras/$obraId/caixa': {
       id: '/app/obras/$obraId/caixa'
       path: '/caixa'
       fullPath: '/app/obras/$obraId/caixa'
       preLoaderRoute: typeof AppObrasObraIdCaixaRouteImport
+      parentRoute: typeof AppObrasObraIdRoute
+    }
+    '/app/obras/$obraId/compras/': {
+      id: '/app/obras/$obraId/compras/'
+      path: '/compras'
+      fullPath: '/app/obras/$obraId/compras/'
+      preLoaderRoute: typeof AppObrasObraIdComprasIndexRouteImport
       parentRoute: typeof AppObrasObraIdRoute
     }
     '/app/obras/$obraId/relatorios/pagamentos': {
@@ -1453,10 +1454,10 @@ declare module '@tanstack/react-router' {
     }
     '/app/obras/$obraId/compras/$compraId': {
       id: '/app/obras/$obraId/compras/$compraId'
-      path: '/$compraId'
+      path: '/compras/$compraId'
       fullPath: '/app/obras/$obraId/compras/$compraId'
       preLoaderRoute: typeof AppObrasObraIdComprasCompraIdRouteImport
-      parentRoute: typeof AppObrasObraIdComprasRoute
+      parentRoute: typeof AppObrasObraIdRoute
     }
   }
 }
@@ -1500,19 +1501,6 @@ const AppConfiguracoesRouteChildren: AppConfiguracoesRouteChildren = {
 const AppConfiguracoesRouteWithChildren =
   AppConfiguracoesRoute._addFileChildren(AppConfiguracoesRouteChildren)
 
-interface AppObrasObraIdComprasRouteChildren {
-  AppObrasObraIdComprasCompraIdRoute: typeof AppObrasObraIdComprasCompraIdRoute
-}
-
-const AppObrasObraIdComprasRouteChildren: AppObrasObraIdComprasRouteChildren = {
-  AppObrasObraIdComprasCompraIdRoute: AppObrasObraIdComprasCompraIdRoute,
-}
-
-const AppObrasObraIdComprasRouteWithChildren =
-  AppObrasObraIdComprasRoute._addFileChildren(
-    AppObrasObraIdComprasRouteChildren,
-  )
-
 interface AppObrasObraIdRdoRouteChildren {
   AppObrasObraIdRdoRdoIdRoute: typeof AppObrasObraIdRdoRdoIdRoute
 }
@@ -1526,7 +1514,6 @@ const AppObrasObraIdRdoRouteWithChildren =
 
 interface AppObrasObraIdRouteChildren {
   AppObrasObraIdCaixaRoute: typeof AppObrasObraIdCaixaRoute
-  AppObrasObraIdComprasRoute: typeof AppObrasObraIdComprasRouteWithChildren
   AppObrasObraIdConsultaRoute: typeof AppObrasObraIdConsultaRoute
   AppObrasObraIdContasPagarRoute: typeof AppObrasObraIdContasPagarRoute
   AppObrasObraIdDocumentosRoute: typeof AppObrasObraIdDocumentosRoute
@@ -1540,14 +1527,15 @@ interface AppObrasObraIdRouteChildren {
   AppObrasObraIdRdoRoute: typeof AppObrasObraIdRdoRouteWithChildren
   AppObrasObraIdRhRoute: typeof AppObrasObraIdRhRoute
   AppObrasObraIdIndexRoute: typeof AppObrasObraIdIndexRoute
+  AppObrasObraIdComprasCompraIdRoute: typeof AppObrasObraIdComprasCompraIdRoute
   AppObrasObraIdRelatoriosComprasRoute: typeof AppObrasObraIdRelatoriosComprasRoute
   AppObrasObraIdRelatoriosOrcadoRealizadoRoute: typeof AppObrasObraIdRelatoriosOrcadoRealizadoRoute
   AppObrasObraIdRelatoriosPagamentosRoute: typeof AppObrasObraIdRelatoriosPagamentosRoute
+  AppObrasObraIdComprasIndexRoute: typeof AppObrasObraIdComprasIndexRoute
 }
 
 const AppObrasObraIdRouteChildren: AppObrasObraIdRouteChildren = {
   AppObrasObraIdCaixaRoute: AppObrasObraIdCaixaRoute,
-  AppObrasObraIdComprasRoute: AppObrasObraIdComprasRouteWithChildren,
   AppObrasObraIdConsultaRoute: AppObrasObraIdConsultaRoute,
   AppObrasObraIdContasPagarRoute: AppObrasObraIdContasPagarRoute,
   AppObrasObraIdDocumentosRoute: AppObrasObraIdDocumentosRoute,
@@ -1561,11 +1549,13 @@ const AppObrasObraIdRouteChildren: AppObrasObraIdRouteChildren = {
   AppObrasObraIdRdoRoute: AppObrasObraIdRdoRouteWithChildren,
   AppObrasObraIdRhRoute: AppObrasObraIdRhRoute,
   AppObrasObraIdIndexRoute: AppObrasObraIdIndexRoute,
+  AppObrasObraIdComprasCompraIdRoute: AppObrasObraIdComprasCompraIdRoute,
   AppObrasObraIdRelatoriosComprasRoute: AppObrasObraIdRelatoriosComprasRoute,
   AppObrasObraIdRelatoriosOrcadoRealizadoRoute:
     AppObrasObraIdRelatoriosOrcadoRealizadoRoute,
   AppObrasObraIdRelatoriosPagamentosRoute:
     AppObrasObraIdRelatoriosPagamentosRoute,
+  AppObrasObraIdComprasIndexRoute: AppObrasObraIdComprasIndexRoute,
 }
 
 const AppObrasObraIdRouteWithChildren = AppObrasObraIdRoute._addFileChildren(
