@@ -504,6 +504,17 @@ function ObrasPage() {
                     <Button
                       variant="ghost"
                       size="sm"
+                      onClick={() => {
+                        setObraParaDuplicar(o);
+                        setDuplicandoNome(`${o.name} (cópia)`);
+                      }}
+                      title="Duplicar obra"
+                    >
+                      <Copy className="mr-2 h-4 w-4" /> Duplicar
+                    </Button>
+                    <Button
+                      variant="ghost"
+                      size="sm"
                       onClick={() => arquivarObra(o, !arquivada)}
                       title={arquivada ? "Reativar" : "Arquivar"}
                     >
@@ -578,6 +589,39 @@ function ObrasPage() {
           </AlertDialogFooter>
         </AlertDialogContent>
       </AlertDialog>
+
+      <Dialog open={!!obraParaDuplicar} onOpenChange={(o) => { if (!o) { setObraParaDuplicar(null); setDuplicandoNome(""); setDuplicandoIncPlan(false); } }}>
+        <DialogContent>
+          <DialogHeader>
+            <DialogTitle>Duplicar "{obraParaDuplicar?.name}"</DialogTitle>
+          </DialogHeader>
+          <div className="space-y-3">
+            <div className="space-y-2">
+              <Label>Nome da nova obra</Label>
+              <Input value={duplicandoNome} onChange={(e) => setDuplicandoNome(e.target.value)} disabled={duplicando} />
+            </div>
+            <label className="flex items-center gap-2 text-sm">
+              <Checkbox
+                checked={duplicandoIncPlan}
+                onCheckedChange={(v) => setDuplicandoIncPlan(v === true)}
+                disabled={duplicando}
+              />
+              Copiar também datas previstas e % de avanço das etapas
+            </label>
+            <p className="text-xs text-muted-foreground">
+              Serão copiados: dados cadastrais (endereço, contato), etapas e subetapas do orçamento
+              (com valores). Compras, RDOs, medições e financeiro <b>não</b> são copiados.
+            </p>
+          </div>
+          <DialogFooter>
+            <Button variant="ghost" onClick={() => setObraParaDuplicar(null)} disabled={duplicando}>Cancelar</Button>
+            <Button onClick={() => void duplicarObraConfirmar()} disabled={duplicando || !duplicandoNome.trim()}>
+              {duplicando ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : <Copy className="mr-2 h-4 w-4" />}
+              Duplicar
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
     </div>
   );
 }
