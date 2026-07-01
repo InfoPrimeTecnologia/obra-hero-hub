@@ -61,6 +61,7 @@ export const saveMyCustomerSettings = createServerFn({ method: "POST" })
       address_zip: normalizeText(data.address_zip),
       notes: normalizeText(data.notes),
       limite_aprovacao_compra: data.limite_aprovacao_compra ?? 0,
+      alerta_subetapa_pct: data.alerta_subetapa_pct ?? 90,
     };
 
     // Try to find by owner first
