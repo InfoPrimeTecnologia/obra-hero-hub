@@ -16,11 +16,16 @@ import {
 import {
   Select, SelectContent, SelectItem, SelectTrigger, SelectValue,
 } from "@/components/ui/select";
+import {
+  AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent,
+  AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle,
+} from "@/components/ui/alert-dialog";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/lib/auth-context";
 import { toast } from "sonner";
 import { CompraNotasFiscais } from "@/components/app/CompraNotasFiscais";
 import { usePlanModules } from "@/lib/use-plan-modules";
+import { checkOrcamentoAlert, brl as brlAlert, type OrcamentoAlertResult } from "@/lib/orcamento-alert";
 
 
 export const Route = createFileRoute("/app/obras/$obraId/compras/$compraId")({
@@ -92,6 +97,17 @@ function CompraDetalhePage() {
   const [novoSubNome, setNovoSubNome] = useState("");
   const [savingSub, setSavingSub] = useState(false);
 
+  const [alertOrc, setAlertOrc] = useState<OrcamentoAlertResult | null>(null);
+  const [pendingItemPayload, setPendingItemPayload] = useState<{
+    payload: {
+      descricao: string; unidade: string | null;
+      quantidade: number; valor_unitario: number; valor_total: number;
+      etapa_id: string; subetapa_id: string;
+    };
+    isEdit: boolean;
+    editingId?: string;
+  } | null>(null);
+
   const [openReceb, setOpenReceb] = useState(false);
   const [recebForm, setRecebForm] = useState({
     data: new Date().toISOString().slice(0, 10),
@@ -152,22 +168,19 @@ function CompraDetalhePage() {
     });
     setOpenItem(true);
   };
-  const salvarItem = async (e: FormEvent) => {
-    e.preventDefault();
+  type ItemPayload = {
+    descricao: string; unidade: string | null;
+    quantidade: number; valor_unitario: number; valor_total: number;
+    etapa_id: string; subetapa_id: string;
+  };
+  const persistirItem = async (
+    payload: ItemPayload,
+    isEdit: boolean,
+    editingId?: string,
+  ) => {
     if (!compra) return;
-    if (!itemForm.etapa_id || !itemForm.subetapa_id) {
-      return toast.error("Selecione a etapa e a subetapa do item");
-    }
-    const qtd = Number(itemForm.quantidade) || 0;
-    const vu = Number(itemForm.valor_unitario) || 0;
-    const payload = {
-      descricao: itemForm.descricao, unidade: itemForm.unidade || null,
-      quantidade: qtd, valor_unitario: vu, valor_total: qtd * vu,
-      etapa_id: itemForm.etapa_id,
-      subetapa_id: itemForm.subetapa_id,
-    };
-    if (editingItem) {
-      const { error } = await supabase.from("compra_itens").update(payload).eq("id", editingItem.id);
+    if (isEdit && editingId) {
+      const { error } = await supabase.from("compra_itens").update(payload).eq("id", editingId);
       if (error) return toast.error("Erro", { description: error.message });
     } else {
       const { error } = await supabase.from("compra_itens").insert({
@@ -177,6 +190,43 @@ function CompraDetalhePage() {
     }
     await recalcularTotalCompra();
     resetItemForm(); setOpenItem(false); toast.success("Item salvo"); void carregar();
+  };
+
+  const salvarItem = async (e: FormEvent) => {
+    e.preventDefault();
+    if (!compra) return;
+    if (!itemForm.etapa_id || !itemForm.subetapa_id) {
+      return toast.error("Selecione a etapa e a subetapa do item");
+    }
+    const qtd = Number(itemForm.quantidade) || 0;
+    const vu = Number(itemForm.valor_unitario) || 0;
+    const valorItem = qtd * vu;
+    const payload = {
+      descricao: itemForm.descricao, unidade: itemForm.unidade || null,
+      quantidade: qtd, valor_unitario: vu, valor_total: valorItem,
+      etapa_id: itemForm.etapa_id,
+      subetapa_id: itemForm.subetapa_id,
+    };
+
+    // Delta do lançamento: se editando, subtrai o valor antigo (se subetapa é a mesma)
+    let delta = valorItem;
+    if (editingItem) {
+      const mesmaSub = editingItem.subetapa_id === itemForm.subetapa_id;
+      if (mesmaSub) delta = valorItem - Number(editingItem.valor_total ?? 0);
+    }
+    if (delta > 0) {
+      const check = await checkOrcamentoAlert(
+        itemForm.subetapa_id,
+        delta,
+        compra.customer_id,
+      );
+      if (check.shouldWarn) {
+        setAlertOrc(check);
+        setPendingItemPayload({ payload, isEdit: !!editingItem, editingId: editingItem?.id });
+        return;
+      }
+    }
+    await persistirItem(payload, !!editingItem, editingItem?.id);
   };
 
   const criarSubetapaInline = async () => {
@@ -590,6 +640,50 @@ function CompraDetalhePage() {
         <NotasFiscaisSection compraId={compraId} customerId={compra.customer_id} />
       </div>
 
+      {/* Alerta de estouro de orçamento */}
+      <AlertDialog open={!!alertOrc} onOpenChange={(o) => { if (!o) { setAlertOrc(null); setPendingItemPayload(null); } }}>
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>
+              {alertOrc?.ultrapassa ? "Orçamento estourado" : "Orçamento próximo do limite"}
+            </AlertDialogTitle>
+            <AlertDialogDescription asChild>
+              <div className="space-y-2 text-sm">
+                <p>
+                  Este lançamento vai colocar a subetapa <strong>{alertOrc?.subetapaNome}</strong>{" "}
+                  em <strong>{alertOrc?.pctFuturo.toFixed(1)}%</strong> do orçamento
+                  (limite de alerta: {alertOrc?.threshold}%).
+                </p>
+                <div className="rounded-md border bg-muted/40 p-3 text-xs">
+                  <div>Orçado: <strong>{brlAlert(alertOrc?.orcado ?? 0)}</strong></div>
+                  <div>Gasto atual: {brlAlert(alertOrc?.gastoAtual ?? 0)} ({alertOrc?.pctAtual.toFixed(1)}%)</div>
+                  <div>Após este lançamento: <strong>{brlAlert(alertOrc?.novoGasto ?? 0)}</strong></div>
+                </div>
+                <p className="text-muted-foreground">
+                  Deseja continuar mesmo assim?
+                </p>
+              </div>
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel>Cancelar</AlertDialogCancel>
+            <AlertDialogAction
+              onClick={async () => {
+                if (pendingItemPayload) {
+                  await persistirItem(
+                    pendingItemPayload.payload,
+                    pendingItemPayload.isEdit,
+                    pendingItemPayload.editingId,
+                  );
+                }
+                setAlertOrc(null); setPendingItemPayload(null);
+              }}
+            >
+              Confirmar mesmo assim
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
     </div>
   );
 }

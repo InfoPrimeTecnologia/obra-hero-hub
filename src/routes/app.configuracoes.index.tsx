@@ -32,6 +32,7 @@ type Empresa = {
   address_zip?: string | null;
   notes?: string | null;
   limite_aprovacao_compra?: number | null;
+  alerta_subetapa_pct?: number | null;
 };
 
 function ConfiguracoesPage() {
@@ -197,6 +198,29 @@ function ConfiguracoesPage() {
                   step="0.01"
                   value={empresa.limite_aprovacao_compra ?? 0}
                   onChange={(e) => set("limite_aprovacao_compra", e.target.value === "" ? 0 : Number(e.target.value))}
+                />
+              </div>
+            </CardContent>
+          </Card>
+
+          <Card>
+            <CardHeader>
+              <CardTitle>Alerta de estouro de orçamento</CardTitle>
+              <CardDescription>
+                A partir de qual percentual do orçamento da subetapa o sistema deve avisar
+                (modal no momento da compra e notificação no sino). Padrão: 90%.
+              </CardDescription>
+            </CardHeader>
+            <CardContent className="grid gap-4 md:grid-cols-2">
+              <div className="space-y-2">
+                <Label>Limite de alerta (%)</Label>
+                <Input
+                  type="number"
+                  min={1}
+                  max={200}
+                  step="1"
+                  value={empresa.alerta_subetapa_pct ?? 90}
+                  onChange={(e) => set("alerta_subetapa_pct", e.target.value === "" ? 90 : Number(e.target.value))}
                 />
               </div>
             </CardContent>

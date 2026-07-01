@@ -17,6 +17,7 @@ const CustomerSettingsSchema = z.object({
   address_zip: z.string().nullable().optional(),
   notes: z.string().nullable().optional(),
   limite_aprovacao_compra: z.number().nonnegative().nullable().optional(),
+  alerta_subetapa_pct: z.number().int().min(1).max(200).nullable().optional(),
 });
 
 function normalizeText(value: string | null | undefined) {
@@ -60,6 +61,7 @@ export const saveMyCustomerSettings = createServerFn({ method: "POST" })
       address_zip: normalizeText(data.address_zip),
       notes: normalizeText(data.notes),
       limite_aprovacao_compra: data.limite_aprovacao_compra ?? 0,
+      alerta_subetapa_pct: data.alerta_subetapa_pct ?? 90,
     };
 
     // Try to find by owner first

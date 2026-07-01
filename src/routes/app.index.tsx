@@ -69,13 +69,18 @@ type Kpis = {
   colaboradores: number;
   produtosBaixo: number;
   aPagar30: number;
+  aPagar7: number;
   aReceber30: number;
   vencidasPagar: number;
+  avancoFisicoMedio: number;
+  faturamentoPrevistoMes: number;
+  faturamentoRealizadoMes: number;
 };
 
 type FluxoPonto = { mes: string; pagar: number; receber: number };
 type RdoRecente = { id: string; data: string; obra: string };
 type AlertaConta = { id: string; descricao: string; vencimento: string; valor: number };
+type ObraEstourada = { id: string; nome: string; orcado: number; realizado: number; pct: number };
 
 function ClienteDashboard() {
   const { user } = useAuth();
@@ -90,9 +95,14 @@ function ClienteDashboard() {
     colaboradores: 0,
     produtosBaixo: 0,
     aPagar30: 0,
+    aPagar7: 0,
     aReceber30: 0,
     vencidasPagar: 0,
+    avancoFisicoMedio: 0,
+    faturamentoPrevistoMes: 0,
+    faturamentoRealizadoMes: 0,
   });
+  const [obrasEstouradas, setObrasEstouradas] = useState<ObraEstourada[]>([]);
   const [fluxo, setFluxo] = useState<FluxoPonto[]>([]);
   const [obrasStatus, setObrasStatus] = useState<{ name: string; value: number }[]>([]);
   const [rdosRecentes, setRdosRecentes] = useState<RdoRecente[]>([]);
@@ -118,6 +128,8 @@ function ClienteDashboard() {
       setLoading(true);
       const hoje = new Date();
       const inicioMes = startOfMonth(hoje).toISOString().slice(0, 10);
+      const fimMes = endOfMonth(hoje).toISOString().slice(0, 10);
+      const em7 = new Date(hoje.getTime() + 7 * 86400000).toISOString().slice(0, 10);
       const em30 = new Date(hoje.getTime() + 30 * 86400000).toISOString().slice(0, 10);
       const hojeStr = hoje.toISOString().slice(0, 10);
 
@@ -129,51 +141,84 @@ function ClienteDashboard() {
         { count: colabs },
         { data: saldosBaixo },
         { data: pagar30 },
+        { data: pagar7 },
         { data: receber30 },
         { data: vencidas },
         { data: obrasRows },
+        { data: obrasAtivasRows },
         { data: rdoRows },
         { data: alertasRows },
+        { data: previstoMes },
+        { data: realizadoMes },
       ] = await Promise.all([
         supabase.from("empresas").select("*", { count: "exact", head: true }),
         supabase.from("obras").select("*", { count: "exact", head: true }),
         supabase.from("obras").select("*", { count: "exact", head: true }).eq("status", "active"),
         supabase.from("rdos").select("*", { count: "exact", head: true }).gte("data", inicioMes),
-        supabase
-          .from("colaboradores")
-          .select("*", { count: "exact", head: true })
-          .eq("ativo", true),
+        supabase.from("colaboradores").select("*", { count: "exact", head: true }).eq("ativo", true),
         supabase.from("estoque_saldos").select("produto_id, quantidade").lte("quantidade", 5),
-        supabase
-          .from("contas_pagar")
-          .select("valor")
-          .gte("data_vencimento", hojeStr)
-          .lte("data_vencimento", em30)
-          .neq("status", "pago"),
-        supabase
-          .from("contas_receber")
-          .select("valor")
-          .gte("data_vencimento", hojeStr)
-          .lte("data_vencimento", em30)
-          .neq("status", "recebido"),
-        supabase
-          .from("contas_pagar")
-          .select("valor")
-          .lt("data_vencimento", hojeStr)
-          .neq("status", "pago"),
+        supabase.from("contas_pagar").select("valor").gte("vencimento", hojeStr).lte("vencimento", em30).neq("status", "pago"),
+        supabase.from("contas_pagar").select("valor").gte("vencimento", hojeStr).lte("vencimento", em7).neq("status", "pago"),
+        supabase.from("contas_receber").select("valor").gte("vencimento", hojeStr).lte("vencimento", em30).neq("status", "recebido"),
+        supabase.from("contas_pagar").select("valor").lt("vencimento", hojeStr).neq("status", "pago"),
         supabase.from("obras").select("status"),
-        supabase
-          .from("rdos")
-          .select("id, data, obra:obras(nome)")
-          .order("data", { ascending: false })
-          .limit(5),
-        supabase
-          .from("contas_pagar")
-          .select("id, descricao, data_vencimento, valor")
-          .neq("status", "pago")
-          .order("data_vencimento", { ascending: true })
-          .limit(5),
+        supabase.from("obras").select("id,name").eq("status", "active"),
+        supabase.from("rdos").select("id, data, obra:obras(name)").order("data", { ascending: false }).limit(5),
+        supabase.from("contas_pagar").select("id, descricao, vencimento, valor").neq("status", "pago").order("vencimento", { ascending: true }).limit(5),
+        supabase.from("contas_receber").select("valor").gte("vencimento", inicioMes).lte("vencimento", fimMes),
+        supabase.from("contas_receber").select("valor_recebido,valor").eq("status", "recebido").gte("recebido_em", inicioMes).lte("recebido_em", fimMes),
       ]);
+
+      // Avanço físico médio + top 3 obras estouradas
+      let avancoFisicoMedio = 0;
+      const topEstouradas: ObraEstourada[] = [];
+      const obrasAtivas = (obrasAtivasRows ?? []) as { id: string; name: string }[];
+      if (obrasAtivas.length > 0) {
+        const obraIds = obrasAtivas.map((o) => o.id);
+        const [{ data: etapas }, { data: subs }, { data: comprasObras }] = await Promise.all([
+          supabase.from("orcamento_etapas").select("id,obra_id,percentual").in("obra_id", obraIds),
+          supabase.from("orcamento_subetapas").select("id,etapa_id,valor_orcado"),
+          supabase.from("compras").select("obra_id,valor_total").in("obra_id", obraIds),
+        ]);
+
+        // Avanço físico médio: média dos percentuais das etapas por obra, depois média entre obras
+        const etapasPorObra = new Map<string, number[]>();
+        (etapas ?? []).forEach((e: any) => {
+          const arr = etapasPorObra.get(e.obra_id) ?? [];
+          arr.push(Number(e.percentual ?? 0));
+          etapasPorObra.set(e.obra_id, arr);
+        });
+        const pctsObras: number[] = [];
+        etapasPorObra.forEach((arr) => {
+          if (arr.length > 0) pctsObras.push(arr.reduce((s, v) => s + v, 0) / arr.length);
+        });
+        avancoFisicoMedio = pctsObras.length > 0
+          ? pctsObras.reduce((s, v) => s + v, 0) / pctsObras.length
+          : 0;
+
+        // Orçado por obra (via etapas → subetapas)
+        const etapaObra = new Map<string, string>();
+        (etapas ?? []).forEach((e: any) => etapaObra.set(e.id, e.obra_id));
+        const orcadoObra = new Map<string, number>();
+        (subs ?? []).forEach((s: any) => {
+          const oid = etapaObra.get(s.etapa_id);
+          if (!oid) return;
+          orcadoObra.set(oid, (orcadoObra.get(oid) ?? 0) + Number(s.valor_orcado ?? 0));
+        });
+        const realizadoObra = new Map<string, number>();
+        (comprasObras ?? []).forEach((c: any) => {
+          realizadoObra.set(c.obra_id, (realizadoObra.get(c.obra_id) ?? 0) + Number(c.valor_total ?? 0));
+        });
+
+        obrasAtivas.forEach((o) => {
+          const orcado = orcadoObra.get(o.id) ?? 0;
+          const realizado = realizadoObra.get(o.id) ?? 0;
+          if (orcado > 0 && realizado > orcado) {
+            topEstouradas.push({ id: o.id, nome: o.name, orcado, realizado, pct: (realizado / orcado) * 100 });
+          }
+        });
+        topEstouradas.sort((a, b) => b.pct - a.pct);
+      }
 
       // Fluxo últimos 6 meses
       const meses = Array.from({ length: 6 }).map((_, i) => {
@@ -185,8 +230,8 @@ function ClienteDashboard() {
           const ini = startOfMonth(d).toISOString().slice(0, 10);
           const fim = endOfMonth(d).toISOString().slice(0, 10);
           const [{ data: p }, { data: r }] = await Promise.all([
-            supabase.from("contas_pagar").select("valor").gte("data_vencimento", ini).lte("data_vencimento", fim),
-            supabase.from("contas_receber").select("valor").gte("data_vencimento", ini).lte("data_vencimento", fim),
+            supabase.from("contas_pagar").select("valor").gte("vencimento", ini).lte("vencimento", fim),
+            supabase.from("contas_receber").select("valor").gte("vencimento", ini).lte("vencimento", fim),
           ]);
           return {
             mes: label,
@@ -211,9 +256,17 @@ function ClienteDashboard() {
         colaboradores: colabs ?? 0,
         produtosBaixo: (saldosBaixo ?? []).length,
         aPagar30: (pagar30 ?? []).reduce((s, x) => s + Number(x.valor ?? 0), 0),
+        aPagar7: (pagar7 ?? []).reduce((s, x) => s + Number(x.valor ?? 0), 0),
         aReceber30: (receber30 ?? []).reduce((s, x) => s + Number(x.valor ?? 0), 0),
         vencidasPagar: (vencidas ?? []).reduce((s, x) => s + Number(x.valor ?? 0), 0),
+        avancoFisicoMedio,
+        faturamentoPrevistoMes: (previstoMes ?? []).reduce((s, x) => s + Number(x.valor ?? 0), 0),
+        faturamentoRealizadoMes: (realizadoMes ?? []).reduce(
+          (s, x: any) => s + Number(x.valor_recebido ?? x.valor ?? 0),
+          0,
+        ),
       });
+      setObrasEstouradas(topEstouradas.slice(0, 3));
       setFluxo(fluxoData);
       setObrasStatus(
         Object.entries(statusMap).map(([name, value]) => ({
@@ -225,14 +278,14 @@ function ClienteDashboard() {
         (rdoRows ?? []).map((r: any) => ({
           id: r.id,
           data: r.data,
-          obra: r.obra?.nome ?? "—",
+          obra: r.obra?.name ?? "—",
         }))
       );
       setAlertas(
         (alertasRows ?? []).map((a: any) => ({
           id: a.id,
           descricao: a.descricao ?? "Conta a pagar",
-          vencimento: a.data_vencimento,
+          vencimento: a.vencimento,
           valor: Number(a.valor ?? 0),
         }))
       );
@@ -242,6 +295,7 @@ function ClienteDashboard() {
       alive = false;
     };
   }, []);
+
 
   const saldoMes = useMemo(() => {
     const last = fluxo[fluxo.length - 1];
@@ -342,7 +396,7 @@ function ClienteDashboard() {
           </div>
         </div>
 
-        {/* KPI cards */}
+        {/* KPI cards principais */}
         <div className="grid grid-cols-2 gap-4 lg:grid-cols-4">
           <KpiCard
             label="Obras ativas"
@@ -352,6 +406,35 @@ function ClienteDashboard() {
             footer={`${kpis.empresas} empresa(s)`}
             loading={loading}
           />
+          <KpiCard
+            label="Avanço físico médio"
+            value={`${kpis.avancoFisicoMedio.toFixed(1)}%`}
+            icon={Activity}
+            tone="accent"
+            footer="Média das obras ativas"
+            loading={loading}
+          />
+          <KpiCard
+            label="A pagar (7 dias)"
+            value={fmtBRL(kpis.aPagar7)}
+            icon={CalendarClock}
+            tone="danger"
+            footer={kpis.vencidasPagar > 0 ? `${fmtBRL(kpis.vencidasPagar)} vencidas` : `${fmtBRL(kpis.aPagar30)} em 30d`}
+            loading={loading}
+            alert={kpis.vencidasPagar > 0}
+          />
+          <KpiCard
+            label="Faturamento do mês"
+            value={fmtBRL(kpis.faturamentoRealizadoMes)}
+            icon={TrendingUp}
+            tone="success"
+            footer={`Previsto: ${fmtBRL(kpis.faturamentoPrevistoMes)}`}
+            loading={loading}
+          />
+        </div>
+
+        {/* KPI cards secundários */}
+        <div className="grid grid-cols-2 gap-4 lg:grid-cols-4">
           <KpiCard
             label="RDOs no mês"
             value={kpis.rdosMes.toString()}
@@ -373,11 +456,56 @@ function ClienteDashboard() {
             value={fmtBRL(kpis.aPagar30)}
             icon={TrendingDown}
             tone="danger"
-            footer={kpis.vencidasPagar > 0 ? `${fmtBRL(kpis.vencidasPagar)} vencidas` : "Em dia"}
+            footer="Total próximos 30 dias"
             loading={loading}
-            alert={kpis.vencidasPagar > 0}
+          />
+          <KpiCard
+            label="Colaboradores"
+            value={kpis.colaboradores.toString()}
+            icon={Users}
+            tone="primary"
+            footer={kpis.produtosBaixo > 0 ? `${kpis.produtosBaixo} produtos com estoque baixo` : "Estoque ok"}
+            loading={loading}
+            alert={kpis.produtosBaixo > 0}
           />
         </div>
+
+        {/* Top 3 obras estouradas */}
+        {obrasEstouradas.length > 0 && (
+          <Card className="border-destructive/40 bg-destructive/5">
+            <CardHeader>
+              <div className="flex items-center gap-2">
+                <AlertTriangle className="h-5 w-5 text-destructive" />
+                <div>
+                  <CardTitle>Obras com orçamento estourado</CardTitle>
+                  <CardDescription>Top 3 obras onde o realizado ultrapassou o orçado</CardDescription>
+                </div>
+              </div>
+            </CardHeader>
+            <CardContent className="space-y-3">
+              {obrasEstouradas.map((o) => (
+                <Link
+                  key={o.id}
+                  to="/app/obras/$obraId/relatorios/orcado-realizado"
+                  params={{ obraId: o.id }}
+                  className="flex items-center justify-between rounded-lg border bg-background p-3 transition hover:bg-muted/50"
+                >
+                  <div className="min-w-0 flex-1">
+                    <div className="truncate font-medium">{o.nome}</div>
+                    <div className="text-xs text-muted-foreground">
+                      Realizado {fmtBRL(o.realizado)} • Orçado {fmtBRL(o.orcado)}
+                    </div>
+                    <Progress value={Math.min(o.pct, 200)} className="mt-2 h-1.5" />
+                  </div>
+                  <Badge variant="destructive" className="ml-4 shrink-0">
+                    {o.pct.toFixed(0)}%
+                  </Badge>
+                </Link>
+              ))}
+            </CardContent>
+          </Card>
+        )}
+
 
         {/* Charts row */}
         <div className="grid grid-cols-1 gap-4 lg:grid-cols-3">

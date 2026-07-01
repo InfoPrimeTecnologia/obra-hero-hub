@@ -12,9 +12,8 @@ export type Notification = {
   date?: string;
 };
 
-// Limite (%) de aviso de estouro de orçamento por subetapa.
-// TODO: mover para tabela de configurações da empresa.
-const BUDGET_ALERT_THRESHOLD = 0.85;
+// Fallback quando a empresa ainda não tem configuração.
+const DEFAULT_BUDGET_THRESHOLD_PCT = 90;
 
 function addDays(d: Date, n: number) {
   const r = new Date(d);
@@ -121,7 +120,7 @@ export function useNotifications() {
     if (obras.length > 0) {
       const obraIds = obras.map((o: any) => o.id);
       const obraNameById = new Map<string, string>(obras.map((o: any) => [o.id, o.name]));
-      const [subRes, compRes] = await Promise.all([
+      const [subRes, compRes, custRes] = await Promise.all([
         supabase
           .from("orcamento_subetapas")
           .select("id,nome,valor_orcado,etapa_id,orcamento_etapas!inner(obra_id)")
@@ -131,7 +130,17 @@ export function useNotifications() {
           .select("subetapa_id,valor_total,obra_id")
           .in("obra_id", obraIds)
           .not("subetapa_id", "is", null),
+        supabase
+          .from("customers")
+          .select("alerta_subetapa_pct")
+          .limit(1)
+          .maybeSingle(),
       ]);
+      const thresholdPct = Number(
+        (custRes.data as { alerta_subetapa_pct?: number } | null)?.alerta_subetapa_pct
+          ?? DEFAULT_BUDGET_THRESHOLD_PCT,
+      );
+      const threshold = thresholdPct / 100;
       const gastoPorSub = new Map<string, number>();
       (compRes.data ?? []).forEach((c: any) => {
         gastoPorSub.set(c.subetapa_id, (gastoPorSub.get(c.subetapa_id) ?? 0) + Number(c.valor_total ?? 0));
@@ -141,7 +150,7 @@ export function useNotifications() {
         if (orcado <= 0) return;
         const gasto = gastoPorSub.get(s.id) ?? 0;
         const pct = gasto / orcado;
-        if (pct < BUDGET_ALERT_THRESHOLD) return;
+        if (pct < threshold) return;
         const obraId = s.orcamento_etapas?.obra_id as string | undefined;
         const obraName = obraId ? obraNameById.get(obraId) ?? "Obra" : "Obra";
         const estourou = pct >= 1;
