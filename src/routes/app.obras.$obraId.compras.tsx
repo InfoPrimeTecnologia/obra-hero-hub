@@ -1,4 +1,4 @@
-import { createFileRoute, Link, useNavigate } from "@tanstack/react-router";
+import { createFileRoute, Link, Outlet, useLocation, useNavigate } from "@tanstack/react-router";
 import { useEffect, useMemo, useState, type FormEvent } from "react";
 import {
   Plus, ArrowLeft, ShoppingCart, Eye, UserPlus,
@@ -81,6 +81,7 @@ const emptyForm = (etapaId = "", subetapaId = "") => ({
 function ComprasPage() {
   const { obraId } = Route.useParams();
   const { user } = useAuth();
+  const location = useLocation();
   const navigate = useNavigate();
   const [items, setItems] = useState<Compra[]>([]);
   const [itens, setItens] = useState<Item[]>([]);
@@ -338,6 +339,11 @@ function ComprasPage() {
 
   const totalGeral = items.reduce((s, c) => s + Number(c.valor_total), 0);
   const itensDaCompra = (cid: string) => itens.filter((i) => i.compra_id === cid);
+
+  const listPath = `/app/obras/${obraId}/compras`;
+  if (location.pathname.replace(/\/$/, "") !== listPath) {
+    return <Outlet />;
+  }
 
   return (
     <div>
