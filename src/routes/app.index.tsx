@@ -396,7 +396,7 @@ function ClienteDashboard() {
           </div>
         </div>
 
-        {/* KPI cards */}
+        {/* KPI cards principais */}
         <div className="grid grid-cols-2 gap-4 lg:grid-cols-4">
           <KpiCard
             label="Obras ativas"
@@ -406,6 +406,35 @@ function ClienteDashboard() {
             footer={`${kpis.empresas} empresa(s)`}
             loading={loading}
           />
+          <KpiCard
+            label="Avanço físico médio"
+            value={`${kpis.avancoFisicoMedio.toFixed(1)}%`}
+            icon={Activity}
+            tone="accent"
+            footer="Média das obras ativas"
+            loading={loading}
+          />
+          <KpiCard
+            label="A pagar (7 dias)"
+            value={fmtBRL(kpis.aPagar7)}
+            icon={CalendarClock}
+            tone="danger"
+            footer={kpis.vencidasPagar > 0 ? `${fmtBRL(kpis.vencidasPagar)} vencidas` : `${fmtBRL(kpis.aPagar30)} em 30d`}
+            loading={loading}
+            alert={kpis.vencidasPagar > 0}
+          />
+          <KpiCard
+            label="Faturamento do mês"
+            value={fmtBRL(kpis.faturamentoRealizadoMes)}
+            icon={TrendingUp}
+            tone="success"
+            footer={`Previsto: ${fmtBRL(kpis.faturamentoPrevistoMes)}`}
+            loading={loading}
+          />
+        </div>
+
+        {/* KPI cards secundários */}
+        <div className="grid grid-cols-2 gap-4 lg:grid-cols-4">
           <KpiCard
             label="RDOs no mês"
             value={kpis.rdosMes.toString()}
@@ -427,11 +456,56 @@ function ClienteDashboard() {
             value={fmtBRL(kpis.aPagar30)}
             icon={TrendingDown}
             tone="danger"
-            footer={kpis.vencidasPagar > 0 ? `${fmtBRL(kpis.vencidasPagar)} vencidas` : "Em dia"}
+            footer="Total próximos 30 dias"
             loading={loading}
-            alert={kpis.vencidasPagar > 0}
+          />
+          <KpiCard
+            label="Colaboradores"
+            value={kpis.colaboradores.toString()}
+            icon={Users}
+            tone="primary"
+            footer={kpis.produtosBaixo > 0 ? `${kpis.produtosBaixo} produtos com estoque baixo` : "Estoque ok"}
+            loading={loading}
+            alert={kpis.produtosBaixo > 0}
           />
         </div>
+
+        {/* Top 3 obras estouradas */}
+        {obrasEstouradas.length > 0 && (
+          <Card className="border-destructive/40 bg-destructive/5">
+            <CardHeader>
+              <div className="flex items-center gap-2">
+                <AlertTriangle className="h-5 w-5 text-destructive" />
+                <div>
+                  <CardTitle>Obras com orçamento estourado</CardTitle>
+                  <CardDescription>Top 3 obras onde o realizado ultrapassou o orçado</CardDescription>
+                </div>
+              </div>
+            </CardHeader>
+            <CardContent className="space-y-3">
+              {obrasEstouradas.map((o) => (
+                <Link
+                  key={o.id}
+                  to="/app/obras/$obraId/relatorios/orcado-realizado"
+                  params={{ obraId: o.id }}
+                  className="flex items-center justify-between rounded-lg border bg-background p-3 transition hover:bg-muted/50"
+                >
+                  <div className="min-w-0 flex-1">
+                    <div className="truncate font-medium">{o.nome}</div>
+                    <div className="text-xs text-muted-foreground">
+                      Realizado {fmtBRL(o.realizado)} • Orçado {fmtBRL(o.orcado)}
+                    </div>
+                    <Progress value={Math.min(o.pct, 200)} className="mt-2 h-1.5" />
+                  </div>
+                  <Badge variant="destructive" className="ml-4 shrink-0">
+                    {o.pct.toFixed(0)}%
+                  </Badge>
+                </Link>
+              ))}
+            </CardContent>
+          </Card>
+        )}
+
 
         {/* Charts row */}
         <div className="grid grid-cols-1 gap-4 lg:grid-cols-3">
