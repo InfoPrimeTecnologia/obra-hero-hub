@@ -97,6 +97,13 @@ function CompraDetalhePage() {
   const [novoSubNome, setNovoSubNome] = useState("");
   const [savingSub, setSavingSub] = useState(false);
 
+  const [alertOrc, setAlertOrc] = useState<OrcamentoAlertResult | null>(null);
+  const [pendingItemPayload, setPendingItemPayload] = useState<{
+    payload: Record<string, unknown>;
+    isEdit: boolean;
+    editingId?: string;
+  } | null>(null);
+
   const [openReceb, setOpenReceb] = useState(false);
   const [recebForm, setRecebForm] = useState({
     data: new Date().toISOString().slice(0, 10),
