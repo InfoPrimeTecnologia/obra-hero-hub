@@ -16,6 +16,7 @@ const CustomerSettingsSchema = z.object({
   address_state: z.string().nullable().optional(),
   address_zip: z.string().nullable().optional(),
   notes: z.string().nullable().optional(),
+  limite_aprovacao_compra: z.number().nonnegative().nullable().optional(),
 });
 
 function normalizeText(value: string | null | undefined) {
