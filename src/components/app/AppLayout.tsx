@@ -64,19 +64,7 @@ const primaryNav: Array<NavItem | NavGroup> = [
   { to: "/app/tarefas", label: "Tarefas", icon: KanbanSquare, module: "tarefas" },
   { to: "/app/agenda", label: "Agenda", icon: CalendarDays, module: "agenda" },
   { to: "/app/empresas", label: "Empresas", icon: Building2 },
-  {
-    label: "Estoque",
-    icon: Package,
-    module: "estoque",
-    children: [
-      { to: "/app/estoque/produtos", label: "Produtos", icon: Package },
-      { to: "/app/estoque/almoxarifados", label: "Almoxarifados", icon: Warehouse },
-      { to: "/app/estoque/saldos", label: "Saldos", icon: ListTree },
-      { to: "/app/estoque/movimentacoes", label: "Movimentações", icon: ArrowUpDown },
-      { to: "/app/estoque/requisicoes", label: "Requisições", icon: ClipboardCheck },
-      { to: "/app/fornecedores", label: "Fornecedores", icon: Truck },
-    ],
-  },
+  { to: "/app/fornecedores", label: "Fornecedores", icon: Truck },
   {
     label: "RH",
     icon: Users,
