@@ -238,20 +238,23 @@ function RelPagamentos() {
               <p className="text-sm text-muted-foreground">Nenhuma conta no período.</p>
             ) : (
               <div className="space-y-1">
-                {filtered.map((c) => (
-                  <div key={c.id} className="flex items-center justify-between border-b py-1 text-sm">
-                    <div className="flex items-center gap-2">
-                      <Badge variant={c.status === "pago" ? "default" : c.status === "cancelado" ? "destructive" : "outline"}>{c.status}</Badge>
-                      <span>{new Date(c.vencimento).toLocaleDateString("pt-BR")}</span>
-                      <span className="text-muted-foreground">
-                        {c.descricao} • {c.fornecedor_id ? fornec[c.fornecedor_id] ?? "—" : "—"}
-                        {c.numero_documento ? ` • NF ${c.numero_documento}` : ""}
-                      </span>
-                      {c.forma_pagamento && <Badge variant="outline" className="capitalize">{c.forma_pagamento}</Badge>}
+                {filtered.map((c) => {
+                  const m = metaOf(c);
+                  return (
+                    <div key={c.id} className="flex items-center justify-between border-b py-1 text-sm">
+                      <div className="flex items-center gap-2">
+                        <Badge variant={c.status === "pago" ? "default" : c.status === "cancelado" ? "destructive" : "outline"}>{c.status}</Badge>
+                        <span>{new Date(c.vencimento).toLocaleDateString("pt-BR")}</span>
+                        <span className="text-muted-foreground">
+                          {c.descricao} • {c.fornecedor_id ? fornec[c.fornecedor_id] ?? "—" : "—"}
+                          {m.nf ? ` • NF ${m.nf}` : ""}
+                        </span>
+                        {m.forma_pagamento && <Badge variant="outline" className="capitalize">{m.forma_pagamento}</Badge>}
+                      </div>
+                      <span className="font-semibold tabular-nums">{brl(Number(c.valor_pago ?? c.valor))}</span>
                     </div>
-                    <span className="font-semibold tabular-nums">{brl(Number(c.valor_pago ?? c.valor))}</span>
-                  </div>
-                ))}
+                  );
+                })}
               </div>
             )}
           </CardContent>
