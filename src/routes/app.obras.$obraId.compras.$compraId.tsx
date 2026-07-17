@@ -118,9 +118,13 @@ function CompraDetalhePage() {
   const [openMed, setOpenMed] = useState(false);
   const [medForm, setMedForm] = useState({
     data: new Date().toISOString().slice(0, 10),
+    data_primeira_parcela: new Date(Date.now() + 30 * 86400000).toISOString().slice(0, 10),
+    forma_pagamento: "boleto",
+    qtd_parcelas: "1",
     observacoes: "",
     quantidades: {} as Record<string, string>,
   });
+
 
 
   const carregar = async () => {
@@ -343,11 +347,15 @@ function CompraDetalhePage() {
       }
     }
     if (linhas.length === 0) return toast.error("Informe quantidade em ao menos um item");
+    const nParc = Math.max(1, parseInt(medForm.qtd_parcelas || "1", 10));
     const numero = (medicoes[medicoes.length - 1]?.numero ?? 0) + 1;
     const { data: med, error } = await supabase.from("medicoes").insert({
       customer_id: compra.customer_id, compra_id: compraId,
       numero, data: medForm.data, valor_total: total,
-      observacoes: medForm.observacoes || null, created_by: user!.id,
+      observacoes:
+        `Emissão: ${medForm.data} · ${medForm.forma_pagamento} · ${nParc}x` +
+        (medForm.observacoes ? ` · ${medForm.observacoes}` : ""),
+      created_by: user!.id,
     }).select("id").single();
     if (error) return toast.error("Erro", { description: error.message });
     const itensPayload = linhas.map((l) => ({ ...l, medicao_id: med!.id }));
@@ -358,10 +366,45 @@ function CompraDetalhePage() {
         qtd_medida: Number(it.qtd_medida) + Number(l.quantidade),
       }).eq("id", it.id);
     }
+
+    // Gerar contas a pagar (N parcelas)
+    const valorParcela = Math.round((total / nParc) * 100) / 100;
+    const [ano, mes, dia] = medForm.data_primeira_parcela.split("-").map(Number);
+    const cpsPayload: any[] = [];
+    for (let i = 0; i < nParc; i++) {
+      const d = new Date(ano, (mes - 1) + i, dia);
+      const venc = `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, "0")}-${String(d.getDate()).padStart(2, "0")}`;
+      const valor = i === nParc - 1 ? Number((total - valorParcela * (nParc - 1)).toFixed(2)) : valorParcela;
+      cpsPayload.push({
+        customer_id: compra.customer_id,
+        obra_id: compra.obra_id,
+        fornecedor_id: compra.fornecedor_id,
+        compra_id: compraId,
+        descricao: `${compra.descricao || "Compra"} - Medição #${numero} - Parcela ${i + 1}/${nParc}`,
+        valor,
+        vencimento: venc,
+        status: "pendente",
+        origem: "compra",
+        observacoes: `Emissão ${medForm.data} · ${medForm.forma_pagamento}`,
+        created_by: user!.id,
+      });
+    }
+    const { error: eCp } = await supabase.from("contas_pagar").insert(cpsPayload);
+    if (eCp) toast.error("Contas a pagar não geradas", { description: eCp.message });
+
     setOpenMed(false);
-    setMedForm({ data: new Date().toISOString().slice(0, 10), observacoes: "", quantidades: {} });
-    toast.success(`Medição #${numero} registrada (R$ ${total.toFixed(2)})`); void carregar();
+    setMedForm({
+      data: new Date().toISOString().slice(0, 10),
+      data_primeira_parcela: new Date(Date.now() + 30 * 86400000).toISOString().slice(0, 10),
+      forma_pagamento: "boleto",
+      qtd_parcelas: "1",
+      observacoes: "",
+      quantidades: {},
+    });
+    toast.success(`Medição #${numero} registrada · ${nParc} conta(s) a pagar geradas (R$ ${total.toFixed(2)})`);
+    void carregar();
   };
+
 
   const desfazerMedicao = async (med: Medicao) => {
     if (!compra) return;
