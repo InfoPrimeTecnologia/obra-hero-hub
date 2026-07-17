@@ -25,12 +25,11 @@ type CP = {
   vencimento: string;
   pago_em: string | null;
   status: string;
-  forma_pagamento: string | null;
   fornecedor_id: string | null;
   compra_id: string | null;
   categoria_id: string | null;
-  numero_documento: string | null;
 };
+type CompraMeta = { forma_pagamento: string | null; natureza: string | null; nf: string | null };
 
 function RelPagamentos() {
   const { obraId } = Route.useParams();
