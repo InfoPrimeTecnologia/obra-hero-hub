@@ -7,8 +7,8 @@ import {
   LogOut,
   KeyRound,
   HelpCircle,
-  HardHat,
 } from "lucide-react";
+
 import { format } from "date-fns";
 import { ptBR } from "date-fns/locale";
 import { Input } from "@/components/ui/input";
@@ -25,7 +25,7 @@ import {
 import { useAuth } from "@/lib/auth-context";
 import { supabase } from "@/integrations/supabase/client";
 import { NotificationBell } from "@/components/app/NotificationBell";
-import { useObraSelecionada } from "@/lib/obra-context";
+
 
 type NavItem = { to: string; label: string };
 
@@ -59,12 +59,11 @@ export function TopBar() {
   const { user, signOut } = useAuth();
   const navigate = useNavigate();
   const location = useLocation();
-  const { obra: ultimaObra } = useObraSelecionada();
   const [query, setQuery] = useState("");
   const [open, setOpen] = useState(false);
   const [profile, setProfile] = useState<{ full_name: string | null; avatar_url: string | null } | null>(null);
   const [now, setNow] = useState(() => new Date());
-  const dentroDeObra = /^\/app\/obras\/[^/]+(\/.*)?$/.test(location.pathname);
+
 
 
   useEffect(() => {
