@@ -111,17 +111,20 @@ function RelPagamentos() {
   const brl = (n: number) => n.toLocaleString("pt-BR", { style: "currency", currency: "BRL" });
 
   const buildRows = () =>
-    filtered.map((c) => [
-      fmtDateCsv(c.vencimento),
-      c.pago_em ? fmtDateCsv(c.pago_em) : "",
-      c.fornecedor_id ? fornec[c.fornecedor_id] ?? "—" : "—",
-      c.descricao,
-      c.numero_documento ?? "",
-      c.forma_pagamento ?? "",
-      c.compra_id ? naturezasByCompra[c.compra_id] ?? "" : "",
-      c.status,
-      fmtNum(Number(c.valor_pago ?? c.valor)),
-    ]);
+    filtered.map((c) => {
+      const m = metaOf(c);
+      return [
+        fmtDateCsv(c.vencimento),
+        c.pago_em ? fmtDateCsv(c.pago_em) : "",
+        c.fornecedor_id ? fornec[c.fornecedor_id] ?? "—" : "—",
+        c.descricao,
+        m.nf ?? "",
+        m.forma_pagamento ?? "",
+        m.natureza ?? "",
+        c.status,
+        fmtNum(Number(c.valor_pago ?? c.valor)),
+      ];
+    });
   const headers = ["Vencimento", "Pago em", "Fornecedor", "Descrição", "NF", "Forma", "Natureza", "Status", "Valor"];
 
   const exportarExcel = () => downloadCsv(`pagamentos-${obraNome}-${de}-${ate}.csv`, buildRows(), headers);
