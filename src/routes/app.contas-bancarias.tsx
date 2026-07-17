@@ -83,6 +83,7 @@ function ContasBancariasPage() {
     const payload = {
       nome: form.nome, banco: form.banco || null, agencia: form.agencia || null,
       conta: form.conta || null, tipo: form.tipo, saldo_inicial: saldo,
+      obra_id: form.obra_id === GLOBAL ? null : form.obra_id,
     };
     if (editing) {
       const { error } = await supabase.from("contas_bancarias").update(payload).eq("id", editing.id);
