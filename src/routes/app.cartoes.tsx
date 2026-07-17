@@ -34,31 +34,37 @@ type Cartao = {
   dia_fechamento: number;
   dia_vencimento: number;
   empresa_id: string | null;
+  obra_id: string | null;
 };
 
 type Empresa = { id: string; nome: string };
+type Obra = { id: string; name: string };
 
+const GLOBAL = "__global__";
 const initial = {
   nome: "", bandeira: "", ultimos_4: "", limite: "0",
-  dia_fechamento: "1", dia_vencimento: "10", empresa_id: "",
+  dia_fechamento: "1", dia_vencimento: "10", empresa_id: "", obra_id: GLOBAL,
 };
 
 function CartoesPage() {
   const { user } = useAuth();
   const [items, setItems] = useState<Cartao[]>([]);
   const [empresas, setEmpresas] = useState<Empresa[]>([]);
+  const [obras, setObras] = useState<Obra[]>([]);
   const [open, setOpen] = useState(false);
   const [saving, setSaving] = useState(false);
   const [editing, setEditing] = useState<Cartao | null>(null);
   const [form, setForm] = useState(initial);
 
   const carregar = async () => {
-    const [{ data: cs }, { data: es }] = await Promise.all([
+    const [{ data: cs }, { data: es }, { data: os }] = await Promise.all([
       supabase.from("cartoes").select("*").eq("ativo", true).order("nome"),
       supabase.from("empresas").select("id,nome").order("nome"),
+      supabase.from("obras").select("id,name").order("name"),
     ]);
     setItems((cs ?? []) as Cartao[]);
     setEmpresas((es ?? []) as Empresa[]);
+    setObras((os ?? []) as Obra[]);
   };
 
   useEffect(() => { void carregar(); }, []);
