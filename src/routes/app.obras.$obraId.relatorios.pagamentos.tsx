@@ -1,12 +1,17 @@
 import { createFileRoute } from "@tanstack/react-router";
-import { useEffect, useState } from "react";
-import { FileBarChart2 } from "lucide-react";
+import { useEffect, useMemo, useState } from "react";
+import { FileBarChart2, FileDown, FileSpreadsheet } from "lucide-react";
 import { PageHeader } from "@/components/admin/PageHeader";
 import { Card, CardContent } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Badge } from "@/components/ui/badge";
+import { Button } from "@/components/ui/button";
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { supabase } from "@/integrations/supabase/client";
+import { downloadCsv, fmtDate as fmtDateCsv, fmtNum } from "@/lib/csv-export";
+import jsPDF from "jspdf";
+import autoTable from "jspdf-autotable";
 
 export const Route = createFileRoute("/app/obras/$obraId/relatorios/pagamentos")({
   component: RelPagamentos,
@@ -20,121 +25,223 @@ type CP = {
   vencimento: string;
   pago_em: string | null;
   status: string;
+  forma_pagamento: string | null;
   fornecedor_id: string | null;
+  compra_id: string | null;
+  categoria_id: string | null;
+  numero_documento: string | null;
 };
 
 function RelPagamentos() {
   const { obraId } = Route.useParams();
   const hoje = new Date().toISOString().slice(0, 10);
-  const ini = new Date(new Date().getFullYear(), new Date().getMonth() - 2, 1)
-    .toISOString()
-    .slice(0, 10);
+  const ini = new Date(new Date().getFullYear(), new Date().getMonth() - 2, 1).toISOString().slice(0, 10);
   const [de, setDe] = useState(ini);
   const [ate, setAte] = useState(hoje);
+  const [tipoData, setTipoData] = useState<"vencimento" | "pago_em">("vencimento");
+  const [fFornecedor, setFFornecedor] = useState("__all");
+  const [fForma, setFForma] = useState("__all");
+  const [fStatus, setFStatus] = useState("__all");
+  const [fNatureza, setFNatureza] = useState("__all");
+  const [fNf, setFNf] = useState("");
   const [items, setItems] = useState<CP[]>([]);
   const [fornec, setFornec] = useState<Record<string, string>>({});
+  const [naturezasByCompra, setNaturezasByCompra] = useState<Record<string, string>>({});
+  const [obraNome, setObraNome] = useState("");
 
   useEffect(() => {
     void (async () => {
-      const { data } = await supabase
-        .from("contas_pagar")
-        .select("id,descricao,valor,valor_pago,vencimento,pago_em,status,fornecedor_id")
-        .eq("obra_id", obraId)
-        .gte("vencimento", de)
-        .lte("vencimento", ate)
-        .order("vencimento", { ascending: false });
-      setItems((data as CP[]) ?? []);
-      const ids = Array.from(new Set((data ?? []).map((c: any) => c.fornecedor_id).filter(Boolean)));
-      if (ids.length) {
-        const { data: f } = await supabase.from("fornecedores").select("id,nome").in("id", ids);
-        const map: Record<string, string> = {};
-        (f ?? []).forEach((x: any) => (map[x.id] = x.nome));
-        setFornec(map);
-      }
+      const [{ data: obra }, { data: fs }] = await Promise.all([
+        supabase.from("obras").select("name").eq("id", obraId).maybeSingle(),
+        supabase.from("fornecedores").select("id,nome").order("nome"),
+      ]);
+      if (obra) setObraNome(obra.name);
+      const map: Record<string, string> = {};
+      (fs ?? []).forEach((x: any) => (map[x.id] = x.nome));
+      setFornec(map);
     })();
-  }, [obraId, de, ate]);
+  }, [obraId]);
 
-  const pago = items
-    .filter((i) => i.status === "pago")
-    .reduce((s, i) => s + Number(i.valor_pago ?? i.valor), 0);
-  const pendente = items
-    .filter((i) => i.status === "pendente")
-    .reduce((s, i) => s + Number(i.valor), 0);
+  useEffect(() => {
+    void (async () => {
+      const col = tipoData === "vencimento" ? "vencimento" : "pago_em";
+      let q = supabase
+        .from("contas_pagar")
+        .select("id,descricao,valor,valor_pago,vencimento,pago_em,status,forma_pagamento,fornecedor_id,compra_id,categoria_id,numero_documento")
+        .eq("obra_id", obraId)
+        .gte(col, de)
+        .lte(col, ate)
+        .order(col, { ascending: false });
+      const { data } = await q;
+      let list = (data ?? []) as CP[];
+      if (fFornecedor !== "__all") list = list.filter((c) => c.fornecedor_id === fFornecedor);
+      if (fForma !== "__all") list = list.filter((c) => (c.forma_pagamento ?? "") === fForma);
+      if (fStatus !== "__all") list = list.filter((c) => c.status === fStatus);
+      setItems(list);
+
+      const compraIds = Array.from(new Set(list.map((c) => c.compra_id).filter(Boolean))) as string[];
+      if (compraIds.length) {
+        const { data: cs } = await supabase.from("compras").select("id,natureza").in("id", compraIds);
+        const nmap: Record<string, string> = {};
+        (cs ?? []).forEach((c: any) => { if (c.natureza) nmap[c.id] = c.natureza; });
+        setNaturezasByCompra(nmap);
+      } else setNaturezasByCompra({});
+    })();
+  }, [obraId, de, ate, tipoData, fFornecedor, fForma, fStatus]);
+
+  const filtered = useMemo(() => {
+    let list = items;
+    if (fNatureza !== "__all") {
+      list = list.filter((c) => (c.compra_id ? naturezasByCompra[c.compra_id] : "") === fNatureza);
+    }
+    if (fNf.trim()) {
+      const q = fNf.trim().toLowerCase();
+      list = list.filter((c) => (c.numero_documento ?? "").toLowerCase().includes(q));
+    }
+    return list;
+  }, [items, fNatureza, fNf, naturezasByCompra]);
+
+  const pago = filtered.filter((i) => i.status === "pago").reduce((s, i) => s + Number(i.valor_pago ?? i.valor), 0);
+  const pendente = filtered.filter((i) => i.status === "pendente").reduce((s, i) => s + Number(i.valor), 0);
   const brl = (n: number) => n.toLocaleString("pt-BR", { style: "currency", currency: "BRL" });
+
+  const buildRows = () =>
+    filtered.map((c) => [
+      fmtDateCsv(c.vencimento),
+      c.pago_em ? fmtDateCsv(c.pago_em) : "",
+      c.fornecedor_id ? fornec[c.fornecedor_id] ?? "—" : "—",
+      c.descricao,
+      c.numero_documento ?? "",
+      c.forma_pagamento ?? "",
+      c.compra_id ? naturezasByCompra[c.compra_id] ?? "" : "",
+      c.status,
+      fmtNum(Number(c.valor_pago ?? c.valor)),
+    ]);
+  const headers = ["Vencimento", "Pago em", "Fornecedor", "Descrição", "NF", "Forma", "Natureza", "Status", "Valor"];
+
+  const exportarExcel = () => downloadCsv(`pagamentos-${obraNome}-${de}-${ate}.csv`, buildRows(), headers);
+
+  const exportarPdf = () => {
+    const doc = new jsPDF();
+    doc.setFontSize(14);
+    doc.text(`Relatório de Pagamentos — ${obraNome}`, 14, 15);
+    doc.setFontSize(10);
+    doc.text(`Período (${tipoData}): ${fmtDateCsv(de)} a ${fmtDateCsv(ate)}`, 14, 22);
+    doc.text(`Pago: ${brl(pago)}  ·  Pendente: ${brl(pendente)}`, 14, 28);
+    autoTable(doc, {
+      startY: 34,
+      head: [headers],
+      body: buildRows(),
+      styles: { fontSize: 8 },
+      headStyles: { fillColor: [15, 23, 42] },
+    });
+    doc.save(`pagamentos-${obraNome}-${de}-${ate}.pdf`);
+  };
 
   return (
     <div>
-      <PageHeader
-        title="Relatório de pagamentos"
-        description="Contas a pagar e pagamentos da obra"
-      />
+      <PageHeader title="Relatório de pagamentos" description="Contas a pagar e pagamentos da obra" />
       <div className="space-y-4 p-8">
-        <div className="flex flex-wrap items-end gap-3">
-          <div className="space-y-1">
-            <Label>De</Label>
-            <Input type="date" value={de} onChange={(e) => setDe(e.target.value)} />
-          </div>
-          <div className="space-y-1">
-            <Label>Até</Label>
-            <Input type="date" value={ate} onChange={(e) => setAte(e.target.value)} />
-          </div>
-        </div>
+        <Card>
+          <CardContent className="space-y-3 p-4">
+            <div className="grid gap-3 md:grid-cols-4">
+              <div className="space-y-1"><Label>De</Label><Input type="date" value={de} onChange={(e) => setDe(e.target.value)} /></div>
+              <div className="space-y-1"><Label>Até</Label><Input type="date" value={ate} onChange={(e) => setAte(e.target.value)} /></div>
+              <div className="space-y-1"><Label>Tipo de data</Label>
+                <Select value={tipoData} onValueChange={(v) => setTipoData(v as "vencimento" | "pago_em")}>
+                  <SelectTrigger><SelectValue /></SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="vencimento">Por vencimento</SelectItem>
+                    <SelectItem value="pago_em">Por pagamento</SelectItem>
+                  </SelectContent>
+                </Select>
+              </div>
+              <div className="space-y-1"><Label>Nota fiscal</Label><Input placeholder="nº doc" value={fNf} onChange={(e) => setFNf(e.target.value)} /></div>
+            </div>
+            <div className="grid gap-3 md:grid-cols-4">
+              <div className="space-y-1"><Label>Fornecedor</Label>
+                <Select value={fFornecedor} onValueChange={setFFornecedor}>
+                  <SelectTrigger><SelectValue /></SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="__all">Todos</SelectItem>
+                    {Object.entries(fornec).map(([id, nome]) => <SelectItem key={id} value={id}>{nome}</SelectItem>)}
+                  </SelectContent>
+                </Select>
+              </div>
+              <div className="space-y-1"><Label>Forma de pagamento</Label>
+                <Select value={fForma} onValueChange={setFForma}>
+                  <SelectTrigger><SelectValue /></SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="__all">Todas</SelectItem>
+                    <SelectItem value="dinheiro">Dinheiro</SelectItem>
+                    <SelectItem value="pix">PIX</SelectItem>
+                    <SelectItem value="boleto">Boleto</SelectItem>
+                    <SelectItem value="cartao">Cartão</SelectItem>
+                    <SelectItem value="transferencia">Transferência</SelectItem>
+                  </SelectContent>
+                </Select>
+              </div>
+              <div className="space-y-1"><Label>Status</Label>
+                <Select value={fStatus} onValueChange={setFStatus}>
+                  <SelectTrigger><SelectValue /></SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="__all">Todos</SelectItem>
+                    <SelectItem value="pendente">Pendente</SelectItem>
+                    <SelectItem value="pago">Pago</SelectItem>
+                    <SelectItem value="cancelado">Cancelado</SelectItem>
+                  </SelectContent>
+                </Select>
+              </div>
+              <div className="space-y-1"><Label>Natureza</Label>
+                <Select value={fNatureza} onValueChange={setFNatureza}>
+                  <SelectTrigger><SelectValue /></SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="__all">Todas</SelectItem>
+                    <SelectItem value="material">Material</SelectItem>
+                    <SelectItem value="servico">Serviço</SelectItem>
+                    <SelectItem value="equipamento">Equipamento</SelectItem>
+                  </SelectContent>
+                </Select>
+              </div>
+            </div>
+            <div className="flex gap-2">
+              <Button variant="outline" size="sm" onClick={exportarPdf}><FileDown className="mr-2 h-4 w-4" /> PDF</Button>
+              <Button variant="outline" size="sm" onClick={exportarExcel}><FileSpreadsheet className="mr-2 h-4 w-4" /> Excel</Button>
+            </div>
+          </CardContent>
+        </Card>
 
         <div className="grid gap-3 md:grid-cols-3">
-          <Card>
-            <CardContent className="p-4">
-              <div className="flex items-center gap-2 text-emerald-600">
-                <FileBarChart2 className="h-4 w-4" /> <span className="text-xs">Pago</span>
-              </div>
-              <p className="mt-1 text-2xl font-bold tabular-nums">{brl(pago)}</p>
-            </CardContent>
-          </Card>
-          <Card>
-            <CardContent className="p-4">
-              <div className="flex items-center gap-2 text-destructive">
-                <FileBarChart2 className="h-4 w-4" /> <span className="text-xs">Pendente</span>
-              </div>
-              <p className="mt-1 text-2xl font-bold tabular-nums">{brl(pendente)}</p>
-            </CardContent>
-          </Card>
-          <Card>
-            <CardContent className="p-4">
-              <span className="text-xs text-muted-foreground">Total</span>
-              <p className="mt-1 text-2xl font-bold tabular-nums">{brl(pago + pendente)}</p>
-            </CardContent>
-          </Card>
+          <Card><CardContent className="p-4">
+            <div className="flex items-center gap-2 text-emerald-600"><FileBarChart2 className="h-4 w-4" /><span className="text-xs">Pago</span></div>
+            <p className="mt-1 text-2xl font-bold tabular-nums">{brl(pago)}</p>
+          </CardContent></Card>
+          <Card><CardContent className="p-4">
+            <div className="flex items-center gap-2 text-destructive"><FileBarChart2 className="h-4 w-4" /><span className="text-xs">Pendente</span></div>
+            <p className="mt-1 text-2xl font-bold tabular-nums">{brl(pendente)}</p>
+          </CardContent></Card>
+          <Card><CardContent className="p-4"><span className="text-xs text-muted-foreground">Total</span><p className="mt-1 text-2xl font-bold tabular-nums">{brl(pago + pendente)}</p></CardContent></Card>
         </div>
 
         <Card>
           <CardContent className="p-4">
             <h3 className="mb-3 text-sm font-semibold">Lançamentos</h3>
-            {items.length === 0 ? (
+            {filtered.length === 0 ? (
               <p className="text-sm text-muted-foreground">Nenhuma conta no período.</p>
             ) : (
               <div className="space-y-1">
-                {items.map((c) => (
+                {filtered.map((c) => (
                   <div key={c.id} className="flex items-center justify-between border-b py-1 text-sm">
                     <div className="flex items-center gap-2">
-                      <Badge
-                        variant={
-                          c.status === "pago"
-                            ? "default"
-                            : c.status === "cancelado"
-                            ? "destructive"
-                            : "outline"
-                        }
-                      >
-                        {c.status}
-                      </Badge>
+                      <Badge variant={c.status === "pago" ? "default" : c.status === "cancelado" ? "destructive" : "outline"}>{c.status}</Badge>
                       <span>{new Date(c.vencimento).toLocaleDateString("pt-BR")}</span>
                       <span className="text-muted-foreground">
-                        {c.descricao} •{" "}
-                        {c.fornecedor_id ? fornec[c.fornecedor_id] ?? "—" : "—"}
+                        {c.descricao} • {c.fornecedor_id ? fornec[c.fornecedor_id] ?? "—" : "—"}
+                        {c.numero_documento ? ` • NF ${c.numero_documento}` : ""}
                       </span>
+                      {c.forma_pagamento && <Badge variant="outline" className="capitalize">{c.forma_pagamento}</Badge>}
                     </div>
-                    <span className="font-semibold tabular-nums">
-                      {brl(Number(c.valor_pago ?? c.valor))}
-                    </span>
+                    <span className="font-semibold tabular-nums">{brl(Number(c.valor_pago ?? c.valor))}</span>
                   </div>
                 ))}
               </div>
