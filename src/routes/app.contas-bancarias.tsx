@@ -34,25 +34,34 @@ type Conta = {
   tipo: string;
   saldo_atual: number;
   saldo_inicial: number;
+  obra_id: string | null;
 };
 
+type Obra = { id: string; name: string };
+
+const GLOBAL = "__global__";
 const initial = {
   nome: "", banco: "", agencia: "", conta: "", tipo: "corrente", saldo_inicial: "0",
+  obra_id: GLOBAL,
 };
 
 function ContasBancariasPage() {
   const { user } = useAuth();
   const [items, setItems] = useState<Conta[]>([]);
+  const [obras, setObras] = useState<Obra[]>([]);
   const [open, setOpen] = useState(false);
   const [saving, setSaving] = useState(false);
   const [editing, setEditing] = useState<Conta | null>(null);
   const [form, setForm] = useState(initial);
 
   const carregar = async () => {
-    const { data, error } = await supabase
-      .from("contas_bancarias").select("*").eq("ativo", true).order("nome");
+    const [{ data, error }, { data: os }] = await Promise.all([
+      supabase.from("contas_bancarias").select("*").eq("ativo", true).order("nome"),
+      supabase.from("obras").select("id,name").order("name"),
+    ]);
     if (error) return toast.error("Erro", { description: error.message });
     setItems((data ?? []) as Conta[]);
+    setObras((os ?? []) as Obra[]);
   };
   useEffect(() => { void carregar(); }, []);
   const reset = () => { setForm(initial); setEditing(null); };
