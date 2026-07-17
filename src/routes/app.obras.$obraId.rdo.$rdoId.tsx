@@ -65,6 +65,7 @@ type Equipe = {
   funcao: string;
   quantidade: number;
   horas: number;
+  tipo: "interna" | "externa";
 };
 type Etapa = { id: string; nome: string };
 type Subetapa = { id: string; nome: string; etapa_id: string };
