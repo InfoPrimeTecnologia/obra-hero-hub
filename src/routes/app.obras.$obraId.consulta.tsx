@@ -38,7 +38,6 @@ const brl = (n: number) => n.toLocaleString("pt-BR", { style: "currency", curren
 
 function ConsultaPage() {
   const { obraId } = Route.useParams();
-  const { customerId } = useAuth();
 
   const [loading, setLoading] = useState(false);
   const [fornecedores, setFornecedores] = useState<Fornecedor[]>([]);
