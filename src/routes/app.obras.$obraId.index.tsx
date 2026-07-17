@@ -1,5 +1,5 @@
 import { createFileRoute, Link } from "@tanstack/react-router";
-import { useEffect, useState } from "react";
+import { useEffect, useState, type FormEvent } from "react";
 import {
   HardHat,
   ListTree,
@@ -11,10 +11,14 @@ import {
   TrendingDown,
   Building2,
   MapPin,
+  Pencil,
 } from "lucide-react";
 import { PageHeader } from "@/components/admin/PageHeader";
 import { Card, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
+import { Input } from "@/components/ui/input";
+import { Label } from "@/components/ui/label";
+import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from "@/components/ui/dialog";
 import { PortalClienteCard } from "@/components/app/PortalClienteCard";
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
@@ -32,6 +36,9 @@ type ObraDet = {
   status: string;
   foto_url: string | null;
   empresa_id: string | null;
+  contact_name: string | null;
+  contact_email: string | null;
+  contact_whatsapp: string | null;
 };
 
 function ObraDashboard() {
@@ -47,26 +54,34 @@ function ObraDashboard() {
     equipe: 0,
   });
 
+  const [contatoOpen, setContatoOpen] = useState(false);
+  const [contatoForm, setContatoForm] = useState({ contact_name: "", contact_email: "", contact_whatsapp: "" });
+  const [savingContato, setSavingContato] = useState(false);
+
+  const carregar = async () => {
+    const { data: o, error } = await supabase
+      .from("obras")
+      .select("id,name,description,address_city,address_state,status,foto_url,empresa_id,contact_name,contact_email,contact_whatsapp")
+      .eq("id", obraId)
+      .maybeSingle();
+    if (error) {
+      toast.error("Erro ao carregar obra", { description: error.message });
+      return;
+    }
+    setObra(o as ObraDet);
+    if (o?.empresa_id) {
+      const { data: emp } = await supabase
+        .from("empresas")
+        .select("nome")
+        .eq("id", o.empresa_id)
+        .maybeSingle();
+      setEmpresaNome(emp?.nome ?? null);
+    }
+  };
+
   useEffect(() => {
     void (async () => {
-      const { data: o, error } = await supabase
-        .from("obras")
-        .select("id,name,description,address_city,address_state,status,foto_url,empresa_id")
-        .eq("id", obraId)
-        .maybeSingle();
-      if (error) {
-        toast.error("Erro ao carregar obra", { description: error.message });
-        return;
-      }
-      setObra(o as ObraDet);
-      if (o?.empresa_id) {
-        const { data: emp } = await supabase
-          .from("empresas")
-          .select("nome")
-          .eq("id", o.empresa_id)
-          .maybeSingle();
-        setEmpresaNome(emp?.nome ?? null);
-      }
+      await carregar();
 
       const { data: etapasData } = await supabase
         .from("orcamento_etapas")
@@ -144,7 +159,26 @@ function ObraDashboard() {
                 )}
               </div>
               <p className="text-xs text-muted-foreground">Status: {obra?.status ?? "—"}</p>
+              <p className="text-xs text-muted-foreground">
+                Contato: {obra?.contact_name ?? "—"}
+                {obra?.contact_whatsapp ? ` · WhatsApp ${obra.contact_whatsapp}` : ""}
+                {obra?.contact_email ? ` · ${obra.contact_email}` : ""}
+              </p>
             </div>
+            <Button
+              variant="outline"
+              size="sm"
+              onClick={() => {
+                setContatoForm({
+                  contact_name: obra?.contact_name ?? "",
+                  contact_email: obra?.contact_email ?? "",
+                  contact_whatsapp: obra?.contact_whatsapp ?? "",
+                });
+                setContatoOpen(true);
+              }}
+            >
+              <Pencil className="mr-2 h-4 w-4" /> Editar contato
+            </Button>
           </CardContent>
         </Card>
 
@@ -210,6 +244,42 @@ function ObraDashboard() {
 
         <PortalClienteCard obraId={obraId} />
       </div>
+
+      <Dialog open={contatoOpen} onOpenChange={setContatoOpen}>
+        <DialogContent>
+          <DialogHeader><DialogTitle>Editar contato da obra</DialogTitle></DialogHeader>
+          <form
+            onSubmit={async (e: FormEvent) => {
+              e.preventDefault();
+              setSavingContato(true);
+              const { error } = await supabase.from("obras").update({
+                contact_name: contatoForm.contact_name || null,
+                contact_email: contatoForm.contact_email || null,
+                contact_whatsapp: contatoForm.contact_whatsapp || null,
+              }).eq("id", obraId);
+              setSavingContato(false);
+              if (error) return toast.error("Erro", { description: error.message });
+              toast.success("Contato atualizado");
+              setContatoOpen(false);
+              void carregar();
+            }}
+            className="space-y-3"
+          >
+            <div className="space-y-2"><Label>Nome do contato</Label>
+              <Input value={contatoForm.contact_name} onChange={(e) => setContatoForm({ ...contatoForm, contact_name: e.target.value })} /></div>
+            <div className="space-y-2"><Label>WhatsApp (com DDD)</Label>
+              <Input placeholder="(11) 99999-9999" value={contatoForm.contact_whatsapp} onChange={(e) => setContatoForm({ ...contatoForm, contact_whatsapp: e.target.value })} />
+              <p className="text-xs text-muted-foreground">Usado para envio de RDO e relatórios pelo WhatsApp.</p>
+            </div>
+            <div className="space-y-2"><Label>E-mail</Label>
+              <Input type="email" value={contatoForm.contact_email} onChange={(e) => setContatoForm({ ...contatoForm, contact_email: e.target.value })} /></div>
+            <DialogFooter>
+              <Button type="button" variant="outline" onClick={() => setContatoOpen(false)}>Cancelar</Button>
+              <Button type="submit" disabled={savingContato}>{savingContato ? "Salvando..." : "Salvar"}</Button>
+            </DialogFooter>
+          </form>
+        </DialogContent>
+      </Dialog>
     </div>
   );
 }

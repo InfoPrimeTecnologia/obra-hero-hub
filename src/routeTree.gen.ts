@@ -84,6 +84,7 @@ import { Route as AppObrasObraIdRelatoriosPagamentosRouteImport } from './routes
 import { Route as AppObrasObraIdRelatoriosOrcadoRealizadoRouteImport } from './routes/app.obras.$obraId.relatorios.orcado-realizado'
 import { Route as AppObrasObraIdRelatoriosComprasRouteImport } from './routes/app.obras.$obraId.relatorios.compras'
 import { Route as AppObrasObraIdRdoRdoIdRouteImport } from './routes/app.obras.$obraId.rdo.$rdoId'
+import { Route as AppObrasObraIdComprasNovaRouteImport } from './routes/app.obras.$obraId.compras.nova'
 import { Route as AppObrasObraIdComprasCompraIdRouteImport } from './routes/app.obras.$obraId.compras.$compraId'
 
 const LoginRoute = LoginRouteImport.update({
@@ -474,6 +475,12 @@ const AppObrasObraIdRdoRdoIdRoute = AppObrasObraIdRdoRdoIdRouteImport.update({
   path: '/$rdoId',
   getParentRoute: () => AppObrasObraIdRdoRoute,
 } as any)
+const AppObrasObraIdComprasNovaRoute =
+  AppObrasObraIdComprasNovaRouteImport.update({
+    id: '/nova',
+    path: '/nova',
+    getParentRoute: () => AppObrasObraIdComprasRoute,
+  } as any)
 const AppObrasObraIdComprasCompraIdRoute =
   AppObrasObraIdComprasCompraIdRouteImport.update({
     id: '/$compraId',
@@ -553,6 +560,7 @@ export interface FileRoutesByFullPath {
   '/lovable/email/transactional/send': typeof LovableEmailTransactionalSendRoute
   '/app/obras/$obraId/': typeof AppObrasObraIdIndexRoute
   '/app/obras/$obraId/compras/$compraId': typeof AppObrasObraIdComprasCompraIdRoute
+  '/app/obras/$obraId/compras/nova': typeof AppObrasObraIdComprasNovaRoute
   '/app/obras/$obraId/rdo/$rdoId': typeof AppObrasObraIdRdoRdoIdRoute
   '/app/obras/$obraId/relatorios/compras': typeof AppObrasObraIdRelatoriosComprasRoute
   '/app/obras/$obraId/relatorios/orcado-realizado': typeof AppObrasObraIdRelatoriosOrcadoRealizadoRoute
@@ -626,6 +634,7 @@ export interface FileRoutesByTo {
   '/lovable/email/transactional/send': typeof LovableEmailTransactionalSendRoute
   '/app/obras/$obraId': typeof AppObrasObraIdIndexRoute
   '/app/obras/$obraId/compras/$compraId': typeof AppObrasObraIdComprasCompraIdRoute
+  '/app/obras/$obraId/compras/nova': typeof AppObrasObraIdComprasNovaRoute
   '/app/obras/$obraId/rdo/$rdoId': typeof AppObrasObraIdRdoRdoIdRoute
   '/app/obras/$obraId/relatorios/compras': typeof AppObrasObraIdRelatoriosComprasRoute
   '/app/obras/$obraId/relatorios/orcado-realizado': typeof AppObrasObraIdRelatoriosOrcadoRealizadoRoute
@@ -705,6 +714,7 @@ export interface FileRoutesById {
   '/lovable/email/transactional/send': typeof LovableEmailTransactionalSendRoute
   '/app/obras/$obraId/': typeof AppObrasObraIdIndexRoute
   '/app/obras/$obraId/compras/$compraId': typeof AppObrasObraIdComprasCompraIdRoute
+  '/app/obras/$obraId/compras/nova': typeof AppObrasObraIdComprasNovaRoute
   '/app/obras/$obraId/rdo/$rdoId': typeof AppObrasObraIdRdoRdoIdRoute
   '/app/obras/$obraId/relatorios/compras': typeof AppObrasObraIdRelatoriosComprasRoute
   '/app/obras/$obraId/relatorios/orcado-realizado': typeof AppObrasObraIdRelatoriosOrcadoRealizadoRoute
@@ -785,6 +795,7 @@ export interface FileRouteTypes {
     | '/lovable/email/transactional/send'
     | '/app/obras/$obraId/'
     | '/app/obras/$obraId/compras/$compraId'
+    | '/app/obras/$obraId/compras/nova'
     | '/app/obras/$obraId/rdo/$rdoId'
     | '/app/obras/$obraId/relatorios/compras'
     | '/app/obras/$obraId/relatorios/orcado-realizado'
@@ -858,6 +869,7 @@ export interface FileRouteTypes {
     | '/lovable/email/transactional/send'
     | '/app/obras/$obraId'
     | '/app/obras/$obraId/compras/$compraId'
+    | '/app/obras/$obraId/compras/nova'
     | '/app/obras/$obraId/rdo/$rdoId'
     | '/app/obras/$obraId/relatorios/compras'
     | '/app/obras/$obraId/relatorios/orcado-realizado'
@@ -936,6 +948,7 @@ export interface FileRouteTypes {
     | '/lovable/email/transactional/send'
     | '/app/obras/$obraId/'
     | '/app/obras/$obraId/compras/$compraId'
+    | '/app/obras/$obraId/compras/nova'
     | '/app/obras/$obraId/rdo/$rdoId'
     | '/app/obras/$obraId/relatorios/compras'
     | '/app/obras/$obraId/relatorios/orcado-realizado'
@@ -1489,6 +1502,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AppObrasObraIdRdoRdoIdRouteImport
       parentRoute: typeof AppObrasObraIdRdoRoute
     }
+    '/app/obras/$obraId/compras/nova': {
+      id: '/app/obras/$obraId/compras/nova'
+      path: '/nova'
+      fullPath: '/app/obras/$obraId/compras/nova'
+      preLoaderRoute: typeof AppObrasObraIdComprasNovaRouteImport
+      parentRoute: typeof AppObrasObraIdComprasRoute
+    }
     '/app/obras/$obraId/compras/$compraId': {
       id: '/app/obras/$obraId/compras/$compraId'
       path: '/$compraId'
@@ -1540,11 +1560,13 @@ const AppConfiguracoesRouteWithChildren =
 
 interface AppObrasObraIdComprasRouteChildren {
   AppObrasObraIdComprasCompraIdRoute: typeof AppObrasObraIdComprasCompraIdRoute
+  AppObrasObraIdComprasNovaRoute: typeof AppObrasObraIdComprasNovaRoute
   AppObrasObraIdComprasIndexRoute: typeof AppObrasObraIdComprasIndexRoute
 }
 
 const AppObrasObraIdComprasRouteChildren: AppObrasObraIdComprasRouteChildren = {
   AppObrasObraIdComprasCompraIdRoute: AppObrasObraIdComprasCompraIdRoute,
+  AppObrasObraIdComprasNovaRoute: AppObrasObraIdComprasNovaRoute,
   AppObrasObraIdComprasIndexRoute: AppObrasObraIdComprasIndexRoute,
 }
 
