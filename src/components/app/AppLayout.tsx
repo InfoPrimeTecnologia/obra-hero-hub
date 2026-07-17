@@ -232,35 +232,6 @@ export function AppLayout() {
         <div className="relative flex h-16 items-center justify-center bg-sidebar px-4 md:h-[68px] after:absolute after:inset-x-3 after:bottom-0 after:h-px after:bg-[linear-gradient(to_right,transparent,color-mix(in_oklab,var(--sidebar-primary)_55%,transparent)_50%,transparent)]">
           <Logo variant="light" className="h-8" />
         </div>
-        {obra ? (
-          <div className="relative px-4 py-3 after:absolute after:inset-x-3 after:bottom-0 after:h-px after:bg-[linear-gradient(to_right,transparent,color-mix(in_oklab,var(--sidebar-primary)_55%,transparent)_50%,transparent)]">
-            <p className="text-xs uppercase tracking-wide text-sidebar-foreground/60">Obra ativa</p>
-            <p className="truncate text-sm font-medium">{obra.name}</p>
-            <div className="mt-2 flex flex-wrap gap-2">
-              <Link
-                to="/app/obras/$obraId/orcamento"
-                params={{ obraId: obra.id }}
-                className="inline-flex items-center gap-1 text-xs text-sidebar-foreground/70 hover:text-sidebar-foreground"
-              >
-                <ListTree className="h-3 w-3" /> Orçamento
-              </Link>
-              <Link
-                to="/app/obras/$obraId/rdo"
-                params={{ obraId: obra.id }}
-                className="inline-flex items-center gap-1 text-xs text-sidebar-foreground/70 hover:text-sidebar-foreground"
-              >
-                <ClipboardList className="h-3 w-3" /> RDO
-              </Link>
-              <Link
-                to="/app/obras/$obraId/compras"
-                params={{ obraId: obra.id }}
-                className="inline-flex items-center gap-1 text-xs text-sidebar-foreground/70 hover:text-sidebar-foreground"
-              >
-                <ShoppingCart className="h-3 w-3" /> Compras
-              </Link>
-            </div>
-          </div>
-        ) : null}
         <nav className="flex-1 space-y-1 overflow-y-auto p-3">
           {visiblePrimaryNav.map(renderNavItem)}
           {visibleSystemNav.length > 0 && (
