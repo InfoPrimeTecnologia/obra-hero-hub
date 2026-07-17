@@ -183,7 +183,11 @@ function ContasBancariasPage() {
               <div className="flex items-center gap-3">
                 <Wallet className="h-5 w-5 text-primary" />
                 <div>
-                  <p className="font-medium">{c.nome}</p>
+                  <p className="font-medium flex items-center gap-2">{c.nome}
+                    {c.obra_id
+                      ? <span className="rounded bg-primary/10 px-2 py-0.5 text-[10px] font-medium text-primary">{obras.find(o => o.id === c.obra_id)?.name ?? "Obra"}</span>
+                      : <span className="rounded bg-muted px-2 py-0.5 text-[10px] text-muted-foreground">Global</span>}
+                  </p>
                   <p className="text-xs text-muted-foreground">
                     {[c.banco, c.agencia, c.conta].filter(Boolean).join(" · ") || c.tipo}
                   </p>
