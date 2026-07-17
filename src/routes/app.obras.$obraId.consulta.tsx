@@ -51,25 +51,21 @@ function ConsultaPage() {
   const [busca, setBusca] = useState<string>("");
 
   useEffect(() => {
-    if (!customerId) return;
     (async () => {
       const { data } = await supabase
         .from("fornecedores")
         .select("id,nome")
-        .eq("customer_id", customerId)
         .eq("ativo", true)
         .order("nome");
       setFornecedores((data ?? []) as Fornecedor[]);
     })();
-  }, [customerId]);
+  }, []);
 
   const buscar = async () => {
-    if (!customerId) return;
     setLoading(true);
     let query = supabase
       .from("compras")
       .select("id,numero,descricao,fornecedor_id,forma_pagamento,valor_total,data_compra,status,qtd_parcelas")
-      .eq("customer_id", customerId)
       .eq("obra_id", obraId)
       .order("data_compra", { ascending: false });
 
@@ -92,7 +88,7 @@ function ConsultaPage() {
     setLoading(false);
   };
 
-  useEffect(() => { buscar(); /* eslint-disable-next-line */ }, [customerId, obraId]);
+  useEffect(() => { buscar(); /* eslint-disable-next-line */ }, [obraId]);
 
   const nomeFornecedor = (id: string | null) =>
     fornecedores.find((f) => f.id === id)?.nome ?? "—";
