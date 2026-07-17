@@ -219,7 +219,7 @@ function RdoDetailPage() {
     if (!anterior) return toast.error("Nenhum RDO anterior encontrado");
     const { data: eq } = await supabase
       .from("rdo_equipes")
-      .select("empreiteiro,funcao,quantidade,horas")
+      .select("empreiteiro,funcao,quantidade,horas,tipo")
       .eq("rdo_id", anterior.id);
     if (!eq?.length) return toast.error("RDO anterior não tem equipe cadastrada");
     const { error } = await supabase
