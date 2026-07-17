@@ -182,10 +182,13 @@ function RdoDetailPage() {
 
   const addEquipe = async () => {
     if (!rdo || !eqFuncao) return toast.error("Informe a função");
+    if (eqTipo === "externa" && !eqEmpreiteiro)
+      return toast.error("Informe o empreiteiro para equipe externa");
     const { error } = await supabase.from("rdo_equipes").insert({
       rdo_id: rdo.id,
       customer_id: rdo.customer_id,
-      empreiteiro: eqEmpreiteiro || null,
+      tipo: eqTipo,
+      empreiteiro: eqTipo === "externa" ? eqEmpreiteiro : null,
       funcao: eqFuncao,
       quantidade: eqQtd,
       horas: eqHoras,
