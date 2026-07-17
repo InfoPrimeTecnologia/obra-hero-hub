@@ -45,7 +45,7 @@ function RelPagamentos() {
   const [fNf, setFNf] = useState("");
   const [items, setItems] = useState<CP[]>([]);
   const [fornec, setFornec] = useState<Record<string, string>>({});
-  const [naturezasByCompra, setNaturezasByCompra] = useState<Record<string, string>>({});
+  const [compraMeta, setCompraMeta] = useState<Record<string, CompraMeta>>({});
   const [obraNome, setObraNome] = useState("");
 
   useEffect(() => {
@@ -64,41 +64,47 @@ function RelPagamentos() {
   useEffect(() => {
     void (async () => {
       const col = tipoData === "vencimento" ? "vencimento" : "pago_em";
-      let q = supabase
+      const { data } = await supabase
         .from("contas_pagar")
-        .select("id,descricao,valor,valor_pago,vencimento,pago_em,status,forma_pagamento,fornecedor_id,compra_id,categoria_id,numero_documento")
+        .select("id,descricao,valor,valor_pago,vencimento,pago_em,status,fornecedor_id,compra_id,categoria_id")
         .eq("obra_id", obraId)
         .gte(col, de)
         .lte(col, ate)
         .order(col, { ascending: false });
-      const { data } = await q;
       let list = (data ?? []) as CP[];
       if (fFornecedor !== "__all") list = list.filter((c) => c.fornecedor_id === fFornecedor);
-      if (fForma !== "__all") list = list.filter((c) => (c.forma_pagamento ?? "") === fForma);
       if (fStatus !== "__all") list = list.filter((c) => c.status === fStatus);
       setItems(list);
 
       const compraIds = Array.from(new Set(list.map((c) => c.compra_id).filter(Boolean))) as string[];
       if (compraIds.length) {
-        const { data: cs } = await supabase.from("compras").select("id,natureza").in("id", compraIds);
-        const nmap: Record<string, string> = {};
-        (cs ?? []).forEach((c: any) => { if (c.natureza) nmap[c.id] = c.natureza; });
-        setNaturezasByCompra(nmap);
-      } else setNaturezasByCompra({});
+        const [{ data: cs }, { data: nfs }] = await Promise.all([
+          supabase.from("compras").select("id,natureza,forma_pagamento").in("id", compraIds),
+          supabase.from("compra_notas_fiscais").select("compra_id,numero").in("compra_id", compraIds),
+        ]);
+        const nfMap: Record<string, string> = {};
+        (nfs ?? []).forEach((n: any) => { if (n.numero) nfMap[n.compra_id] = String(n.numero); });
+        const meta: Record<string, CompraMeta> = {};
+        (cs ?? []).forEach((c: any) => {
+          meta[c.id] = { natureza: c.natureza ?? null, forma_pagamento: c.forma_pagamento ?? null, nf: nfMap[c.id] ?? null };
+        });
+        setCompraMeta(meta);
+      } else setCompraMeta({});
     })();
-  }, [obraId, de, ate, tipoData, fFornecedor, fForma, fStatus]);
+  }, [obraId, de, ate, tipoData, fFornecedor, fStatus]);
+
+  const metaOf = (c: CP): CompraMeta => (c.compra_id ? compraMeta[c.compra_id] : undefined) ?? { forma_pagamento: null, natureza: null, nf: null };
 
   const filtered = useMemo(() => {
     let list = items;
-    if (fNatureza !== "__all") {
-      list = list.filter((c) => (c.compra_id ? naturezasByCompra[c.compra_id] : "") === fNatureza);
-    }
+    if (fForma !== "__all") list = list.filter((c) => (metaOf(c).forma_pagamento ?? "") === fForma);
+    if (fNatureza !== "__all") list = list.filter((c) => (metaOf(c).natureza ?? "") === fNatureza);
     if (fNf.trim()) {
       const q = fNf.trim().toLowerCase();
-      list = list.filter((c) => (c.numero_documento ?? "").toLowerCase().includes(q));
+      list = list.filter((c) => (metaOf(c).nf ?? "").toLowerCase().includes(q));
     }
     return list;
-  }, [items, fNatureza, fNf, naturezasByCompra]);
+  }, [items, fForma, fNatureza, fNf, compraMeta]);
 
   const pago = filtered.filter((i) => i.status === "pago").reduce((s, i) => s + Number(i.valor_pago ?? i.valor), 0);
   const pendente = filtered.filter((i) => i.status === "pendente").reduce((s, i) => s + Number(i.valor), 0);
