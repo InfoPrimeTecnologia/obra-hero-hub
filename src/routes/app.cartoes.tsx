@@ -92,6 +92,7 @@ function CartoesPage() {
       dia_fechamento: Number(form.dia_fechamento),
       dia_vencimento: Number(form.dia_vencimento),
       empresa_id: form.empresa_id || null,
+      obra_id: form.obra_id === GLOBAL ? null : form.obra_id,
     };
     if (editing) {
       const { error } = await supabase.from("cartoes").update(payload).eq("id", editing.id);
