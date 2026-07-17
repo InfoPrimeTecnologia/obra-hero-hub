@@ -100,6 +100,7 @@ function RdoDetailPage() {
   const [subetapas, setSubetapas] = useState<Subetapa[]>([]);
 
   // form state — equipe
+  const [eqTipo, setEqTipo] = useState<"interna" | "externa">("interna");
   const [eqEmpreiteiro, setEqEmpreiteiro] = useState("");
   const [eqFuncao, setEqFuncao] = useState("");
   const [eqQtd, setEqQtd] = useState(1);
