@@ -77,6 +77,7 @@ function CartoesPage() {
       nome: c.nome, bandeira: c.bandeira ?? "", ultimos_4: c.ultimos_4 ?? "",
       limite: String(c.limite), dia_fechamento: String(c.dia_fechamento),
       dia_vencimento: String(c.dia_vencimento), empresa_id: c.empresa_id ?? "",
+      obra_id: c.obra_id ?? GLOBAL,
     });
     setOpen(true);
   };
