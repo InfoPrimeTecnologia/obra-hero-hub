@@ -570,6 +570,7 @@ export type Database = {
           forma_pagamento: string
           fornecedor_id: string | null
           id: string
+          natureza: string | null
           numero: string | null
           obra_id: string
           observacoes: string | null
@@ -595,6 +596,7 @@ export type Database = {
           forma_pagamento?: string
           fornecedor_id?: string | null
           id?: string
+          natureza?: string | null
           numero?: string | null
           obra_id: string
           observacoes?: string | null
@@ -620,6 +622,7 @@ export type Database = {
           forma_pagamento?: string
           fornecedor_id?: string | null
           id?: string
+          natureza?: string | null
           numero?: string | null
           obra_id?: string
           observacoes?: string | null

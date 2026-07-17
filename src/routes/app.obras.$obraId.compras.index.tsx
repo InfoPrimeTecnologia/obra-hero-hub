@@ -123,10 +123,11 @@ function ComprasPage() {
   const [nfFile, setNfFile] = useState<{ base64: string; mimeType: string; filename: string } | null>(null);
 
   const abrirNovaCompra = (etapaId: string, subetapaId: string) => {
-    setForm(emptyForm(etapaId, subetapaId));
-    setParsedNf(null);
-    setNfFile(null);
-    setOpen(true);
+    navigate({
+      to: "/app/obras/$obraId/compras/nova",
+      params: { obraId },
+      search: { etapa: etapaId, subetapa: subetapaId } as never,
+    });
   };
 
   const handleImportNf = async (file: File) => {
@@ -472,7 +473,7 @@ function ComprasPage() {
               const subsDessaEtapa = subetapas.filter((s) => s.etapa_id === et.id);
               const comprasDaEtapa = tree.byEtapa.get(et.id) ?? [];
               const totalEt = comprasDaEtapa.reduce((s, c) => s + Number(c.valor_total), 0);
-              const isOpenEt = expEtapa[et.id] ?? true;
+              const isOpenEt = expEtapa[et.id] ?? false;
               return (
                 <Card key={et.id}>
                   <CardContent className="p-0">
@@ -510,7 +511,7 @@ function ComprasPage() {
                         ) : subsDessaEtapa.map((sb) => {
                           const cs = comprasDaEtapa.filter((c) => c.subetapa_id === sb.id);
                           const totalSb = cs.reduce((s, c) => s + Number(c.valor_total), 0);
-                          const isOpenSb = expSub[sb.id] ?? true;
+                          const isOpenSb = expSub[sb.id] ?? false;
                           return (
                             <div key={sb.id} className="border-b last:border-b-0">
                               <div className="flex items-stretch bg-muted/30">
