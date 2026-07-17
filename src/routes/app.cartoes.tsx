@@ -34,31 +34,37 @@ type Cartao = {
   dia_fechamento: number;
   dia_vencimento: number;
   empresa_id: string | null;
+  obra_id: string | null;
 };
 
 type Empresa = { id: string; nome: string };
+type Obra = { id: string; name: string };
 
+const GLOBAL = "__global__";
 const initial = {
   nome: "", bandeira: "", ultimos_4: "", limite: "0",
-  dia_fechamento: "1", dia_vencimento: "10", empresa_id: "",
+  dia_fechamento: "1", dia_vencimento: "10", empresa_id: "", obra_id: GLOBAL,
 };
 
 function CartoesPage() {
   const { user } = useAuth();
   const [items, setItems] = useState<Cartao[]>([]);
   const [empresas, setEmpresas] = useState<Empresa[]>([]);
+  const [obras, setObras] = useState<Obra[]>([]);
   const [open, setOpen] = useState(false);
   const [saving, setSaving] = useState(false);
   const [editing, setEditing] = useState<Cartao | null>(null);
   const [form, setForm] = useState(initial);
 
   const carregar = async () => {
-    const [{ data: cs }, { data: es }] = await Promise.all([
+    const [{ data: cs }, { data: es }, { data: os }] = await Promise.all([
       supabase.from("cartoes").select("*").eq("ativo", true).order("nome"),
       supabase.from("empresas").select("id,nome").order("nome"),
+      supabase.from("obras").select("id,name").order("name"),
     ]);
     setItems((cs ?? []) as Cartao[]);
     setEmpresas((es ?? []) as Empresa[]);
+    setObras((os ?? []) as Obra[]);
   };
 
   useEffect(() => { void carregar(); }, []);
@@ -71,6 +77,7 @@ function CartoesPage() {
       nome: c.nome, bandeira: c.bandeira ?? "", ultimos_4: c.ultimos_4 ?? "",
       limite: String(c.limite), dia_fechamento: String(c.dia_fechamento),
       dia_vencimento: String(c.dia_vencimento), empresa_id: c.empresa_id ?? "",
+      obra_id: c.obra_id ?? GLOBAL,
     });
     setOpen(true);
   };
@@ -85,6 +92,7 @@ function CartoesPage() {
       dia_fechamento: Number(form.dia_fechamento),
       dia_vencimento: Number(form.dia_vencimento),
       empresa_id: form.empresa_id || null,
+      obra_id: form.obra_id === GLOBAL ? null : form.obra_id,
     };
     if (editing) {
       const { error } = await supabase.from("cartoes").update(payload).eq("id", editing.id);
@@ -134,11 +142,22 @@ function CartoesPage() {
                   <div className="space-y-2"><Label>Últimos 4 dígitos</Label>
                     <Input maxLength={4} value={form.ultimos_4} onChange={(e) => setForm({ ...form, ultimos_4: e.target.value })} /></div>
                 </div>
-                <div className="space-y-2"><Label>Empresa</Label>
-                  <Select value={form.empresa_id} onValueChange={(v) => setForm({ ...form, empresa_id: v })}>
-                    <SelectTrigger><SelectValue placeholder="Selecione (opcional)" /></SelectTrigger>
-                    <SelectContent>{empresas.map((e) => <SelectItem key={e.id} value={e.id}>{e.nome}</SelectItem>)}</SelectContent>
-                  </Select>
+                <div className="grid grid-cols-2 gap-3">
+                  <div className="space-y-2"><Label>Empresa</Label>
+                    <Select value={form.empresa_id} onValueChange={(v) => setForm({ ...form, empresa_id: v })}>
+                      <SelectTrigger><SelectValue placeholder="Opcional" /></SelectTrigger>
+                      <SelectContent>{empresas.map((e) => <SelectItem key={e.id} value={e.id}>{e.nome}</SelectItem>)}</SelectContent>
+                    </Select>
+                  </div>
+                  <div className="space-y-2"><Label>Vínculo</Label>
+                    <Select value={form.obra_id} onValueChange={(v) => setForm({ ...form, obra_id: v })}>
+                      <SelectTrigger><SelectValue /></SelectTrigger>
+                      <SelectContent>
+                        <SelectItem value={GLOBAL}>Global (todas as obras)</SelectItem>
+                        {obras.map((o) => <SelectItem key={o.id} value={o.id}>{o.name}</SelectItem>)}
+                      </SelectContent>
+                    </Select>
+                  </div>
                 </div>
                 <div className="grid grid-cols-3 gap-3">
                   <div className="space-y-2"><Label>Limite</Label>
@@ -165,8 +184,11 @@ function CartoesPage() {
               <div className="flex items-center gap-3">
                 <CreditCard className="h-5 w-5 text-primary" />
                 <div>
-                  <p className="font-medium">
-                    {c.nome} {c.ultimos_4 && <span className="text-muted-foreground">•••• {c.ultimos_4}</span>}
+                  <p className="font-medium flex items-center gap-2">
+                    {c.nome} {c.ultimos_4 && <span className="text-muted-foreground text-sm">•••• {c.ultimos_4}</span>}
+                    {c.obra_id
+                      ? <span className="rounded bg-primary/10 px-2 py-0.5 text-[10px] font-medium text-primary">{obras.find(o => o.id === c.obra_id)?.name ?? "Obra"}</span>
+                      : <span className="rounded bg-muted px-2 py-0.5 text-[10px] text-muted-foreground">Global</span>}
                   </p>
                   <p className="text-xs text-muted-foreground">
                     {c.bandeira ? `${c.bandeira} · ` : ""}

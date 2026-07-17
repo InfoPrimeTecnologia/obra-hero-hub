@@ -34,25 +34,34 @@ type Conta = {
   tipo: string;
   saldo_atual: number;
   saldo_inicial: number;
+  obra_id: string | null;
 };
 
+type Obra = { id: string; name: string };
+
+const GLOBAL = "__global__";
 const initial = {
   nome: "", banco: "", agencia: "", conta: "", tipo: "corrente", saldo_inicial: "0",
+  obra_id: GLOBAL,
 };
 
 function ContasBancariasPage() {
   const { user } = useAuth();
   const [items, setItems] = useState<Conta[]>([]);
+  const [obras, setObras] = useState<Obra[]>([]);
   const [open, setOpen] = useState(false);
   const [saving, setSaving] = useState(false);
   const [editing, setEditing] = useState<Conta | null>(null);
   const [form, setForm] = useState(initial);
 
   const carregar = async () => {
-    const { data, error } = await supabase
-      .from("contas_bancarias").select("*").eq("ativo", true).order("nome");
+    const [{ data, error }, { data: os }] = await Promise.all([
+      supabase.from("contas_bancarias").select("*").eq("ativo", true).order("nome"),
+      supabase.from("obras").select("id,name").order("name"),
+    ]);
     if (error) return toast.error("Erro", { description: error.message });
     setItems((data ?? []) as Conta[]);
+    setObras((os ?? []) as Obra[]);
   };
   useEffect(() => { void carregar(); }, []);
   const reset = () => { setForm(initial); setEditing(null); };
@@ -62,6 +71,7 @@ function ContasBancariasPage() {
     setForm({
       nome: c.nome, banco: c.banco ?? "", agencia: c.agencia ?? "",
       conta: c.conta ?? "", tipo: c.tipo, saldo_inicial: String(c.saldo_inicial ?? 0),
+      obra_id: c.obra_id ?? GLOBAL,
     });
     setOpen(true);
   };
@@ -73,6 +83,7 @@ function ContasBancariasPage() {
     const payload = {
       nome: form.nome, banco: form.banco || null, agencia: form.agencia || null,
       conta: form.conta || null, tipo: form.tipo, saldo_inicial: saldo,
+      obra_id: form.obra_id === GLOBAL ? null : form.obra_id,
     };
     if (editing) {
       const { error } = await supabase.from("contas_bancarias").update(payload).eq("id", editing.id);
@@ -142,6 +153,15 @@ function ContasBancariasPage() {
                 <div className="space-y-2"><Label>Saldo inicial</Label>
                   <Input type="number" step="0.01" value={form.saldo_inicial}
                     onChange={(e) => setForm({ ...form, saldo_inicial: e.target.value })} /></div>
+                <div className="space-y-2"><Label>Vínculo</Label>
+                  <Select value={form.obra_id} onValueChange={(v) => setForm({ ...form, obra_id: v })}>
+                    <SelectTrigger><SelectValue /></SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value={GLOBAL}>Global (todas as obras)</SelectItem>
+                      {obras.map((o) => <SelectItem key={o.id} value={o.id}>{o.name}</SelectItem>)}
+                    </SelectContent>
+                  </Select>
+                </div>
                 <DialogFooter><Button type="submit" disabled={saving}>{saving ? "Salvando..." : "Salvar"}</Button></DialogFooter>
               </form>
             </DialogContent>
@@ -163,7 +183,11 @@ function ContasBancariasPage() {
               <div className="flex items-center gap-3">
                 <Wallet className="h-5 w-5 text-primary" />
                 <div>
-                  <p className="font-medium">{c.nome}</p>
+                  <p className="font-medium flex items-center gap-2">{c.nome}
+                    {c.obra_id
+                      ? <span className="rounded bg-primary/10 px-2 py-0.5 text-[10px] font-medium text-primary">{obras.find(o => o.id === c.obra_id)?.name ?? "Obra"}</span>
+                      : <span className="rounded bg-muted px-2 py-0.5 text-[10px] text-muted-foreground">Global</span>}
+                  </p>
                   <p className="text-xs text-muted-foreground">
                     {[c.banco, c.agencia, c.conta].filter(Boolean).join(" · ") || c.tipo}
                   </p>
