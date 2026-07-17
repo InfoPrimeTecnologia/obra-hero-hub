@@ -153,6 +153,15 @@ function ContasBancariasPage() {
                 <div className="space-y-2"><Label>Saldo inicial</Label>
                   <Input type="number" step="0.01" value={form.saldo_inicial}
                     onChange={(e) => setForm({ ...form, saldo_inicial: e.target.value })} /></div>
+                <div className="space-y-2"><Label>Vínculo</Label>
+                  <Select value={form.obra_id} onValueChange={(v) => setForm({ ...form, obra_id: v })}>
+                    <SelectTrigger><SelectValue /></SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value={GLOBAL}>Global (todas as obras)</SelectItem>
+                      {obras.map((o) => <SelectItem key={o.id} value={o.id}>{o.name}</SelectItem>)}
+                    </SelectContent>
+                  </Select>
+                </div>
                 <DialogFooter><Button type="submit" disabled={saving}>{saving ? "Salvando..." : "Salvar"}</Button></DialogFooter>
               </form>
             </DialogContent>
