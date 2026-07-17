@@ -160,18 +160,8 @@ export function TopBar() {
         </div>
       </div>
 
-      {/* Atalho para última obra acessada (oculto quando já estamos dentro da obra) */}
-      {!dentroDeObra && ultimaObra ? (
-        <Link
-          to="/app/obras/$obraId"
-          params={{ obraId: ultimaObra.id }}
-          title={`Voltar para ${ultimaObra.name}`}
-          className="hidden items-center gap-2 rounded-full border border-border/60 bg-card px-3 py-1.5 text-xs font-medium text-foreground shadow-[var(--shadow-card)] transition-colors hover:bg-muted md:inline-flex"
-        >
-          <HardHat className="h-3.5 w-3.5 text-primary" />
-          <span className="max-w-[160px] truncate">{ultimaObra.name}</span>
-        </Link>
-      ) : null}
+
+
 
 
 

@@ -422,7 +422,12 @@ function OrcamentoPage() {
                     </button>
                     <div className="flex-1 min-w-[200px]">
                       <div className="flex items-center gap-2">
-                        <p className="font-medium">{et.nome}</p>
+                        <p className="font-medium">
+                          <span className="mr-1 text-muted-foreground tabular-nums">
+                            {String(etapas.findIndex((x) => x.id === et.id) + 1).padStart(2, "0")}.
+                          </span>
+                          {et.nome}
+                        </p>
                         <Badge variant="secondary">{subsDaEtapa.length} itens</Badge>
                       </div>
                       <div className="mt-1 flex flex-wrap items-center gap-3 text-xs text-muted-foreground">
