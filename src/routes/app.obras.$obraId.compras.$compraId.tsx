@@ -1,7 +1,7 @@
 import { createFileRoute, Link } from "@tanstack/react-router";
 import { useEffect, useMemo, useState, type FormEvent } from "react";
 import {
-  Plus, ArrowLeft, Trash2, Package, CheckCircle2, Ruler, Pencil, Undo2,
+  Plus, ArrowLeft, Trash2, Package, CheckCircle2, Ruler, Pencil, Undo2, Receipt,
 } from "lucide-react";
 import { PageHeader } from "@/components/admin/PageHeader";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
@@ -118,9 +118,13 @@ function CompraDetalhePage() {
   const [openMed, setOpenMed] = useState(false);
   const [medForm, setMedForm] = useState({
     data: new Date().toISOString().slice(0, 10),
+    data_primeira_parcela: new Date(Date.now() + 30 * 86400000).toISOString().slice(0, 10),
+    forma_pagamento: "boleto",
+    qtd_parcelas: "1",
     observacoes: "",
     quantidades: {} as Record<string, string>,
   });
+
 
 
   const carregar = async () => {
@@ -343,11 +347,15 @@ function CompraDetalhePage() {
       }
     }
     if (linhas.length === 0) return toast.error("Informe quantidade em ao menos um item");
+    const nParc = Math.max(1, parseInt(medForm.qtd_parcelas || "1", 10));
     const numero = (medicoes[medicoes.length - 1]?.numero ?? 0) + 1;
     const { data: med, error } = await supabase.from("medicoes").insert({
       customer_id: compra.customer_id, compra_id: compraId,
       numero, data: medForm.data, valor_total: total,
-      observacoes: medForm.observacoes || null, created_by: user!.id,
+      observacoes:
+        `Emissão: ${medForm.data} · ${medForm.forma_pagamento} · ${nParc}x` +
+        (medForm.observacoes ? ` · ${medForm.observacoes}` : ""),
+      created_by: user!.id,
     }).select("id").single();
     if (error) return toast.error("Erro", { description: error.message });
     const itensPayload = linhas.map((l) => ({ ...l, medicao_id: med!.id }));
@@ -358,10 +366,45 @@ function CompraDetalhePage() {
         qtd_medida: Number(it.qtd_medida) + Number(l.quantidade),
       }).eq("id", it.id);
     }
+
+    // Gerar contas a pagar (N parcelas)
+    const valorParcela = Math.round((total / nParc) * 100) / 100;
+    const [ano, mes, dia] = medForm.data_primeira_parcela.split("-").map(Number);
+    const cpsPayload: any[] = [];
+    for (let i = 0; i < nParc; i++) {
+      const d = new Date(ano, (mes - 1) + i, dia);
+      const venc = `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, "0")}-${String(d.getDate()).padStart(2, "0")}`;
+      const valor = i === nParc - 1 ? Number((total - valorParcela * (nParc - 1)).toFixed(2)) : valorParcela;
+      cpsPayload.push({
+        customer_id: compra.customer_id,
+        obra_id: compra.obra_id,
+        fornecedor_id: compra.fornecedor_id,
+        compra_id: compraId,
+        descricao: `${compra.descricao || "Compra"} - Medição #${numero} - Parcela ${i + 1}/${nParc}`,
+        valor,
+        vencimento: venc,
+        status: "pendente",
+        origem: "compra",
+        observacoes: `Emissão ${medForm.data} · ${medForm.forma_pagamento}`,
+        created_by: user!.id,
+      });
+    }
+    const { error: eCp } = await supabase.from("contas_pagar").insert(cpsPayload);
+    if (eCp) toast.error("Contas a pagar não geradas", { description: eCp.message });
+
     setOpenMed(false);
-    setMedForm({ data: new Date().toISOString().slice(0, 10), observacoes: "", quantidades: {} });
-    toast.success(`Medição #${numero} registrada (R$ ${total.toFixed(2)})`); void carregar();
+    setMedForm({
+      data: new Date().toISOString().slice(0, 10),
+      data_primeira_parcela: new Date(Date.now() + 30 * 86400000).toISOString().slice(0, 10),
+      forma_pagamento: "boleto",
+      qtd_parcelas: "1",
+      observacoes: "",
+      quantidades: {},
+    });
+    toast.success(`Medição #${numero} registrada · ${nParc} conta(s) a pagar geradas (R$ ${total.toFixed(2)})`);
+    void carregar();
   };
+
 
   const desfazerMedicao = async (med: Medicao) => {
     if (!compra) return;
@@ -586,39 +629,93 @@ function CompraDetalhePage() {
           </CardContent>
         </Card>
 
-        {/* MEDIÇÕES */}
+        {/* GERAR CONTAS A PAGAR (a partir da medição) */}
         <Card>
           <CardHeader className="flex flex-row items-center justify-between">
-            <CardTitle className="text-base">Medições</CardTitle>
+            <CardTitle className="text-base">Contas a pagar geradas</CardTitle>
             <Dialog open={openMed} onOpenChange={setOpenMed}>
               <DialogTrigger asChild>
-                <Button size="sm" disabled={itens.length === 0}><Ruler className="mr-2 h-4 w-4" /> Nova medição</Button>
+                <Button size="sm" disabled={itens.length === 0}>
+                  <Receipt className="mr-2 h-4 w-4" /> Gerar contas a pagar
+                </Button>
               </DialogTrigger>
               <DialogContent className="max-w-lg">
-                <DialogHeader><DialogTitle>Nova medição</DialogTitle></DialogHeader>
+                <DialogHeader>
+                  <DialogTitle>Gerar contas a pagar</DialogTitle>
+                  <p className="text-xs text-muted-foreground">
+                    Informe a quantidade a medir de cada item e os dados financeiros. Serão criadas contas a pagar conforme o número de parcelas.
+                  </p>
+                </DialogHeader>
                 <form onSubmit={salvarMedicao} className="space-y-3">
-                  <div className="space-y-2"><Label>Data *</Label>
-                    <Input type="date" required value={medForm.data} onChange={(e) => setMedForm({ ...medForm, data: e.target.value })} /></div>
                   <div className="space-y-2">
-                    <Label>Quantidade medida</Label>
+                    <Label>Quantidade a medir por item</Label>
                     {itens.map((it) => (
                       <div key={it.id} className="flex items-center gap-2">
-                        <span className="flex-1 text-sm">{it.descricao} <span className="text-muted-foreground">(restam {Number(it.quantidade) - Number(it.qtd_medida)})</span></span>
-                        <Input type="number" step="0.01" className="w-28" value={medForm.quantidades[it.id] ?? ""}
-                          onChange={(e) => setMedForm({ ...medForm, quantidades: { ...medForm.quantidades, [it.id]: e.target.value } })} />
+                        <span className="flex-1 text-sm">
+                          {it.descricao}{" "}
+                          <span className="text-muted-foreground">
+                            (restam {Number(it.quantidade) - Number(it.qtd_medida)} {it.unidade ?? ""})
+                          </span>
+                        </span>
+                        <Input
+                          type="number" step="0.01" className="w-28"
+                          value={medForm.quantidades[it.id] ?? ""}
+                          onChange={(e) => setMedForm({ ...medForm, quantidades: { ...medForm.quantidades, [it.id]: e.target.value } })}
+                        />
                       </div>
                     ))}
                   </div>
-                  <div className="space-y-2"><Label>Observações</Label>
-                    <Textarea rows={2} value={medForm.observacoes} onChange={(e) => setMedForm({ ...medForm, observacoes: e.target.value })} /></div>
-                  <DialogFooter><Button type="submit">Salvar</Button></DialogFooter>
+
+                  <div className="rounded-md border bg-muted/30 p-3 space-y-3">
+                    <p className="text-xs font-semibold text-muted-foreground uppercase tracking-wide">Dados financeiros</p>
+                    <div className="grid grid-cols-2 gap-3">
+                      <div className="space-y-2">
+                        <Label>Data de emissão *</Label>
+                        <Input type="date" required value={medForm.data}
+                          onChange={(e) => setMedForm({ ...medForm, data: e.target.value })} />
+                      </div>
+                      <div className="space-y-2">
+                        <Label>1ª parcela vence *</Label>
+                        <Input type="date" required value={medForm.data_primeira_parcela}
+                          onChange={(e) => setMedForm({ ...medForm, data_primeira_parcela: e.target.value })} />
+                      </div>
+                    </div>
+                    <div className="grid grid-cols-2 gap-3">
+                      <div className="space-y-2">
+                        <Label>Meio de pagamento *</Label>
+                        <Select value={medForm.forma_pagamento} onValueChange={(v) => setMedForm({ ...medForm, forma_pagamento: v })}>
+                          <SelectTrigger><SelectValue /></SelectTrigger>
+                          <SelectContent>
+                            <SelectItem value="boleto">Boleto</SelectItem>
+                            <SelectItem value="pix">PIX</SelectItem>
+                            <SelectItem value="transferencia">Transferência</SelectItem>
+                            <SelectItem value="cartao">Cartão</SelectItem>
+                            <SelectItem value="dinheiro">Dinheiro</SelectItem>
+                            <SelectItem value="cheque">Cheque</SelectItem>
+                          </SelectContent>
+                        </Select>
+                      </div>
+                      <div className="space-y-2">
+                        <Label>Nº de parcelas *</Label>
+                        <Input type="number" min={1} required value={medForm.qtd_parcelas}
+                          onChange={(e) => setMedForm({ ...medForm, qtd_parcelas: e.target.value })} />
+                      </div>
+                    </div>
+                  </div>
+
+                  <div className="space-y-2">
+                    <Label>Observações</Label>
+                    <Textarea rows={2} value={medForm.observacoes}
+                      onChange={(e) => setMedForm({ ...medForm, observacoes: e.target.value })} />
+                  </div>
+                  <DialogFooter><Button type="submit">Gerar</Button></DialogFooter>
                 </form>
               </DialogContent>
             </Dialog>
           </CardHeader>
           <CardContent className="space-y-2">
             {medicoes.length === 0 ? (
-              <p className="text-sm text-muted-foreground">Nenhuma medição.</p>
+              <p className="text-sm text-muted-foreground">Nenhuma conta a pagar gerada.</p>
             ) : medicoes.map((m) => (
               <div key={m.id} className="flex items-center justify-between gap-2 rounded-md border p-3">
                 <div>
@@ -627,7 +724,7 @@ function CompraDetalhePage() {
                 </div>
                 <div className="flex items-center gap-2">
                   <span className="text-sm font-semibold">R$ {Number(m.valor_total).toFixed(2)}</span>
-                  <Button variant="ghost" size="sm" onClick={() => desfazerMedicao(m)} title="Desfazer medição">
+                  <Button variant="ghost" size="sm" onClick={() => desfazerMedicao(m)} title="Desfazer (não remove contas a pagar já geradas)">
                     <Undo2 className="h-4 w-4" />
                   </Button>
                 </div>
@@ -635,6 +732,7 @@ function CompraDetalhePage() {
             ))}
           </CardContent>
         </Card>
+
 
         {/* NOTAS FISCAIS */}
         <NotasFiscaisSection compraId={compraId} customerId={compra.customer_id} />
