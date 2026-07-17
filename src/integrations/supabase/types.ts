@@ -150,6 +150,7 @@ export type Database = {
           id: string
           limite: number
           nome: string
+          obra_id: string | null
           ultimos_4: string | null
           updated_at: string
         }
@@ -165,6 +166,7 @@ export type Database = {
           id?: string
           limite?: number
           nome: string
+          obra_id?: string | null
           ultimos_4?: string | null
           updated_at?: string
         }
@@ -180,10 +182,19 @@ export type Database = {
           id?: string
           limite?: number
           nome?: string
+          obra_id?: string | null
           ultimos_4?: string | null
           updated_at?: string
         }
-        Relationships: []
+        Relationships: [
+          {
+            foreignKeyName: "cartoes_obra_id_fkey"
+            columns: ["obra_id"]
+            isOneToOne: false
+            referencedRelation: "obras"
+            referencedColumns: ["id"]
+          },
+        ]
       }
       categorias_financeiras: {
         Row: {
@@ -741,6 +752,7 @@ export type Database = {
           empresa_id: string | null
           id: string
           nome: string
+          obra_id: string | null
           saldo_atual: number
           saldo_inicial: number
           tipo: string
@@ -757,6 +769,7 @@ export type Database = {
           empresa_id?: string | null
           id?: string
           nome: string
+          obra_id?: string | null
           saldo_atual?: number
           saldo_inicial?: number
           tipo?: string
@@ -773,12 +786,21 @@ export type Database = {
           empresa_id?: string | null
           id?: string
           nome?: string
+          obra_id?: string | null
           saldo_atual?: number
           saldo_inicial?: number
           tipo?: string
           updated_at?: string
         }
-        Relationships: []
+        Relationships: [
+          {
+            foreignKeyName: "contas_bancarias_obra_id_fkey"
+            columns: ["obra_id"]
+            isOneToOne: false
+            referencedRelation: "obras"
+            referencedColumns: ["id"]
+          },
+        ]
       }
       contas_pagar: {
         Row: {
