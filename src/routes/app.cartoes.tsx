@@ -142,11 +142,22 @@ function CartoesPage() {
                   <div className="space-y-2"><Label>Últimos 4 dígitos</Label>
                     <Input maxLength={4} value={form.ultimos_4} onChange={(e) => setForm({ ...form, ultimos_4: e.target.value })} /></div>
                 </div>
-                <div className="space-y-2"><Label>Empresa</Label>
-                  <Select value={form.empresa_id} onValueChange={(v) => setForm({ ...form, empresa_id: v })}>
-                    <SelectTrigger><SelectValue placeholder="Selecione (opcional)" /></SelectTrigger>
-                    <SelectContent>{empresas.map((e) => <SelectItem key={e.id} value={e.id}>{e.nome}</SelectItem>)}</SelectContent>
-                  </Select>
+                <div className="grid grid-cols-2 gap-3">
+                  <div className="space-y-2"><Label>Empresa</Label>
+                    <Select value={form.empresa_id} onValueChange={(v) => setForm({ ...form, empresa_id: v })}>
+                      <SelectTrigger><SelectValue placeholder="Opcional" /></SelectTrigger>
+                      <SelectContent>{empresas.map((e) => <SelectItem key={e.id} value={e.id}>{e.nome}</SelectItem>)}</SelectContent>
+                    </Select>
+                  </div>
+                  <div className="space-y-2"><Label>Vínculo</Label>
+                    <Select value={form.obra_id} onValueChange={(v) => setForm({ ...form, obra_id: v })}>
+                      <SelectTrigger><SelectValue /></SelectTrigger>
+                      <SelectContent>
+                        <SelectItem value={GLOBAL}>Global (todas as obras)</SelectItem>
+                        {obras.map((o) => <SelectItem key={o.id} value={o.id}>{o.name}</SelectItem>)}
+                      </SelectContent>
+                    </Select>
+                  </div>
                 </div>
                 <div className="grid grid-cols-3 gap-3">
                   <div className="space-y-2"><Label>Limite</Label>
