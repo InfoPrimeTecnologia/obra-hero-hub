@@ -536,11 +536,21 @@ function RdoDetailPage() {
             </Button>
           </CardHeader>
           <CardContent className="space-y-3">
-            <div className="grid grid-cols-1 gap-2 md:grid-cols-5">
+            <div className="grid grid-cols-1 gap-2 md:grid-cols-6">
+              <Select value={eqTipo} onValueChange={(v) => setEqTipo(v as "interna" | "externa")}>
+                <SelectTrigger>
+                  <SelectValue />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="interna">Interna</SelectItem>
+                  <SelectItem value="externa">Externa</SelectItem>
+                </SelectContent>
+              </Select>
               <Input
-                placeholder="Empreiteiro"
+                placeholder={eqTipo === "externa" ? "Empreiteiro *" : "Empreiteiro"}
                 value={eqEmpreiteiro}
                 onChange={(e) => setEqEmpreiteiro(e.target.value)}
+                disabled={eqTipo === "interna"}
               />
               <Input
                 placeholder="Função"
@@ -568,7 +578,16 @@ function RdoDetailPage() {
                 key={e.id}
                 className="flex items-center justify-between rounded-md border p-2 text-sm"
               >
-                <span>
+                <span className="flex items-center gap-2">
+                  <span
+                    className={`rounded px-1.5 py-0.5 text-xs font-medium ${
+                      e.tipo === "externa"
+                        ? "bg-amber-100 text-amber-800 dark:bg-amber-900/40 dark:text-amber-200"
+                        : "bg-sky-100 text-sky-800 dark:bg-sky-900/40 dark:text-sky-200"
+                    }`}
+                  >
+                    {e.tipo === "externa" ? "Externa" : "Interna"}
+                  </span>
                   <strong>{e.funcao}</strong>
                   {e.empreiteiro ? ` — ${e.empreiteiro}` : ""} • {e.quantidade}x • {e.horas}h
                 </span>
