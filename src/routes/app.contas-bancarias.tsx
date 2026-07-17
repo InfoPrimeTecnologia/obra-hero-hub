@@ -71,6 +71,7 @@ function ContasBancariasPage() {
     setForm({
       nome: c.nome, banco: c.banco ?? "", agencia: c.agencia ?? "",
       conta: c.conta ?? "", tipo: c.tipo, saldo_inicial: String(c.saldo_inicial ?? 0),
+      obra_id: c.obra_id ?? GLOBAL,
     });
     setOpen(true);
   };
