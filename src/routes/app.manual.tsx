@@ -93,18 +93,18 @@ const SECTIONS: Section[] = [
     title: "Workspace dedicado da obra",
     icon: HardHat,
     summary:
-      "Ao abrir uma obra, a sidebar muda para o contexto dela: você só vê os módulos daquela obra (Visão, Planejamento, RDO, Compras, Consulta, Fornecedores, Caixa, Faturas, Contas a Pagar, Pagamentos, RH e Relatórios).",
+      "Ao abrir uma obra, a sidebar muda para o contexto dela: você vê apenas os módulos daquela obra (Visão, Planejamento, RDO, Compras, Consulta, Fornecedores, RH, Financeiro da obra e Relatórios).",
     steps: [
       'Em Obras, clique em "Abrir obra" no card desejado.',
       "A barra lateral passa a mostrar apenas os módulos daquela obra; o breadcrumb no topo mostra Empresa › Obra › Seção.",
-      'Use o atalho "Última obra" na barra superior para voltar rapidamente ao último projeto acessado.',
       "Para sair do workspace, use o botão Voltar ou navegue por Obras no topo.",
     ],
     tips: [
-      "O atalho da última obra fica salvo localmente — útil para retomar o trabalho do dia.",
       "Tudo dentro do workspace já vem filtrado pela obra: você não precisa reaplicar filtros.",
+      "No painel da obra, use o botão de editar contato para cadastrar nome, e-mail e WhatsApp do responsável — esse WhatsApp é usado para envio de RDO e relatórios.",
     ],
   },
+
   {
     id: "planejamento",
     title: "Planejamento (Engenharia)",
