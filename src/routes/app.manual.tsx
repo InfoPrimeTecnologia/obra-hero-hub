@@ -202,31 +202,45 @@ const SECTIONS: Section[] = [
     title: "Compras e Notas Fiscais",
     icon: ShoppingCart,
     summary:
-      "Registre toda compra de material/serviço vinculada a uma etapa da obra, com fornecedor, parcelas e NF.",
+      "Registre compras de material, serviço ou equipamento vinculadas a uma etapa/subetapa da obra, com fornecedor, natureza, NF e geração automática de contas a pagar.",
     steps: [
-      "Dentro da obra, vá em Compras → Nova compra.",
-      "Escolha obrigatoriamente a etapa e a subetapa do orçamento — toda a compra ficará vinculada a esse local.",
-      "Informe fornecedor, itens, valor e forma de pagamento (à vista, parcelado, cartão).",
-      "Anexe a NF (PDF/XML) e suas parcelas viram contas a pagar automaticamente.",
+      "Dentro da obra, vá em Compras. A árvore de etapas inicia recolhida — expanda apenas a etapa/subetapa desejada.",
+      'Clique em "Nova compra" — abre em tela dedicada (sem popup) com todos os campos.',
+      "Escolha etapa e subetapa (é possível criar uma subetapa nova na hora, se não existir).",
+      "Selecione ou cadastre o fornecedor (você pode criar direto na obra, e o cadastro fica disponível globalmente).",
+      "Defina a natureza: Material, Serviço ou Equipamento (usada nos relatórios).",
+      "Informe itens, valor, NF (PDF/XML) e dados financeiros.",
+      'Use "Gerar contas a pagar" para lançar as parcelas: informe data de emissão, meio de pagamento e número de parcelas — o sistema cria automaticamente em Contas a Pagar.',
     ],
     tips: [
-      "Os itens da compra já vêm pré-preenchidos com a etapa/subetapa escolhida.",
-      "A sidebar da obra inicia recolhida; expanda apenas o grupo que precisar.",
-      "Parcelas no cartão entram na fatura do cartão.",
-      'Use "Medições" quando o serviço é faturado em etapas (ex.: empreitada).',
+      "Compras acima do limite configurado entram em fluxo de aprovação (veja seção Aprovação de Compras).",
+      "Parcelas no cartão entram na fatura do cartão correspondente.",
     ],
   },
   {
-    id: "estoque",
-    title: "Estoque, Produtos e Requisições",
-    icon: Package,
+    id: "aprovacao-compras",
+    title: "Aprovação de compras (workflow)",
+    icon: ShieldCheck,
     summary:
-      "Controle o que entra, sai e está em cada almoxarifado, e atenda requisições da obra.",
+      "Compras acima de um valor configurável entram como 'Pendente de aprovação'. Dono da conta e usuários com papel 'aprovador' podem aprovar ou rejeitar.",
     steps: [
-      "Cadastre Produtos (insumos), unidades e estoque mínimo.",
-      "Crie Almoxarifados (ex.: Central, Obra X).",
-      "Registre Movimentações de entrada/saída/transferência.",
-      "Atenda Requisições feitas pelo mestre de obra.",
+      "Configure o valor mínimo de aprovação nas configurações da conta.",
+      "Ao lançar uma compra acima do limite, ela recebe status Pendente e o aprovador é notificado.",
+      "O aprovador abre a compra e clica em Aprovar ou Rejeitar (com motivo).",
+      "Somente compras aprovadas geram contas a pagar.",
+    ],
+    tips: ["Badges coloridos (amarelo/verde/vermelho) mostram o status de aprovação direto na lista."],
+  },
+  {
+    id: "alertas-orcamento",
+    title: "Alertas inteligentes de orçamento (85%)",
+    icon: Bell,
+    summary:
+      "Quando uma etapa atinge 85% do valor orçado, o sistema exibe alerta amarelo. Ao ultrapassar 100%, alerta vermelho — tudo no sino de notificações.",
+    steps: [
+      "Cadastre orçamento por etapa/subetapa normalmente.",
+      "Ao lançar compras, o realizado é comparado com o orçado em tempo real.",
+      "Veja alertas no sino do topo e badges de status na tela de Orçamento e Compras.",
     ],
   },
   {
@@ -234,10 +248,10 @@ const SECTIONS: Section[] = [
     title: "Fornecedores",
     icon: Truck,
     to: "/app/fornecedores",
-    summary: "Cadastro homologado de fornecedores com dados fiscais, contato e chave PIX.",
+    summary: "Cadastro homologado de fornecedores com dados fiscais, contato e chave PIX. Pode ser criado direto de dentro da obra.",
     steps: [
       "Cadastre fornecedor com CNPJ/CPF, e-mail, telefone e PIX.",
-      "Use o filtro por categoria para encontrar rapidamente nas compras.",
+      "Dentro da obra, é possível cadastrar fornecedor no ato do lançamento da compra — ele fica global automaticamente.",
     ],
   },
   {
@@ -245,9 +259,14 @@ const SECTIONS: Section[] = [
     title: "Colaboradores (RH)",
     icon: Users,
     to: "/app/rh/colaboradores",
-    summary: "Cadastro de colaboradores próprios e terceirizados utilizados no RDO e folha.",
-    steps: ["Vá em RH → Colaboradores → Novo.", "Informe função, CPF, admissão e empresa vinculada."],
+    summary: "Cadastro de colaboradores próprios e terceirizados. Pode criar colaborador direto na obra ativa.",
+    steps: [
+      "Vá em RH → Colaboradores → Novo, ou dentro da obra em RH → Novo Colaborador.",
+      "Informe função, CPF, admissão e empresa vinculada.",
+      "No RDO, ao registrar a equipe, classifique cada colaborador como Interna ou Externa (badge visual).",
+    ],
   },
+
   {
     id: "financeiro",
     title: "Financeiro",
