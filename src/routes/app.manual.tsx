@@ -272,14 +272,16 @@ const SECTIONS: Section[] = [
     title: "Financeiro",
     icon: Wallet,
     summary:
-      "Controle bancos, cartões, categorias, contas a pagar/receber e transferências entre contas.",
+      "Controle bancos, cartões, categorias, contas a pagar/receber e transferências. Meios de pagamento podem ser globais ou exclusivos de uma obra.",
     steps: [
       "Cadastre Contas bancárias e Cartões antes de lançar pagamentos.",
+      "Ao cadastrar, escolha entre vínculo Global ou uma obra específica — os selects de pagamento mostram meios globais + meios da obra ativa.",
       "Crie a árvore de Categorias (despesa/receita) — base de todos os relatórios.",
       "Use Contas a Pagar/Receber para o dia a dia; baixe (pague) e o saldo da conta é atualizado.",
       "Concilie o extrato bancário em Conciliação.",
     ],
     tips: [
+      "Badges nos cards identificam se o meio é Global ou de uma obra específica.",
       "Estornar um pagamento gera um lançamento reverso e devolve o saldo na conta — auditoria completa.",
       "O Fluxo de Caixa projeta entradas e saídas pelos próximos meses.",
     ],
@@ -296,18 +298,30 @@ const SECTIONS: Section[] = [
     ],
   },
   {
+    id: "relatorios-avancados",
+    title: "Relatórios avançados (Compras e Pagamentos)",
+    icon: FileSpreadsheet,
+    summary:
+      "Dentro da obra, os relatórios de Compras e Pagamentos têm exportação em PDF, Excel e envio por WhatsApp (Compras).",
+    steps: [
+      "Compras: filtre por fornecedor, etapa, NF e período. Exporte PDF, Excel ou envie por WhatsApp (modal para digitar o número — envia o PDF em anexo).",
+      "Pagamentos: filtre por fornecedor, forma de pagamento, status, natureza, NF e tipo de data (vencimento ou pagamento). Exporte PDF ou Excel.",
+    ],
+  },
+  {
     id: "relatorios",
-    title: "Relatórios",
+    title: "Relatórios consolidados",
     icon: FileBarChart2,
     to: "/app/relatorios",
     summary:
-      "Consolidados financeiros, Orçado x Realizado por obra/etapa, DRE e exportações CSV/PDF.",
+      "Consolidados financeiros multi-obra, Orçado x Realizado por obra/etapa, DRE e exportações CSV/PDF.",
     steps: [
       "Filtre por obra e período.",
       "Compare Orçado x Realizado por etapa e veja desvio percentual.",
       "Exporte em CSV (formatado para Excel pt-BR) ou PDF.",
     ],
   },
+
   {
     id: "assinatura",
     title: "Assinatura e Planos",
