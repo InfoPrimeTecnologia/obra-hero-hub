@@ -268,6 +268,7 @@ function CompraDetalhePage() {
   const regerarParcelas = async (total: number) => {
     if (!compra) return;
     await supabase.from("compra_parcelas").delete().eq("compra_id", compraId).eq("status", "pendente");
+    if (!compra.qtd_parcelas || compra.qtd_parcelas <= 0) return;
     const qtd = compra.qtd_parcelas;
     const start = compra.data_primeira_parcela ? new Date(compra.data_primeira_parcela) : new Date(compra.data_compra);
     const valor = Number((total / qtd).toFixed(2));
