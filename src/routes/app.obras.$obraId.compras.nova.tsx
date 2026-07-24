@@ -1,6 +1,6 @@
 import { createFileRoute, useNavigate, Link } from "@tanstack/react-router";
 import { useEffect, useState, type FormEvent } from "react";
-import { UserPlus, FolderPlus, FileUp, Loader2, ArrowLeft } from "lucide-react";
+import { UserPlus, FolderPlus, FileUp, Loader2, ArrowLeft, Plus, Trash2 } from "lucide-react";
 import { useServerFn } from "@tanstack/react-start";
 import { parseNotaFiscal, type NfParsed, type NfItem } from "@/lib/nota-fiscal.functions";
 import { PageHeader } from "@/components/admin/PageHeader";
@@ -30,14 +30,26 @@ export const Route = createFileRoute("/app/obras/$obraId/compras/nova")({
 });
 
 type Fornecedor = { id: string; nome: string; cpf_cnpj?: string | null };
-type Cartao = { id: string; nome: string };
 type Etapa = { id: string; nome: string };
 type Subetapa = { id: string; etapa_id: string; nome: string; ordem: number };
 
-const formaLabels: Record<string, string> = {
-  dinheiro: "Dinheiro", pix: "PIX", boleto: "Boleto",
-  cartao: "Cartão", transferencia: "Transferência",
+type ItemLinha = {
+  key: string;
+  descricao: string;
+  unidade: string;
+  quantidade: string;
+  valor_unitario: string;
 };
+
+const novaLinha = (): ItemLinha => ({
+  key: crypto.randomUUID(),
+  descricao: "",
+  unidade: "",
+  quantidade: "",
+  valor_unitario: "",
+});
+
+const brl = (n: number) => n.toLocaleString("pt-BR", { style: "currency", currency: "BRL" });
 
 function NovaCompraPage() {
   const { obraId } = Route.useParams();
@@ -48,7 +60,6 @@ function NovaCompraPage() {
 
   const [customerId, setCustomerId] = useState<string | null>(null);
   const [fornecedores, setFornecedores] = useState<Fornecedor[]>([]);
-  const [cartoes, setCartoes] = useState<Cartao[]>([]);
   const [etapas, setEtapas] = useState<Etapa[]>([]);
   const [subetapas, setSubetapas] = useState<Subetapa[]>([]);
   const [saving, setSaving] = useState(false);
@@ -68,14 +79,12 @@ function NovaCompraPage() {
     fornecedor_id: "",
     descricao: "",
     natureza: "material" as "material" | "servico" | "equipamento",
-    forma_pagamento: "dinheiro",
-    cartao_id: "",
-    qtd_parcelas: "1",
     data_compra: new Date().toISOString().slice(0, 10),
-    data_primeira_parcela: new Date().toISOString().slice(0, 10),
     etapa_id: etapaSearch ?? "",
     subetapa_id: subetapaSearch ?? "",
   });
+
+  const [itens, setItens] = useState<ItemLinha[]>([novaLinha()]);
 
   useEffect(() => {
     void (async () => {
@@ -85,20 +94,32 @@ function NovaCompraPage() {
       ]);
       const cid = owned?.id ?? memberOf?.customer_id ?? null;
       setCustomerId(cid);
-      const [{ data: fs }, { data: ks }, { data: es }, { data: ss }] = await Promise.all([
+      const [{ data: fs }, { data: es }, { data: ss }] = await Promise.all([
         supabase.from("fornecedores").select("id,nome,cpf_cnpj").eq("ativo", true).order("nome"),
-        supabase.from("cartoes").select("id,nome").eq("ativo", true).order("nome"),
         supabase.from("orcamento_etapas").select("id,nome,ordem").eq("obra_id", obraId).order("ordem"),
         supabase.from("orcamento_subetapas").select("id,etapa_id,nome,ordem").order("ordem"),
       ]);
       setFornecedores((fs ?? []) as Fornecedor[]);
-      setCartoes((ks ?? []) as Cartao[]);
       setEtapas((es ?? []) as Etapa[]);
       setSubetapas((ss ?? []) as Subetapa[]);
     })();
   }, [obraId, user]);
 
   const subsDoForm = subetapas.filter((s) => s.etapa_id === form.etapa_id);
+
+  const totalItens = itens.reduce((s, i) => {
+    const q = Number(i.quantidade) || 0;
+    const v = Number(i.valor_unitario) || 0;
+    return s + q * v;
+  }, 0);
+
+  const atualizarLinha = (key: string, patch: Partial<ItemLinha>) => {
+    setItens((prev) => prev.map((l) => (l.key === key ? { ...l, ...patch } : l)));
+  };
+  const removerLinha = (key: string) => {
+    setItens((prev) => (prev.length === 1 ? [novaLinha()] : prev.filter((l) => l.key !== key)));
+  };
+  const adicionarLinha = () => setItens((prev) => [...prev, novaLinha()]);
 
   const handleImportNf = async (file: File) => {
     setImporting(true);
@@ -133,6 +154,15 @@ function NovaCompraPage() {
         descricao: `NF ${parsed.numero ?? ""}${parsed.serie ? "/" + parsed.serie : ""} — ${parsed.fornecedor.nome}`.trim(),
         data_compra: parsed.emissao ?? f.data_compra,
       }));
+      if (parsed.itens.length > 0) {
+        setItens(parsed.itens.map((i: NfItem) => ({
+          key: crypto.randomUUID(),
+          descricao: i.descricao,
+          unidade: i.unidade ?? "",
+          quantidade: String(i.quantidade),
+          valor_unitario: String(i.valor_unitario),
+        })));
+      }
       toast.success(`Nota lida (${parsed.itens.length} itens)`);
     } catch (e: any) {
       toast.error("Falha ao ler nota", { description: e?.message ?? String(e) });
@@ -187,52 +217,71 @@ function NovaCompraPage() {
     e.preventDefault();
     if (!form.etapa_id || !form.subetapa_id) return toast.error("Selecione etapa e subetapa");
     if (!customerId) return toast.error("Conta não identificada");
+
+    const linhasValidas = itens
+      .map((l) => {
+        const q = Number(l.quantidade) || 0;
+        const v = Number(l.valor_unitario) || 0;
+        return { linha: l, q, v, total: q * v };
+      })
+      .filter((r) => r.linha.descricao.trim() && r.q > 0);
+
+    if (linhasValidas.length === 0) {
+      return toast.error("Adicione ao menos um item com descrição e quantidade");
+    }
+
     setSaving(true);
+    const total = linhasValidas.reduce((s, r) => s + r.total, 0);
+
     const { data, error } = await supabase.from("compras").insert({
       customer_id: customerId,
       obra_id: obraId,
       fornecedor_id: form.fornecedor_id || null,
       descricao: form.descricao || null,
       natureza: form.natureza,
-      forma_pagamento: form.forma_pagamento,
-      cartao_id: form.forma_pagamento === "cartao" ? (form.cartao_id || null) : null,
-      qtd_parcelas: Number(form.qtd_parcelas) || 1,
+      qtd_parcelas: 0,
+      valor_total: total,
       data_compra: form.data_compra,
-      data_primeira_parcela: form.data_primeira_parcela,
       etapa_id: form.etapa_id,
       subetapa_id: form.subetapa_id,
+      status: "pendente",
       created_by: user!.id,
     } as never).select("id").single();
+
     if (error) { setSaving(false); return toast.error("Erro", { description: error.message }); }
     const compraId = data!.id;
 
-    if (parsedNf) {
-      if (parsedNf.itens.length > 0) {
-        const rows = parsedNf.itens.map((i: NfItem) => ({
-          customer_id: customerId, compra_id: compraId,
-          etapa_id: form.etapa_id, subetapa_id: form.subetapa_id,
-          descricao: i.descricao, unidade: i.unidade ?? null,
-          quantidade: i.quantidade, valor_unitario: i.valor_unitario, valor_total: i.valor_total,
-        }));
-        await supabase.from("compra_itens").insert(rows);
-      }
+    const itensPayload = linhasValidas.map((r) => ({
+      customer_id: customerId,
+      compra_id: compraId,
+      etapa_id: form.etapa_id,
+      subetapa_id: form.subetapa_id,
+      descricao: r.linha.descricao.trim(),
+      unidade: r.linha.unidade.trim() || null,
+      quantidade: r.q,
+      valor_unitario: r.v,
+      valor_total: r.total,
+    }));
+    const { error: eItens } = await supabase.from("compra_itens").insert(itensPayload);
+    if (eItens) toast.error("Itens não inseridos", { description: eItens.message });
+
+    if (parsedNf && nfFile) {
       let arquivoUrl: string | null = null;
-      if (nfFile) {
-        const bin = Uint8Array.from(atob(nfFile.base64), (c) => c.charCodeAt(0));
-        const path = `${customerId}/${compraId}/${Date.now()}-${nfFile.filename}`;
-        const { error: eUp } = await supabase.storage.from("notas-fiscais").upload(path, bin, {
-          contentType: nfFile.mimeType, upsert: false,
-        });
-        if (!eUp) arquivoUrl = path;
-      }
+      const bin = Uint8Array.from(atob(nfFile.base64), (c) => c.charCodeAt(0));
+      const path = `${customerId}/${compraId}/${Date.now()}-${nfFile.filename}`;
+      const { error: eUp } = await supabase.storage.from("notas-fiscais").upload(path, bin, {
+        contentType: nfFile.mimeType, upsert: false,
+      });
+      if (!eUp) arquivoUrl = path;
       await supabase.from("compra_notas_fiscais").insert({
         customer_id: customerId, compra_id: compraId,
         numero: parsedNf.numero, serie: parsedNf.serie, chave: parsedNf.chave,
         valor: parsedNf.valor_total, emitida_em: parsedNf.emissao,
-        arquivo_url: arquivoUrl, arquivo_nome: nfFile?.filename ?? null,
+        arquivo_url: arquivoUrl, arquivo_nome: nfFile.filename,
         created_by: user!.id,
       });
     }
+
     setSaving(false);
     toast.success("Compra criada");
     navigate({ to: "/app/obras/$obraId/compras/$compraId", params: { obraId, compraId } });
@@ -240,7 +289,7 @@ function NovaCompraPage() {
 
   return (
     <div>
-      <PageHeader title="Nova compra" description="Lançamento de compra vinculada ao orçamento" />
+      <PageHeader title="Nova compra" description="Preencha o cabeçalho e os itens. Os dados financeiros serão informados depois, ao gerar as contas a pagar." />
       <div className="p-8">
         <div className="mb-3">
           <Button asChild variant="outline" size="sm">
@@ -251,12 +300,12 @@ function NovaCompraPage() {
         </div>
         <Card>
           <CardContent className="p-6">
-            <form onSubmit={criar} className="space-y-4">
+            <form onSubmit={criar} className="space-y-5">
               <div className="rounded-md border border-dashed border-border/70 bg-muted/30 p-3">
                 <div className="flex items-center justify-between gap-2">
                   <div className="text-sm">
                     <p className="font-medium">Importar Nota Fiscal</p>
-                    <p className="text-xs text-muted-foreground">XML da NFe, PDF do DANFE ou foto.</p>
+                    <p className="text-xs text-muted-foreground">XML da NFe, PDF do DANFE ou foto — preenche cabeçalho e itens.</p>
                   </div>
                   <label className="inline-flex items-center">
                     <input type="file" accept=".xml,application/xml,text/xml,application/pdf,image/*" className="hidden"
@@ -269,7 +318,7 @@ function NovaCompraPage() {
                 {parsedNf && (
                   <div className="mt-3 rounded bg-background/60 p-2 text-xs">
                     <p><strong>{parsedNf.fornecedor.nome}</strong>{parsedNf.fornecedor.cnpj ? ` · CNPJ ${parsedNf.fornecedor.cnpj}` : ""}</p>
-                    <p className="text-muted-foreground">NF {parsedNf.numero ?? "—"} · {parsedNf.itens.length} itens · R$ {Number(parsedNf.valor_total).toLocaleString("pt-BR", { minimumFractionDigits: 2 })}</p>
+                    <p className="text-muted-foreground">NF {parsedNf.numero ?? "—"} · {parsedNf.itens.length} itens · {brl(Number(parsedNf.valor_total))}</p>
                   </div>
                 )}
               </div>
@@ -287,8 +336,10 @@ function NovaCompraPage() {
                 </div>
               </div>
 
-              <div className="space-y-2"><Label>Descrição</Label>
-                <Textarea rows={2} value={form.descricao} onChange={(e) => setForm({ ...form, descricao: e.target.value })} /></div>
+              <div className="space-y-2">
+                <Label>Descrição</Label>
+                <Textarea rows={2} value={form.descricao} onChange={(e) => setForm({ ...form, descricao: e.target.value })} />
+              </div>
 
               <div className="grid grid-cols-2 gap-3">
                 <div className="space-y-2"><Label>Etapa *</Label>
@@ -313,7 +364,7 @@ function NovaCompraPage() {
                 </div>
               </div>
 
-              <div className="grid grid-cols-3 gap-3">
+              <div className="grid grid-cols-2 gap-3">
                 <div className="space-y-2"><Label>Natureza *</Label>
                   <Select value={form.natureza} onValueChange={(v) => setForm({ ...form, natureza: v as typeof form.natureza })}>
                     <SelectTrigger><SelectValue /></SelectTrigger>
@@ -324,31 +375,66 @@ function NovaCompraPage() {
                     </SelectContent>
                   </Select>
                 </div>
-                <div className="space-y-2"><Label>Forma de pagamento *</Label>
-                  <Select value={form.forma_pagamento} onValueChange={(v) => setForm({ ...form, forma_pagamento: v })}>
-                    <SelectTrigger><SelectValue /></SelectTrigger>
-                    <SelectContent>{Object.entries(formaLabels).map(([k, v]) => <SelectItem key={k} value={k}>{v}</SelectItem>)}</SelectContent>
-                  </Select>
-                </div>
-                <div className="space-y-2"><Label>Parcelas *</Label>
-                  <Input type="number" min={1} required value={form.qtd_parcelas} onChange={(e) => setForm({ ...form, qtd_parcelas: e.target.value })} />
+                <div className="space-y-2"><Label>Data da compra *</Label>
+                  <Input type="date" required value={form.data_compra} onChange={(e) => setForm({ ...form, data_compra: e.target.value })} />
                 </div>
               </div>
 
-              {form.forma_pagamento === "cartao" && (
-                <div className="space-y-2"><Label>Cartão *</Label>
-                  <Select value={form.cartao_id} onValueChange={(v) => setForm({ ...form, cartao_id: v })}>
-                    <SelectTrigger><SelectValue placeholder="Selecione" /></SelectTrigger>
-                    <SelectContent>{cartoes.map((c) => <SelectItem key={c.id} value={c.id}>{c.nome}</SelectItem>)}</SelectContent>
-                  </Select>
+              {/* ITENS INLINE */}
+              <div className="space-y-2">
+                <div className="flex items-center justify-between">
+                  <Label className="text-base">Itens</Label>
+                  <Button type="button" variant="outline" size="sm" onClick={adicionarLinha}>
+                    <Plus className="mr-2 h-4 w-4" /> Adicionar item
+                  </Button>
                 </div>
-              )}
-
-              <div className="grid grid-cols-2 gap-3">
-                <div className="space-y-2"><Label>Data da compra *</Label>
-                  <Input type="date" required value={form.data_compra} onChange={(e) => setForm({ ...form, data_compra: e.target.value })} /></div>
-                <div className="space-y-2"><Label>1ª parcela *</Label>
-                  <Input type="date" required value={form.data_primeira_parcela} onChange={(e) => setForm({ ...form, data_primeira_parcela: e.target.value })} /></div>
+                <div className="overflow-x-auto rounded-md border">
+                  <table className="w-full text-sm">
+                    <thead className="bg-muted/50 text-xs uppercase tracking-wide text-muted-foreground">
+                      <tr>
+                        <th className="p-2 text-left">Descrição</th>
+                        <th className="p-2 text-left w-24">QTD</th>
+                        <th className="p-2 text-left w-24">UND</th>
+                        <th className="p-2 text-left w-32">Valor unit.</th>
+                        <th className="p-2 text-right w-32">Total</th>
+                        <th className="w-10 p-2"></th>
+                      </tr>
+                    </thead>
+                    <tbody>
+                      {itens.map((l) => {
+                        const q = Number(l.quantidade) || 0;
+                        const v = Number(l.valor_unitario) || 0;
+                        return (
+                          <tr key={l.key} className="border-t">
+                            <td className="p-1"><Input placeholder="Ex.: Cimento CP-II 50kg" value={l.descricao}
+                              onChange={(e) => atualizarLinha(l.key, { descricao: e.target.value })} /></td>
+                            <td className="p-1"><Input type="number" step="0.01" min={0} placeholder="0" value={l.quantidade}
+                              onChange={(e) => atualizarLinha(l.key, { quantidade: e.target.value })} /></td>
+                            <td className="p-1"><Input placeholder="un/kg/m" value={l.unidade}
+                              onChange={(e) => atualizarLinha(l.key, { unidade: e.target.value })} /></td>
+                            <td className="p-1"><Input type="number" step="0.01" min={0} placeholder="0,00" value={l.valor_unitario}
+                              onChange={(e) => atualizarLinha(l.key, { valor_unitario: e.target.value })} /></td>
+                            <td className="p-2 text-right tabular-nums">{brl(q * v)}</td>
+                            <td className="p-1 text-center">
+                              <Button type="button" variant="ghost" size="sm" onClick={() => removerLinha(l.key)}>
+                                <Trash2 className="h-4 w-4" />
+                              </Button>
+                            </td>
+                          </tr>
+                        );
+                      })}
+                    </tbody>
+                    <tfoot>
+                      <tr className="border-t bg-muted/30">
+                        <td colSpan={4} className="p-2 text-right text-xs font-semibold uppercase tracking-wide text-muted-foreground">
+                          Total geral
+                        </td>
+                        <td className="p-2 text-right font-semibold tabular-nums">{brl(totalItens)}</td>
+                        <td></td>
+                      </tr>
+                    </tfoot>
+                  </table>
+                </div>
               </div>
 
               <div className="flex justify-end gap-2 pt-2">
