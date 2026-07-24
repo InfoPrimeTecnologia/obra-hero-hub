@@ -456,46 +456,51 @@ function CompraDetalhePage() {
         <Card>
           <CardHeader className="flex flex-row items-center justify-between">
             <CardTitle className="text-base">Itens</CardTitle>
-            <Dialog open={openItem} onOpenChange={(v) => { setOpenItem(v); if (!v) resetItemForm(); }}>
-              <DialogTrigger asChild>
-                <Button size="sm" onClick={resetItemForm}><Plus className="mr-2 h-4 w-4" /> Adicionar item</Button>
-              </DialogTrigger>
-              <DialogContent>
-                <DialogHeader><DialogTitle>{editingItem ? "Editar item" : "Novo item"}</DialogTitle></DialogHeader>
-                <form onSubmit={salvarItem} className="space-y-3">
-                  <div className="space-y-2"><Label>Descrição *</Label>
-                    <Input required value={itemForm.descricao} onChange={(e) => setItemForm({ ...itemForm, descricao: e.target.value })} /></div>
-                  <div className="grid grid-cols-3 gap-3">
-                    <div className="space-y-2"><Label>Unidade</Label>
-                      <Input value={itemForm.unidade} onChange={(e) => setItemForm({ ...itemForm, unidade: e.target.value })} /></div>
-                    <div className="space-y-2"><Label>Quantidade *</Label>
-                      <Input type="number" step="0.01" required value={itemForm.quantidade} onChange={(e) => setItemForm({ ...itemForm, quantidade: e.target.value })} /></div>
-                    <div className="space-y-2"><Label>Valor unitário *</Label>
-                      <Input type="number" step="0.01" required value={itemForm.valor_unitario} onChange={(e) => setItemForm({ ...itemForm, valor_unitario: e.target.value })} /></div>
+            <Button size="sm" onClick={() => { if (openItem) { setOpenItem(false); resetItemForm(); } else { resetItemForm(); setOpenItem(true); } }}>
+              <Plus className="mr-2 h-4 w-4" /> {openItem ? "Fechar" : "Adicionar item"}
+            </Button>
+          </CardHeader>
+          <CardContent className="space-y-2">
+            {openItem && (
+              <form onSubmit={salvarItem} className="space-y-3 rounded-md border bg-muted/30 p-3">
+                <p className="text-xs font-semibold uppercase tracking-wide text-muted-foreground">
+                  {editingItem ? "Editar item" : "Novo item"}
+                </p>
+                <div className="space-y-2"><Label>Descrição *</Label>
+                  <Input required value={itemForm.descricao} onChange={(e) => setItemForm({ ...itemForm, descricao: e.target.value })} /></div>
+                <div className="grid grid-cols-3 gap-3">
+                  <div className="space-y-2"><Label>Unidade</Label>
+                    <Input value={itemForm.unidade} onChange={(e) => setItemForm({ ...itemForm, unidade: e.target.value })} /></div>
+                  <div className="space-y-2"><Label>Quantidade *</Label>
+                    <Input type="number" step="0.01" required value={itemForm.quantidade} onChange={(e) => setItemForm({ ...itemForm, quantidade: e.target.value })} /></div>
+                  <div className="space-y-2"><Label>Valor unitário *</Label>
+                    <Input type="number" step="0.01" required value={itemForm.valor_unitario} onChange={(e) => setItemForm({ ...itemForm, valor_unitario: e.target.value })} /></div>
+                </div>
+                <div className="grid grid-cols-2 gap-3">
+                  <div className="space-y-2"><Label>Etapa *</Label>
+                    <Select value={itemForm.etapa_id} onValueChange={(v) => setItemForm({ ...itemForm, etapa_id: v, subetapa_id: "" })}>
+                      <SelectTrigger><SelectValue placeholder="Selecione" /></SelectTrigger>
+                      <SelectContent>{etapas.map((e) => <SelectItem key={e.id} value={e.id}>{e.nome}</SelectItem>)}</SelectContent>
+                    </Select>
                   </div>
-                  <div className="grid grid-cols-2 gap-3">
-                    <div className="space-y-2"><Label>Etapa *</Label>
-                      <Select value={itemForm.etapa_id} onValueChange={(v) => setItemForm({ ...itemForm, etapa_id: v, subetapa_id: "" })}>
-                        <SelectTrigger><SelectValue placeholder="Selecione" /></SelectTrigger>
-                        <SelectContent>{etapas.map((e) => <SelectItem key={e.id} value={e.id}>{e.nome}</SelectItem>)}</SelectContent>
-                      </Select>
+                  <div className="space-y-2">
+                    <div className="flex items-center justify-between">
+                      <Label>Subetapa *</Label>
+                      <button type="button" className="text-xs text-primary hover:underline disabled:opacity-50"
+                        disabled={!itemForm.etapa_id} onClick={() => setNovoSubOpen(true)}>+ nova</button>
                     </div>
-                    <div className="space-y-2">
-                      <div className="flex items-center justify-between">
-                        <Label>Subetapa *</Label>
-                        <button type="button" className="text-xs text-primary hover:underline disabled:opacity-50"
-                          disabled={!itemForm.etapa_id} onClick={() => setNovoSubOpen(true)}>+ nova</button>
-                      </div>
-                      <Select value={itemForm.subetapa_id} onValueChange={(v) => setItemForm({ ...itemForm, subetapa_id: v })} disabled={!itemForm.etapa_id}>
-                        <SelectTrigger><SelectValue placeholder={itemForm.etapa_id ? "Selecione" : "Escolha a etapa"} /></SelectTrigger>
-                        <SelectContent>{subsDoForm.map((s) => <SelectItem key={s.id} value={s.id}>{s.nome}</SelectItem>)}</SelectContent>
-                      </Select>
-                    </div>
+                    <Select value={itemForm.subetapa_id} onValueChange={(v) => setItemForm({ ...itemForm, subetapa_id: v })} disabled={!itemForm.etapa_id}>
+                      <SelectTrigger><SelectValue placeholder={itemForm.etapa_id ? "Selecione" : "Escolha a etapa"} /></SelectTrigger>
+                      <SelectContent>{subsDoForm.map((s) => <SelectItem key={s.id} value={s.id}>{s.nome}</SelectItem>)}</SelectContent>
+                    </Select>
                   </div>
-                  <DialogFooter><Button type="submit">Salvar</Button></DialogFooter>
-                </form>
-              </DialogContent>
-            </Dialog>
+                </div>
+                <div className="flex justify-end gap-2">
+                  <Button type="button" variant="outline" size="sm" onClick={() => { setOpenItem(false); resetItemForm(); }}>Cancelar</Button>
+                  <Button type="submit" size="sm">Salvar</Button>
+                </div>
+              </form>
+            )}
             <Dialog open={novoSubOpen} onOpenChange={(v) => { setNovoSubOpen(v); if (!v) setNovoSubNome(""); }}>
               <DialogContent>
                 <DialogHeader><DialogTitle>Nova subetapa</DialogTitle></DialogHeader>
@@ -515,8 +520,6 @@ function CompraDetalhePage() {
               </DialogContent>
             </Dialog>
 
-          </CardHeader>
-          <CardContent className="space-y-2">
             {itens.length === 0 ? (
               <p className="text-sm text-muted-foreground">Nenhum item.</p>
             ) : itens.map((i) => {
@@ -546,6 +549,7 @@ function CompraDetalhePage() {
             </div>
           </CardContent>
         </Card>
+
 
         {/* PARCELAS */}
         <Card>
