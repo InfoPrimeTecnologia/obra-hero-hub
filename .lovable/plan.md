@@ -1,43 +1,59 @@
-## Requisições recebidas
+## Feedback do cliente (22/07)
 
-1. **Plano Básico** — remover módulo/menu "Estoque".
-2. **Obra ativa › Financeiro › Meios de pagamento** — permitir cadastrar meios de pagamento vinculados à obra (hoje só global).
-3. **Obra ativa › Suprimentos › Consulta** — nova tela de consulta de compras com filtros (fornecedor, tipo, faturamento) mostrando compras do fornecedor.
-4. **Obra ativa › Administração › RH** — permitir criar colaborador direto na obra (hoje só global).
-5. **Obra ativa › Engenharia › Diário de Obra › Equipe** — permitir cadastrar equipe interna e equipe externa.
+O fluxo de cadastro de compra está fragmentado: usuário preenche cabeçalho → salva → só depois lança itens → e ainda vê pop-up. Além disso, há campos financeiros (forma de pagamento, parcelas, 1ª parcela) misturados na compra — que só deveriam aparecer no passo "Gerar contas a pagar".
 
-## Ordem de entrega sugerida (um item por turno, para revisão)
+## Objetivo
 
-- **Turno 1 (agora):** #1 Remover Estoque do menu + #5 Equipe interna/externa no RDO (mudanças pequenas, sem SQL de schema pesado).
-- **Turno 2:** #4 Cadastro de colaborador dentro da obra (reaproveita `colaboradores` + vínculo automático em `colaborador_obras`; sem schema novo).
-- **Turno 3:** #2 Meios de pagamento por obra — requer **SQL** (adicionar `obra_id` nullable em `contas_bancarias` ou `cartoes`, ajustar RLS/GRANT, filtros). Entrego migration + script idempotente para produção.
-- **Turno 4:** #3 Consulta de compras por fornecedor/tipo/faturamento — provavelmente só front (reaproveita `compras` + joins). Se precisar de índice, entrego SQL.
+Uma única tela `/compras/nova` com toda a compra (cabeçalho + itens) preenchida antes de salvar. Ao salvar, ir direto para a tela da compra criada, onde já existe o botão **Gerar contas a pagar** (etapa financeira).
 
-## Detalhes técnicos por item
+## Alterações
 
-### 1. Retirar Estoque
-- Remover itens de menu/sidebar/rotas de Estoque (`AppLayout.tsx`, sub-menu Suprimentos).
-- Manter tabelas `estoque_*` no banco (não apagar dados) — só ocultar UI. Sem SQL.
+### 1. `src/routes/app.obras.$obraId.compras.nova.tsx` (reescrever)
+- **Remover** os campos: Forma de pagamento, Parcelas, 1ª parcela (movem-se para "Gerar contas a pagar").
+- **Manter** cabeçalho: Importar NF, Fornecedor (+ Novo), Descrição, Etapa*, Subetapa* (+ criar nova), Natureza*, Data da compra*, Desconto, Acréscimo.
+- **Adicionar seção "Itens" inline** na mesma página (não modal/pop-up):
+  - Tabela editável linha a linha: Descrição, QTD, UND, Valor unit., Total (calc.), Ação (remover).
+  - Botão "+ Adicionar item".
+  - Total geral dos itens somado ao final.
+- Botão **"Criar compra"**:
+  - Validação: precisa etapa, subetapa, natureza, data e ≥1 item.
+  - Salva `compras` (sem forma_pagamento/parcelas — usar defaults ou tornar nullable, ver seção SQL).
+  - Salva `compra_itens` em lote.
+  - Redireciona para `/app/obras/$obraId/compras/$compraId` (tela detalhada onde já existe "Gerar contas a pagar").
 
-### 5. RDO — Equipe interna/externa
-- Em `rdo_equipes` já existe estrutura; adicionar campo `tipo` ('interna' | 'externa') se não existir → **SQL necessário**.
-- UI: toggle no formulário de equipe do RDO.
+### 2. `src/routes/app.obras.$obraId.compras.$compraId.tsx`
+- Confirmar que o botão **Gerar contas a pagar** continua funcionando e agora é o único lugar que coleta forma_pagamento / qtd_parcelas / data 1ª parcela.
+- Ajustar cabeçalho da compra para não exibir mais "1x" se não houver parcelas ainda.
 
-### 4. Colaborador na obra
-- Botão "Novo colaborador" dentro de `app.obras.$obraId.rh` que abre modal do cadastro global + já vincula em `colaborador_obras` com a obra atual. Sem schema novo.
+### 3. Remover o modal/pop-up de item
+- Localizar o componente atual de adicionar item (dialog) usado em `compras.$compraId.tsx` e substituir por inclusão inline (mesma UX da tela nova).
 
-### 2. Meios de pagamento por obra
-- Adicionar `obra_id uuid null` em `contas_bancarias` e `cartoes` (ou criar tabela `obra_meios_pagamento`).
-- Preferência: coluna `obra_id` nullable — `null` = global, preenchido = exclusivo da obra.
-- Ajustar filtros nos selects de pagamento para: `obra_id IS NULL OR obra_id = :obra`.
-- **SQL entregue como migration + arquivo `sql/producao-meios-pagamento-obra.sql`.**
+## SQL para produção
 
-### 3. Consulta de compras
-- Nova rota `app.obras.$obraId.suprimentos.consulta.tsx`.
-- Filtros: fornecedor (select), tipo (material/serviço), faturamento (à vista/cartão/boleto).
-- Lista com totais por fornecedor. Sem SQL (ou índice opcional).
+A tabela `compras` hoje tem `forma_pagamento text not null` e `qtd_parcelas integer not null`. Como a criação passa a ocorrer antes da definição financeira, precisamos permitir criar sem esses campos.
 
-## Changelog
-Cada turno registra entrada em `app_releases` via SQL.
+Arquivo a ser gerado: **`sql/producao-1.6.0-compra-sem-financeiro.sql`** (idempotente)
 
-Confirma a ordem? Posso começar pelo **Turno 1** (Remover Estoque + Equipe interna/externa no RDO)?
+```sql
+-- Torna campos financeiros opcionais na criação da compra
+ALTER TABLE public.compras ALTER COLUMN forma_pagamento DROP NOT NULL;
+ALTER TABLE public.compras ALTER COLUMN qtd_parcelas DROP NOT NULL;
+ALTER TABLE public.compras ALTER COLUMN qtd_parcelas SET DEFAULT 0;
+
+-- Registro no changelog
+INSERT INTO public.app_releases (version, highlight, items)
+VALUES ('1.6.0',
+  'Fluxo de compra simplificado',
+  '["Nova compra em tela única com itens inline","Campos financeiros movidos para Gerar contas a pagar","Remoção do pop-up de item"]'::jsonb)
+ON CONFLICT (version) DO NOTHING;
+```
+
+## Fora de escopo (não vou mexer)
+
+- Lógica de "Gerar contas a pagar" existente — permanece como está.
+- Estrutura de `compra_itens` — sem alteração.
+- Tela de listagem/árvore de compras.
+
+## Entrega
+
+Um turno só. Após aprovação, entrego código + arquivo SQL para rodar em produção.
