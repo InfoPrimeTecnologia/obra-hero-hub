@@ -567,14 +567,14 @@ export type Database = {
           data_primeira_parcela: string | null
           descricao: string | null
           etapa_id: string | null
-          forma_pagamento: string
+          forma_pagamento: string | null
           fornecedor_id: string | null
           id: string
           natureza: string | null
           numero: string | null
           obra_id: string
           observacoes: string | null
-          qtd_parcelas: number
+          qtd_parcelas: number | null
           rejeicao_motivo: string | null
           status: string
           subetapa_id: string | null
@@ -593,14 +593,14 @@ export type Database = {
           data_primeira_parcela?: string | null
           descricao?: string | null
           etapa_id?: string | null
-          forma_pagamento?: string
+          forma_pagamento?: string | null
           fornecedor_id?: string | null
           id?: string
           natureza?: string | null
           numero?: string | null
           obra_id: string
           observacoes?: string | null
-          qtd_parcelas?: number
+          qtd_parcelas?: number | null
           rejeicao_motivo?: string | null
           status?: string
           subetapa_id?: string | null
@@ -619,14 +619,14 @@ export type Database = {
           data_primeira_parcela?: string | null
           descricao?: string | null
           etapa_id?: string | null
-          forma_pagamento?: string
+          forma_pagamento?: string | null
           fornecedor_id?: string | null
           id?: string
           natureza?: string | null
           numero?: string | null
           obra_id?: string
           observacoes?: string | null
-          qtd_parcelas?: number
+          qtd_parcelas?: number | null
           rejeicao_motivo?: string | null
           status?: string
           subetapa_id?: string | null
