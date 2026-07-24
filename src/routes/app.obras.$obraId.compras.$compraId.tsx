@@ -439,7 +439,8 @@ function CompraDetalhePage() {
         description={(() => {
           const et = etapas.find((x) => x.id === compra.etapa_id);
           const sb = subetapas.find((x) => x.id === compra.subetapa_id);
-          const base = `${new Date(compra.data_compra).toLocaleDateString("pt-BR")} · ${compra.qtd_parcelas}x · R$ ${Number(compra.valor_total).toLocaleString("pt-BR", { minimumFractionDigits: 2 })}`;
+          const parcInfo = compra.qtd_parcelas > 0 ? ` · ${compra.qtd_parcelas}x` : "";
+          const base = `${new Date(compra.data_compra).toLocaleDateString("pt-BR")}${parcInfo} · R$ ${Number(compra.valor_total).toLocaleString("pt-BR", { minimumFractionDigits: 2 })}`;
           return et || sb ? `${base} · ${et?.nome ?? ""}${sb ? ` › ${sb.nome}` : ""}` : base;
         })()}
         actions={
