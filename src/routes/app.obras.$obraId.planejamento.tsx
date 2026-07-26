@@ -14,6 +14,7 @@ function PlanejamentoPage() {
     <div>
       <PageHeader
         title="Planejamento"
+        info="Cronograma físico (Gantt) e tarefas operacionais da obra. O Gantt mostra etapas, prazos e atrasos."
         description="Cronograma físico (Gantt) e tarefas da obra"
       />
       <div className="grid gap-3 p-8 md:grid-cols-2">

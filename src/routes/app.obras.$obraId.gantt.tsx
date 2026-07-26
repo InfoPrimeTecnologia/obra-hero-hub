@@ -120,6 +120,7 @@ function GanttPage() {
     <div>
       <PageHeader
         title="Gantt"
+        info="Cronograma visual em linha do tempo com etapas previstas x realizadas, percentual de conclusão e indicador de atraso. As datas vêm das etapas do Orçamento."
         description={obraNome ? `Cronograma — ${obraNome}` : "Cronograma da obra"}
         actions={
           <Button variant="outline" asChild>

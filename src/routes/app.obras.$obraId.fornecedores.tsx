@@ -56,6 +56,7 @@ function FornObraPage() {
     <div>
       <PageHeader
         title="Fornecedores da obra"
+        info="Fornecedores vinculados especificamente a esta obra. Você pode cadastrar um novo fornecedor aqui ou vincular um já existente do cadastro global."
         description="Fornecedores com compras vinculadas a esta obra"
         actions={
           <Button asChild variant="outline">

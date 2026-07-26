@@ -59,6 +59,7 @@ function FaturasObraPage() {
     <div>
       <PageHeader
         title="Faturas de cartão"
+        info="Faturas dos cartões usados nesta obra, com detalhamento das compras que compõem cada fatura."
         description="Faturas dos cartões usados em compras desta obra"
         actions={
           <Button asChild variant="outline">

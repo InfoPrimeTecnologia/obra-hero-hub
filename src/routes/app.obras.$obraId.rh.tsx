@@ -162,6 +162,7 @@ function RhObraPage() {
     <div>
       <PageHeader
         title="RH da obra"
+        info="Colaboradores alocados nesta obra (CLT, PJ, terceirizados). Você pode cadastrar um novo colaborador ou vincular um existente do cadastro global."
         description="Colaboradores vinculados a esta obra"
         actions={
           <div className="flex gap-2">

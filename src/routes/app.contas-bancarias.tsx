@@ -116,6 +116,7 @@ function ContasBancariasPage() {
     <div>
       <PageHeader
         title="Contas bancárias"
+        info="Contas bancárias e caixas físicos. Pode ser global ou vinculada a uma obra específica."
         description="Gerencie contas, saldos iniciais e tipos"
         actions={
           <Dialog open={open} onOpenChange={(v) => { setOpen(v); if (!v) reset(); }}>

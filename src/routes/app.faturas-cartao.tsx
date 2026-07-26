@@ -91,6 +91,7 @@ function FaturasCartaoPage() {
     <div>
       <PageHeader
         title="Faturas de cartão"
+        info="Faturas fechadas de cada cartão, com detalhamento das compras. Registre o pagamento da fatura para dar baixa em todas as parcelas."
         description="Faturas geradas automaticamente a partir das compras no cartão"
       />
       <div className="space-y-4 p-8">

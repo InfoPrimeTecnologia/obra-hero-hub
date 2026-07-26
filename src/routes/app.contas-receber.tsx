@@ -121,6 +121,7 @@ function ContasReceberPage() {
     <div>
       <PageHeader
         title="Contas a Receber"
+        info="Recebimentos previstos (medições, aditivos, mensalidades). Registre baixas ao receber."
         description="Receitas previstas e baixas no caixa"
         actions={
           <Dialog open={open} onOpenChange={setOpen}>

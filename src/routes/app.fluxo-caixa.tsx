@@ -71,6 +71,7 @@ function FluxoCaixaPage() {
     <div>
       <PageHeader
         title="Fluxo de caixa"
+        info="Projeção e realizado de entradas e saídas por período. Agrupa todas as obras e contas."
         description="Realizado vs previsto, por período"
       />
       <div className="space-y-4 p-8">

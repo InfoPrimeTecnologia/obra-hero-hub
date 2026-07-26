@@ -123,6 +123,7 @@ function CartoesPage() {
     <div>
       <PageHeader
         title="Cartões"
+        info="Cartões de crédito usados para compras. Pode ser global (todas as obras) ou vinculado a uma obra específica."
         description="Cartões de crédito usados em compras"
         actions={
           <Dialog open={open} onOpenChange={(v) => { setOpen(v); if (!v) reset(); }}>
