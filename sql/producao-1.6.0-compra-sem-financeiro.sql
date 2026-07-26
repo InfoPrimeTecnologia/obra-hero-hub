@@ -9,6 +9,13 @@ ALTER TABLE public.compras ALTER COLUMN forma_pagamento DROP NOT NULL;
 ALTER TABLE public.compras ALTER COLUMN qtd_parcelas    DROP NOT NULL;
 ALTER TABLE public.compras ALTER COLUMN qtd_parcelas    SET DEFAULT 0;
 
+-- A regra antiga exigia qtd_parcelas >= 1 e bloqueia o novo fluxo (criar
+-- compra sem parcelas). Substitui pela versão que aceita NULL ou zero.
+ALTER TABLE public.compras DROP CONSTRAINT IF EXISTS compras_qtd_parcelas_check;
+ALTER TABLE public.compras
+  ADD CONSTRAINT compras_qtd_parcelas_check
+  CHECK (qtd_parcelas IS NULL OR qtd_parcelas >= 0);
+
 -- Changelog
 INSERT INTO public.app_releases (version, highlight, items, released_at)
 SELECT '1.6.0',
