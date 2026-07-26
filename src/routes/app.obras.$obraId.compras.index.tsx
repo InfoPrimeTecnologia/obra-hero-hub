@@ -445,6 +445,7 @@ function ComprasPage() {
       <PageHeader
         title="Compras"
         description="Lance compras dentro de cada subetapa do orçamento"
+        info="A árvore reflete o orçamento: Etapa › Subetapa › Compra › Itens. Clique em uma subetapa para lançar uma nova compra vinculada, ou em 'Nova compra' para abrir a tela dedicada. Os campos financeiros (forma de pagamento, parcelas) só aparecem depois, ao gerar as contas a pagar."
       />
       <div className="space-y-3 p-8">
         <Card>

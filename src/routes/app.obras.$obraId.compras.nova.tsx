@@ -289,7 +289,7 @@ function NovaCompraPage() {
 
   return (
     <div>
-      <PageHeader title="Nova compra" description="Preencha o cabeçalho e os itens. Os dados financeiros serão informados depois, ao gerar as contas a pagar." />
+      <PageHeader title="Nova compra" description="Preencha o cabeçalho e os itens. Os dados financeiros serão informados depois, ao gerar as contas a pagar." info="Preencha o cabeçalho (fornecedor, etapa/subetapa, natureza) e adicione os itens diretamente na tabela. É possível cadastrar fornecedor ou subetapa nova sem sair da tela. Ao salvar, você vai direto para a compra criada para gerar as contas a pagar quando quiser." />
       <div className="p-8">
         <div className="mb-3">
           <Button asChild variant="outline" size="sm">
