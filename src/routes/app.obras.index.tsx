@@ -296,6 +296,7 @@ function ObrasPage() {
     <div>
       <PageHeader
         title="Obras"
+        info="Lista todas as obras cadastradas. Clique em uma obra para acessar seu painel completo (orçamento, compras, RDO, financeiro). Você pode duplicar uma obra existente para reaproveitar etapas e subetapas como template."
         description="Cadastre, abra e gerencie suas obras"
         actions={
           <Dialog open={open} onOpenChange={setOpen}>

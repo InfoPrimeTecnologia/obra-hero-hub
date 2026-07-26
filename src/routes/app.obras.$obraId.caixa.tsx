@@ -115,6 +115,7 @@ function CaixaObraPage() {
     <div>
       <PageHeader
         title="Caixa e bancos"
+        info="Movimentações financeiras (entradas e saídas) desta obra por conta bancária ou caixa. Base para o fluxo de caixa da obra."
         description="Movimentações financeiras vinculadas a esta obra"
         actions={
           <div className="flex gap-2">

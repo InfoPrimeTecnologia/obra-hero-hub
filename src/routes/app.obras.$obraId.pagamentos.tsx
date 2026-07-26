@@ -58,6 +58,7 @@ function PagamentosObraPage() {
     <div>
       <PageHeader
         title="Meio de pagamentos"
+        info="Cartões e contas bancárias movimentados por esta obra, com totais gastos/recebidos em cada meio."
         description="Cartões e contas bancárias movimentados por esta obra"
         actions={
           <div className="flex gap-2">

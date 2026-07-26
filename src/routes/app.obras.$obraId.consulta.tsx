@@ -102,6 +102,7 @@ function ConsultaPage() {
     <div>
       <PageHeader
         title="Consulta de compras"
+        info="Busque e filtre todas as compras desta obra por fornecedor, forma de pagamento, status, NF e período."
         description="Filtre compras da obra por fornecedor, tipo de pagamento e faturamento (período)"
       />
       <div className="space-y-4 p-6">

@@ -68,6 +68,7 @@ function CategoriasPage() {
     <div>
       <PageHeader
         title="Categorias financeiras"
+        info="Categorias usadas para classificar lançamentos e compras (receitas e despesas). Base para relatórios por natureza."
         description="Organize receitas e despesas em árvore (pai/filho)"
         actions={
           <Dialog open={open} onOpenChange={setOpen}>

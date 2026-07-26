@@ -150,6 +150,7 @@ function ContasPagarObra() {
     <div>
       <PageHeader
         title="Contas a pagar"
+        info="Parcelas geradas a partir das compras desta obra, com vencimento, forma de pagamento e status. Baixe pagamentos para atualizar o financeiro."
         description="Contas a pagar vinculadas a esta obra"
         info="Lista todas as parcelas geradas pelas compras da obra, além de contas cadastradas manualmente. Você pode marcar como paga, editar valores e vincular meio de pagamento (conta bancária ou cartão)."
         actions={

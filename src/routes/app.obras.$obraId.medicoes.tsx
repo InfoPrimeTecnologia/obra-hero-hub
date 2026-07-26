@@ -195,6 +195,7 @@ function MedicoesPage() {
     <div>
       <PageHeader
         title="Medições"
+        info="Registra o quanto de cada item da compra já foi executado/entregue na obra. As medições alimentam o percentual de execução das etapas e o relatório Orçado x Realizado."
         description="Avanço físico por subetapa do orçamento"
         actions={
           <Button onClick={novaMedicao} disabled={subetapas.length === 0}>

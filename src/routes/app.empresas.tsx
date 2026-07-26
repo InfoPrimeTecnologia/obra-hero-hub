@@ -140,6 +140,7 @@ function EmpresasPage() {
     <div>
       <PageHeader
         title="Empresas"
+        info="Empresas (clientes) do seu portfólio. Cada obra pertence a uma empresa."
         description="Gerencie as empresas que possuem suas obras"
         actions={
           <Dialog open={open} onOpenChange={(v) => { setOpen(v); if (!v) reset(); }}>

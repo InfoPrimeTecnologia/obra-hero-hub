@@ -115,6 +115,7 @@ function TransferenciasPage() {
     <div>
       <PageHeader
         title="Transferências entre contas"
+        info="Movimentações entre contas próprias (sem entrada ou saída real). Ex.: transferir do caixa da obra para a conta corrente."
         description="Movimentações com token de estorno"
         actions={
           <Dialog open={open} onOpenChange={setOpen}>

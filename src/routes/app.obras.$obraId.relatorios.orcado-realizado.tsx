@@ -147,6 +147,7 @@ function RelOrcadoReal() {
     <div>
       <PageHeader
         title="Orçado x Realizado"
+        info="Compara o valor orçado de cada etapa com o valor efetivamente comprado, mostrando o saldo restante e o percentual executado."
         description="Compare o orçamento com as compras lançadas na obra"
         actions={
           <Button variant="outline" onClick={() => { void exportOrcadoRealizadoPdf(obraId).catch((e) => toast.error(e.message ?? "Erro ao gerar PDF")); }}>

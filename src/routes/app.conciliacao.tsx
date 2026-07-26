@@ -132,6 +132,7 @@ function ConciliacaoPage() {
     <div>
       <PageHeader
         title="Conciliação bancária"
+        info="Confere lançamentos do sistema com o extrato bancário, marcando o que já foi conciliado."
         description="Importe OFX/CSV e bata contra os lançamentos"
       />
       <div className="space-y-4 p-8">

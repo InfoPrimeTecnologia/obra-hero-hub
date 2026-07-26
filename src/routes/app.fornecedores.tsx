@@ -118,6 +118,7 @@ function FornecedoresPage() {
     <div>
       <PageHeader
         title="Fornecedores"
+        info="Cadastro global de fornecedores. Podem ser vinculados a qualquer obra. Use o cadastro dentro da obra para associar automaticamente."
         description="Cadastro de fornecedores para uso em compras"
         actions={
           <Dialog open={open} onOpenChange={(v) => { setOpen(v); if (!v) reset(); }}>

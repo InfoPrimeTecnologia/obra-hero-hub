@@ -194,6 +194,7 @@ function ContasPagarPage() {
     <div>
       <PageHeader
         title="Contas a Pagar"
+        info="Consolida todas as parcelas a pagar de todas as obras. Filtre por obra, fornecedor, status ou vencimento."
         description="Inclui contas geradas automaticamente das compras e faturas"
         actions={
           <Dialog open={open} onOpenChange={setOpen}>
