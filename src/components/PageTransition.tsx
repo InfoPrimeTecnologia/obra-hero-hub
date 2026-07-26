@@ -10,7 +10,7 @@ export function PageTransition({ children }: { children: ReactNode }) {
   return (
     <div
       key={location.pathname}
-      className="animate-in fade-in slide-in-from-bottom-1 duration-300 ease-out motion-reduce:animate-none"
+      className="animate-in fade-in duration-150 ease-out motion-reduce:animate-none"
     >
       {children}
     </div>
