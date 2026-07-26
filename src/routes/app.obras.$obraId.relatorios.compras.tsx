@@ -171,7 +171,7 @@ function RelCompras() {
 
   return (
     <div>
-      <PageHeader title="Relatório de compras" description="Compras desta obra no período" />
+      <PageHeader title="Relatório de compras" description="Compras desta obra no período" info="Filtre por fornecedor, etapa, NF e período. Exporte em PDF ou Excel, ou envie por WhatsApp direto ao contato da obra." />
       <div className="space-y-4 p-8">
         <Card>
           <CardContent className="space-y-3 p-4">

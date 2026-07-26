@@ -152,6 +152,7 @@ function RdoListPage() {
       <PageHeader
         title={obra ? `RDO — ${obra.name}` : "RDO"}
         description="Relatório Diário de Obra"
+        info="Registre diariamente o andamento da obra: clima, equipe (interna/externa), atividades realizadas, ocorrências e fotos. Cada RDO gera um PDF que pode ser enviado por WhatsApp ao cliente da obra."
         actions={
           <div className="flex gap-2">
             <Button variant="outline" asChild>

@@ -349,6 +349,7 @@ function OrcamentoPage() {
       <PageHeader
         title="Orçamento"
         description={obraNome ? `Obra: ${obraNome}` : "Estruture o orçamento por etapas e subetapas"}
+        info="Organize o orçamento em Etapas e Subetapas — a numeração é gerada pela ordem de criação. Os valores lançados aqui viram a base para o controle de compras, alertas de estouro (85%) e relatórios de orçado x realizado."
         actions={
           <div className="flex gap-2">
             <Button variant="outline" asChild>

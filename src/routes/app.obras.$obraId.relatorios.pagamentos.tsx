@@ -148,7 +148,7 @@ function RelPagamentos() {
 
   return (
     <div>
-      <PageHeader title="Relatório de pagamentos" description="Contas a pagar e pagamentos da obra" />
+      <PageHeader title="Relatório de pagamentos" description="Contas a pagar e pagamentos da obra" info="Filtre por fornecedor, forma de pagamento, status, natureza da compra, NF e tipo de data (vencimento ou pagamento). Exporte em PDF ou Excel." />
       <div className="space-y-4 p-8">
         <Card>
           <CardContent className="space-y-3 p-4">
