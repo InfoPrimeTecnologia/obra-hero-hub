@@ -38,6 +38,7 @@ import { Logo } from "@/components/Logo";
 import { useAuth } from "@/lib/auth-context";
 import { Button } from "@/components/ui/button";
 import { TopBar } from "@/components/app/TopBar";
+import { PageTransition } from "@/components/PageTransition";
 import { cn } from "@/lib/utils";
 import { useObraSelecionada } from "@/lib/obra-context";
 import { usePlanModules } from "@/lib/use-plan-modules";
@@ -213,6 +214,7 @@ export function AppLayout() {
     return <Outlet />;
   }
 
+
   return (
     <div className="flex min-h-screen bg-background">
       <aside className="sticky top-0 flex h-screen w-64 flex-col bg-sidebar text-sidebar-foreground">
@@ -251,7 +253,9 @@ export function AppLayout() {
       </aside>
       <main className="flex-1 overflow-auto">
         <TopBar />
-        <Outlet />
+        <PageTransition>
+          <Outlet />
+        </PageTransition>
       </main>
       {hasFeature("ai_assistant") ? <AIAssistant /> : null}
     </div>

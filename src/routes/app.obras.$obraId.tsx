@@ -3,6 +3,7 @@ import { ObraSidebar } from "@/components/app/ObraSidebar";
 import { TopBar } from "@/components/app/TopBar";
 import { AIAssistant } from "@/components/app/AIAssistant";
 import { ObraBreadcrumb } from "@/components/app/ObraBreadcrumb";
+import { PageTransition } from "@/components/PageTransition";
 import { usePlanModules } from "@/lib/use-plan-modules";
 
 export const Route = createFileRoute("/app/obras/$obraId")({
@@ -18,7 +19,9 @@ function ObraLayout() {
       <main className="flex-1 overflow-auto">
         <TopBar />
         <ObraBreadcrumb obraId={obraId} />
-        <Outlet />
+        <PageTransition>
+          <Outlet />
+        </PageTransition>
       </main>
       {hasFeature("ai_assistant") ? <AIAssistant /> : null}
     </div>
