@@ -2,6 +2,7 @@ import { Outlet, Link, createRootRoute, HeadContent, Scripts } from "@tanstack/r
 import { useEffect } from "react";
 import { AuthProvider } from "@/lib/auth-context";
 import { Toaster } from "@/components/ui/sonner";
+import { RouteLoadingOverlay } from "@/components/RouteLoadingOverlay";
 
 import appCss from "../styles.css?url";
 
@@ -99,6 +100,7 @@ function RootShell({ children }: { children: React.ReactNode }) {
       <body>
         <AuthProvider>
           {children}
+          <RouteLoadingOverlay />
           <Toaster richColors position="top-right" />
         </AuthProvider>
         <Scripts />
