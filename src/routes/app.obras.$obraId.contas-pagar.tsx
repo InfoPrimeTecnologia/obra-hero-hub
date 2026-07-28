@@ -140,6 +140,17 @@ function ContasPagarObra() {
     void carregar();
   };
 
+  const excluir = async (cp: CP) => {
+    if (cp.status !== "pendente") return toast.error("Só é possível excluir contas pendentes");
+    if (!confirm(`Excluir a conta "${cp.descricao}"?`)) return;
+    const { error } = await supabase.from("contas_pagar").delete().eq("id", cp.id);
+    if (error) return toast.error(error.message);
+    toast.success("Conta excluída"); void carregar();
+  };
+
+  const fmtBR = (ymd: string) => { const [y,m,d]=ymd.slice(0,10).split("-"); return `${d}/${m}/${y}`; };
+
+
   const filtrados = items.filter((i) => filtro === "todos" || i.status === filtro);
   const total = filtrados.reduce((s, i) => s + Number(i.valor || 0), 0);
   const brl = (n: number) => n.toLocaleString("pt-BR", { style: "currency", currency: "BRL" });
