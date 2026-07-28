@@ -461,17 +461,25 @@ function CompraDetalhePage() {
           const et = etapas.find((x) => x.id === compra.etapa_id);
           const sb = subetapas.find((x) => x.id === compra.subetapa_id);
           const parcInfo = compra.qtd_parcelas && compra.qtd_parcelas > 0 ? ` · ${compra.qtd_parcelas}x` : "";
-          const base = `${new Date(compra.data_compra).toLocaleDateString("pt-BR")}${parcInfo} · ${brl(Number(compra.valor_total))}`;
+          const base = `${fmtBR(compra.data_compra)}${parcInfo} · ${brl(Number(compra.valor_total))}`;
           return et || sb ? `${base} · ${et?.nome ?? ""}${sb ? ` › ${sb.nome}` : ""}` : base;
         })()}
         actions={
-          <Button asChild variant="ghost" size="sm">
-            <Link to="/app/obras/$obraId/compras" params={{ obraId }}>
-              <ArrowLeft className="mr-2 h-4 w-4" /> Voltar
-            </Link>
-          </Button>
+          <div className="flex gap-2">
+            {!jaFaturada && (
+              <Button variant="destructive" size="sm" onClick={excluirCompra} disabled={excluindoCompra}>
+                <Trash2 className="mr-2 h-4 w-4" /> {excluindoCompra ? "Excluindo..." : "Excluir compra"}
+              </Button>
+            )}
+            <Button asChild variant="ghost" size="sm">
+              <Link to="/app/obras/$obraId/compras" params={{ obraId }}>
+                <ArrowLeft className="mr-2 h-4 w-4" /> Voltar
+              </Link>
+            </Button>
+          </div>
         }
       />
+
       <div className="space-y-6 p-8">
         {/* ITENS */}
         <Card>
