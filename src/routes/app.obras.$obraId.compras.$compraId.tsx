@@ -356,13 +356,16 @@ function CompraDetalhePage() {
       const q = Number(gerarForm.quantidades[it.id] || 0);
       if (q > 0) total += q * Number(it.valor_unitario);
     }
-    const n = Math.max(1, parseInt(gerarForm.qtd_parcelas || "1", 10));
+    // À vista força 1 parcela vencendo na data de emissão
+    const n = aVista ? 1 : Math.max(1, parseInt(gerarForm.qtd_parcelas || "1", 10));
     let vencs: string[] = [];
-    if (gerarForm.forma_pagamento === "cartao" && gerarForm.cartao_id) {
+    if (aVista) {
+      vencs = [gerarForm.data_emissao];
+    } else if (gerarForm.forma_pagamento === "cartao" && gerarForm.cartao_id) {
       const cart = cartoes.find((c) => c.id === gerarForm.cartao_id);
       if (cart) vencs = calcularVencimentosCartao(compra.data_compra, { fechamento: cart.dia_fechamento, vencimento: cart.dia_vencimento }, n);
     } else {
-      const dias = Math.max(1, parseInt(gerarForm.intervalo_dias || "30", 10));
+      const dias = Math.max(0, parseInt(gerarForm.intervalo_dias || "30", 10));
       vencs = calcularVencimentosIntervalo(gerarForm.data_primeira_parcela, dias, n);
     }
     const vp = Math.round((total / n) * 100) / 100;
@@ -372,7 +375,8 @@ function CompraDetalhePage() {
       valor: i === n - 1 ? Number((total - vp * (n - 1)).toFixed(2)) : vp,
     }));
     return { total, parcelas };
-  }, [gerarForm, itens, compra, cartoes]);
+  }, [gerarForm, itens, compra, cartoes, aVista]);
+
 
   const gerarContasPagar = async (e: FormEvent) => {
     e.preventDefault();
