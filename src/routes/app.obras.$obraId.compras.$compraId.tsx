@@ -750,7 +750,7 @@ function CompraDetalhePage() {
                 <div>
                   <p className="text-sm font-medium">{cp.descricao}</p>
                   <p className="text-xs text-muted-foreground">
-                    Vence {new Date(cp.vencimento).toLocaleDateString("pt-BR")}
+                    Vence {fmtBR(cp.vencimento)}
                     {cp.fatura_cartao_id ? " · via fatura do cartão" : ""}
                   </p>
                 </div>
