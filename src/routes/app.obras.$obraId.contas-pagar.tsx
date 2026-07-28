@@ -1,6 +1,6 @@
 import { createFileRoute } from "@tanstack/react-router";
 import { useEffect, useState, type FormEvent } from "react";
-import { Plus, Receipt, CheckCircle2 } from "lucide-react";
+import { Plus, Receipt, CheckCircle2, Trash2 } from "lucide-react";
 import { PageHeader } from "@/components/admin/PageHeader";
 import { Card, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
@@ -139,6 +139,17 @@ function ContasPagarObra() {
     setPaying(null);
     void carregar();
   };
+
+  const excluir = async (cp: CP) => {
+    if (cp.status !== "pendente") return toast.error("Só é possível excluir contas pendentes");
+    if (!confirm(`Excluir a conta "${cp.descricao}"?`)) return;
+    const { error } = await supabase.from("contas_pagar").delete().eq("id", cp.id);
+    if (error) return toast.error(error.message);
+    toast.success("Conta excluída"); void carregar();
+  };
+
+  const fmtBR = (ymd: string) => { const [y,m,d]=ymd.slice(0,10).split("-"); return `${d}/${m}/${y}`; };
+
 
   const filtrados = items.filter((i) => filtro === "todos" || i.status === filtro);
   const total = filtrados.reduce((s, i) => s + Number(i.valor || 0), 0);
@@ -290,18 +301,23 @@ function ContasPagarObra() {
                     </Badge>
                   </div>
                   <p className="text-xs text-muted-foreground">
-                    {fornName(cp.fornecedor_id)} • venc.{" "}
-                    {new Date(cp.vencimento).toLocaleDateString("pt-BR")}
+                    {fornName(cp.fornecedor_id)} • venc. {fmtBR(cp.vencimento)}
                   </p>
                 </div>
                 <div className="flex items-center gap-3">
                   <span className="font-semibold tabular-nums">{brl(Number(cp.valor))}</span>
                   {cp.status === "pendente" && (
-                    <Button size="sm" onClick={() => setPaying(cp)}>
-                      <CheckCircle2 className="mr-2 h-4 w-4" /> Pagar
-                    </Button>
+                    <>
+                      <Button size="sm" onClick={() => setPaying(cp)}>
+                        <CheckCircle2 className="mr-2 h-4 w-4" /> Pagar
+                      </Button>
+                      <Button size="sm" variant="ghost" onClick={() => excluir(cp)} title="Excluir">
+                        <Trash2 className="h-4 w-4 text-destructive" />
+                      </Button>
+                    </>
                   )}
                 </div>
+
               </CardContent>
             </Card>
           ))

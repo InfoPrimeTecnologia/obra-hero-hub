@@ -1,10 +1,12 @@
 import { createFileRoute, Link } from "@tanstack/react-router";
 import { useEffect, useState } from "react";
-import { CreditCard, CheckCircle2, Receipt } from "lucide-react";
+import { CreditCard, CheckCircle2, Receipt, Wallet } from "lucide-react";
 import { PageHeader } from "@/components/admin/PageHeader";
 import { Card, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
+import { Label } from "@/components/ui/label";
+import { Input } from "@/components/ui/input";
 import {
   Select, SelectContent, SelectItem, SelectTrigger, SelectValue,
 } from "@/components/ui/select";
@@ -13,6 +15,9 @@ import {
   AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle,
   AlertDialogTrigger,
 } from "@/components/ui/alert-dialog";
+import {
+  Dialog, DialogContent, DialogFooter, DialogHeader, DialogTitle, DialogTrigger,
+} from "@/components/ui/dialog";
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
 
@@ -32,6 +37,17 @@ type Fatura = {
 };
 
 type Cartao = { id: string; nome: string; ultimos_4: string | null };
+type ContaBancaria = { id: string; nome: string; banco: string | null };
+
+function fmtBR(ymd: string | null | undefined) {
+  if (!ymd) return "";
+  const [y, m, d] = ymd.slice(0, 10).split("-");
+  return `${d}/${m}/${y}`;
+}
+function hojeYMD() {
+  const d = new Date();
+  return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, "0")}-${String(d.getDate()).padStart(2, "0")}`;
+}
 
 const statusVariant = (s: string) =>
   s === "paga" ? "default" : s === "fechada" ? "secondary" : "outline";
@@ -42,17 +58,24 @@ const statusLabel = (s: string) =>
 function FaturasCartaoPage() {
   const [faturas, setFaturas] = useState<Fatura[]>([]);
   const [cartoes, setCartoes] = useState<Cartao[]>([]);
+  const [contas, setContas] = useState<ContaBancaria[]>([]);
   const [cpByFatura, setCpByFatura] = useState<Record<string, string>>({});
   const [filtroCartao, setFiltroCartao] = useState<string>("todos");
   const [filtroStatus, setFiltroStatus] = useState<string>("todos");
 
+  const [pagando, setPagando] = useState<Fatura | null>(null);
+  const [payForm, setPayForm] = useState({ conta_bancaria_id: "", data: hojeYMD() });
+  const [salvandoPag, setSalvandoPag] = useState(false);
+
   const carregar = async () => {
-    const [{ data: fs }, { data: cs }] = await Promise.all([
+    const [{ data: fs }, { data: cs }, { data: cbs }] = await Promise.all([
       supabase.from("faturas_cartao").select("*").order("dt_vencimento", { ascending: false }),
       supabase.from("cartoes").select("id,nome,ultimos_4").eq("ativo", true).order("nome"),
+      supabase.from("contas_bancarias").select("id,nome,banco").eq("ativo", true).order("nome"),
     ]);
     setFaturas((fs ?? []) as Fatura[]);
     setCartoes((cs ?? []) as Cartao[]);
+    setContas((cbs ?? []) as ContaBancaria[]);
     const ids = (fs ?? []).map((f: any) => f.id);
     if (ids.length) {
       const { data: cps } = await supabase
@@ -74,6 +97,61 @@ function FaturasCartaoPage() {
     if (error) return toast.error("Erro", { description: error.message });
     toast.success("Fatura fechada — conta a pagar gerada");
     void carregar();
+  };
+
+  const abrirPagamento = (f: Fatura) => {
+    setPagando(f);
+    setPayForm({ conta_bancaria_id: "", data: hojeYMD() });
+  };
+
+  const pagarFatura = async () => {
+    if (!pagando) return;
+    if (!payForm.conta_bancaria_id) return toast.error("Escolha a conta bancária");
+    setSalvandoPag(true);
+    try {
+      let f = pagando;
+      // Se ainda aberta, fecha primeiro para o trigger criar a conta a pagar
+      if (f.status === "aberta") {
+        const { error } = await supabase.from("faturas_cartao").update({ status: "fechada" }).eq("id", f.id);
+        if (error) throw error;
+      }
+      // Busca (ou aguarda) a conta a pagar vinculada
+      let cpId = cpByFatura[f.id];
+      if (!cpId) {
+        const { data: cp } = await supabase
+          .from("contas_pagar").select("id").eq("fatura_cartao_id", f.id).maybeSingle();
+        cpId = cp?.id ?? "";
+      }
+      if (!cpId) throw new Error("Conta a pagar da fatura não encontrada");
+
+      // Baixa a conta a pagar → trigger cp_baixa_to_lancamento debita a conta bancária
+      const { error: e1 } = await supabase.from("contas_pagar").update({
+        status: "pago",
+        pago_em: payForm.data,
+        valor_pago: f.valor_total,
+        conta_bancaria_id: payForm.conta_bancaria_id,
+      }).eq("id", cpId);
+      if (e1) throw e1;
+
+      // Marca a fatura e as parcelas da compra como pagas
+      await supabase.from("faturas_cartao").update({
+        status: "paga",
+        valor_pago: f.valor_total,
+        pago_em: new Date().toISOString(),
+      }).eq("id", f.id);
+      await supabase.from("compra_parcelas").update({
+        status: "pago",
+        pago_em: new Date().toISOString(),
+      }).eq("fatura_cartao_id", f.id);
+
+      toast.success("Fatura paga e lançada no banco");
+      setPagando(null);
+      void carregar();
+    } catch (err: any) {
+      toast.error("Erro", { description: err?.message ?? String(err) });
+    } finally {
+      setSalvandoPag(false);
+    }
   };
 
   const nomeCartao = (id: string) => {
@@ -132,8 +210,8 @@ function FaturasCartaoPage() {
                       {nomeCartao(f.cartao_id)} · {f.competencia}
                     </p>
                     <p className="text-xs text-muted-foreground">
-                      Fechamento {new Date(f.dt_fechamento).toLocaleDateString("pt-BR")} ·
-                      Vence {new Date(f.dt_vencimento).toLocaleDateString("pt-BR")} ·
+                      Fechamento {fmtBR(f.dt_fechamento)} ·
+                      Vence {fmtBR(f.dt_vencimento)} ·
                       Total R$ {Number(f.valor_total).toLocaleString("pt-BR", { minimumFractionDigits: 2 })}
                     </p>
                   </div>
@@ -148,15 +226,14 @@ function FaturasCartaoPage() {
                   {f.status === "aberta" && (
                     <AlertDialog>
                       <AlertDialogTrigger asChild>
-                        <Button size="sm"><CheckCircle2 className="mr-2 h-4 w-4" /> Fechar fatura</Button>
+                        <Button variant="outline" size="sm"><CheckCircle2 className="mr-2 h-4 w-4" /> Fechar</Button>
                       </AlertDialogTrigger>
                       <AlertDialogContent>
                         <AlertDialogHeader>
                           <AlertDialogTitle>Fechar fatura?</AlertDialogTitle>
                           <AlertDialogDescription>
                             Ao fechar, será criada uma conta a pagar com vencimento em{" "}
-                            {new Date(f.dt_vencimento).toLocaleDateString("pt-BR")}.
-                            Pague essa conta normalmente em Contas a pagar para debitar do banco.
+                            {fmtBR(f.dt_vencimento)}.
                           </AlertDialogDescription>
                         </AlertDialogHeader>
                         <AlertDialogFooter>
@@ -166,12 +243,59 @@ function FaturasCartaoPage() {
                       </AlertDialogContent>
                     </AlertDialog>
                   )}
+                  {f.status !== "paga" && (
+                    <Button size="sm" onClick={() => abrirPagamento(f)}>
+                      <Wallet className="mr-2 h-4 w-4" /> Pagar fatura
+                    </Button>
+                  )}
                 </div>
               </CardContent>
             </Card>
           );
         })}
       </div>
+
+      <Dialog open={pagando !== null} onOpenChange={(v) => !v && setPagando(null)}>
+        <DialogContent>
+          <DialogHeader>
+            <DialogTitle>Pagar fatura</DialogTitle>
+          </DialogHeader>
+          {pagando && (
+            <div className="space-y-4">
+              <div className="rounded-md border bg-muted/30 p-3 text-sm">
+                <p className="font-medium">{nomeCartao(pagando.cartao_id)} · {pagando.competencia}</p>
+                <p className="text-xs text-muted-foreground">
+                  Total R$ {Number(pagando.valor_total).toLocaleString("pt-BR", { minimumFractionDigits: 2 })}
+                </p>
+              </div>
+              <div className="space-y-2">
+                <Label>Conta bancária *</Label>
+                <Select value={payForm.conta_bancaria_id} onValueChange={(v) => setPayForm({ ...payForm, conta_bancaria_id: v })}>
+                  <SelectTrigger><SelectValue placeholder="Selecione a conta que vai debitar" /></SelectTrigger>
+                  <SelectContent>
+                    {contas.map((c) => (
+                      <SelectItem key={c.id} value={c.id}>
+                        {c.nome}{c.banco ? ` — ${c.banco}` : ""}
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+              </div>
+              <div className="space-y-2">
+                <Label>Data do pagamento *</Label>
+                <Input type="date" value={payForm.data} onChange={(e) => setPayForm({ ...payForm, data: e.target.value })} />
+              </div>
+              <p className="text-xs text-muted-foreground">
+                O valor será debitado da conta escolhida. Se precisar reverter, use "Estornar" em Contas a pagar.
+              </p>
+            </div>
+          )}
+          <DialogFooter>
+            <Button variant="ghost" onClick={() => setPagando(null)}>Cancelar</Button>
+            <Button onClick={pagarFatura} disabled={salvandoPag}>{salvandoPag ? "Pagando..." : "Confirmar pagamento"}</Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
     </div>
   );
 }

@@ -1,8 +1,9 @@
-import { createFileRoute, Link } from "@tanstack/react-router";
+import { createFileRoute, Link, useNavigate } from "@tanstack/react-router";
 import { useEffect, useMemo, useState, type FormEvent } from "react";
 import {
   Plus, ArrowLeft, Trash2, Pencil, Receipt, AlertTriangle,
 } from "lucide-react";
+
 import { PageHeader } from "@/components/admin/PageHeader";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
@@ -72,6 +73,19 @@ type ContaPagarLite = {
 
 const brl = (n: number) => `R$ ${Number(n).toLocaleString("pt-BR", { minimumFractionDigits: 2 })}`;
 
+/** Formata "YYYY-MM-DD" como dd/mm/yyyy sem passar por Date (evita bug de timezone). */
+function fmtBR(ymd: string | null | undefined): string {
+  if (!ymd) return "";
+  const [y, m, d] = ymd.slice(0, 10).split("-");
+  return `${d}/${m}/${y}`;
+}
+/** Data de hoje em "YYYY-MM-DD" no fuso local. */
+function hojeYMD(): string {
+  const d = new Date();
+  return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, "0")}-${String(d.getDate()).padStart(2, "0")}`;
+}
+
+
 /** Calcula vencimentos de fatura de cartão para N parcelas a partir da data da compra. */
 function calcularVencimentosCartao(dataCompra: string, dias: { fechamento: number; vencimento: number }, n: number): string[] {
   const [ay, am, ad] = dataCompra.split("-").map(Number);
@@ -114,8 +128,10 @@ function calcularVencimentosIntervalo(dataPrimeira: string, intervaloDias: numbe
   return out;
 }
 
+
 function CompraDetalhePage() {
   const { obraId, compraId } = Route.useParams();
+  const navigate = useNavigate();
   const { user } = useAuth();
   const [compra, setCompra] = useState<Compra | null>(null);
   const [itens, setItens] = useState<Item[]>([]);
@@ -123,6 +139,8 @@ function CompraDetalhePage() {
   const [subetapas, setSubetapas] = useState<Subetapa[]>([]);
   const [cartoes, setCartoes] = useState<Cartao[]>([]);
   const [contasPagar, setContasPagar] = useState<ContaPagarLite[]>([]);
+  const [parcelasCartao, setParcelasCartao] = useState<number>(0);
+  const [excluindoCompra, setExcluindoCompra] = useState(false);
 
   const [openItem, setOpenItem] = useState(false);
   const [editingItem, setEditingItem] = useState<Item | null>(null);
@@ -148,9 +166,10 @@ function CompraDetalhePage() {
 
   const [openGerar, setOpenGerar] = useState(false);
   const [gerando, setGerando] = useState(false);
+  const [aVista, setAVista] = useState(false);
   const [gerarForm, setGerarForm] = useState({
-    data_emissao: new Date().toISOString().slice(0, 10),
-    data_primeira_parcela: new Date(Date.now() + 30 * 86400000).toISOString().slice(0, 10),
+    data_emissao: hojeYMD(),
+    data_primeira_parcela: hojeYMD(),
     forma_pagamento: "boleto",
     cartao_id: "",
     qtd_parcelas: "1",
@@ -159,14 +178,16 @@ function CompraDetalhePage() {
     quantidades: {} as Record<string, string>,
   });
 
+
   const carregar = async () => {
-    const [{ data: c }, { data: is }, { data: es }, { data: subs }, { data: cts }, { data: cps }] = await Promise.all([
+    const [{ data: c }, { data: is }, { data: es }, { data: subs }, { data: cts }, { data: cps }, { data: parc }] = await Promise.all([
       supabase.from("compras").select("*").eq("id", compraId).single(),
       supabase.from("compra_itens").select("*").eq("compra_id", compraId).order("created_at"),
       supabase.from("orcamento_etapas").select("id,nome").eq("obra_id", obraId).order("ordem"),
       supabase.from("orcamento_subetapas").select("id,etapa_id,nome").order("ordem"),
       supabase.from("cartoes").select("id,nome,ultimos_4,dia_fechamento,dia_vencimento").eq("ativo", true).order("nome"),
       supabase.from("contas_pagar").select("id,descricao,valor,vencimento,status,fatura_cartao_id").eq("compra_id", compraId).order("vencimento"),
+      supabase.from("compra_parcelas").select("id,status").eq("compra_id", compraId),
     ]);
     setCompra(c as Compra | null);
     setItens((is ?? []) as Item[]);
@@ -174,14 +195,21 @@ function CompraDetalhePage() {
     setSubetapas((subs ?? []) as Subetapa[]);
     setCartoes((cts ?? []) as Cartao[]);
     setContasPagar((cps ?? []) as ContaPagarLite[]);
+    setParcelasCartao((parc ?? []).length);
 
-    // Sincroniza status da compra com base nas contas a pagar (poka-yoke visual)
+    // Sincroniza status da compra: considera contas_pagar (não-cartão) e compra_parcelas (cartão)
     if (c) {
       const list = (cps ?? []) as ContaPagarLite[];
+      const parcList = (parc ?? []) as { status: string }[];
       let novo = "pendente";
       if (list.length > 0) {
         const pagas = list.filter((p) => p.status === "pago").length;
         if (pagas === list.length) novo = "paga";
+        else if (pagas > 0) novo = "parcial";
+        else novo = "faturada";
+      } else if (parcList.length > 0) {
+        const pagas = parcList.filter((p) => p.status === "pago").length;
+        if (pagas === parcList.length) novo = "paga";
         else if (pagas > 0) novo = "parcial";
         else novo = "faturada";
       }
@@ -192,12 +220,28 @@ function CompraDetalhePage() {
   };
   useEffect(() => { void carregar(); }, [compraId]);
 
+
   const totalItens = useMemo(
     () => itens.reduce((s, i) => s + Number(i.valor_total), 0),
     [itens]
   );
 
-  const jaFaturada = contasPagar.length > 0;
+  const jaFaturada = contasPagar.length > 0 || parcelasCartao > 0;
+
+  const excluirCompra = async () => {
+    if (jaFaturada) return toast.error("Exclua as contas a pagar antes");
+    if (!confirm("Excluir esta compra e todos os seus itens? Esta ação não pode ser desfeita.")) return;
+    setExcluindoCompra(true);
+    // Cascata manual (sem FK ON DELETE definida no schema)
+    await supabase.from("compra_notas_fiscais").delete().eq("compra_id", compraId);
+    await supabase.from("compra_itens").delete().eq("compra_id", compraId);
+    const { error } = await supabase.from("compras").delete().eq("id", compraId);
+    setExcluindoCompra(false);
+    if (error) return toast.error("Erro", { description: error.message });
+    toast.success("Compra excluída");
+    navigate({ to: "/app/obras/$obraId/compras", params: { obraId } });
+  };
+
 
   // ==== ITENS ====
   const resetItemForm = () => {
@@ -312,13 +356,16 @@ function CompraDetalhePage() {
       const q = Number(gerarForm.quantidades[it.id] || 0);
       if (q > 0) total += q * Number(it.valor_unitario);
     }
-    const n = Math.max(1, parseInt(gerarForm.qtd_parcelas || "1", 10));
+    // À vista força 1 parcela vencendo na data de emissão
+    const n = aVista ? 1 : Math.max(1, parseInt(gerarForm.qtd_parcelas || "1", 10));
     let vencs: string[] = [];
-    if (gerarForm.forma_pagamento === "cartao" && gerarForm.cartao_id) {
+    if (aVista) {
+      vencs = [gerarForm.data_emissao];
+    } else if (gerarForm.forma_pagamento === "cartao" && gerarForm.cartao_id) {
       const cart = cartoes.find((c) => c.id === gerarForm.cartao_id);
       if (cart) vencs = calcularVencimentosCartao(compra.data_compra, { fechamento: cart.dia_fechamento, vencimento: cart.dia_vencimento }, n);
     } else {
-      const dias = Math.max(1, parseInt(gerarForm.intervalo_dias || "30", 10));
+      const dias = Math.max(0, parseInt(gerarForm.intervalo_dias || "30", 10));
       vencs = calcularVencimentosIntervalo(gerarForm.data_primeira_parcela, dias, n);
     }
     const vp = Math.round((total / n) * 100) / 100;
@@ -328,7 +375,8 @@ function CompraDetalhePage() {
       valor: i === n - 1 ? Number((total - vp * (n - 1)).toFixed(2)) : vp,
     }));
     return { total, parcelas };
-  }, [gerarForm, itens, compra, cartoes]);
+  }, [gerarForm, itens, compra, cartoes, aVista]);
+
 
   const gerarContasPagar = async (e: FormEvent) => {
     e.preventDefault();
@@ -387,8 +435,8 @@ function CompraDetalhePage() {
     setGerando(false);
     setOpenGerar(false);
     setGerarForm({
-      data_emissao: new Date().toISOString().slice(0, 10),
-      data_primeira_parcela: new Date(Date.now() + 30 * 86400000).toISOString().slice(0, 10),
+      data_emissao: hojeYMD(),
+      data_primeira_parcela: hojeYMD(),
       forma_pagamento: "boleto",
       cartao_id: "",
       qtd_parcelas: "1",
@@ -396,6 +444,8 @@ function CompraDetalhePage() {
       observacoes: "",
       quantidades: {},
     });
+    setAVista(false);
+
     void carregar();
   };
 
@@ -411,17 +461,25 @@ function CompraDetalhePage() {
           const et = etapas.find((x) => x.id === compra.etapa_id);
           const sb = subetapas.find((x) => x.id === compra.subetapa_id);
           const parcInfo = compra.qtd_parcelas && compra.qtd_parcelas > 0 ? ` · ${compra.qtd_parcelas}x` : "";
-          const base = `${new Date(compra.data_compra).toLocaleDateString("pt-BR")}${parcInfo} · ${brl(Number(compra.valor_total))}`;
+          const base = `${fmtBR(compra.data_compra)}${parcInfo} · ${brl(Number(compra.valor_total))}`;
           return et || sb ? `${base} · ${et?.nome ?? ""}${sb ? ` › ${sb.nome}` : ""}` : base;
         })()}
         actions={
-          <Button asChild variant="ghost" size="sm">
-            <Link to="/app/obras/$obraId/compras" params={{ obraId }}>
-              <ArrowLeft className="mr-2 h-4 w-4" /> Voltar
-            </Link>
-          </Button>
+          <div className="flex gap-2">
+            {!jaFaturada && (
+              <Button variant="destructive" size="sm" onClick={excluirCompra} disabled={excluindoCompra}>
+                <Trash2 className="mr-2 h-4 w-4" /> {excluindoCompra ? "Excluindo..." : "Excluir compra"}
+              </Button>
+            )}
+            <Button asChild variant="ghost" size="sm">
+              <Link to="/app/obras/$obraId/compras" params={{ obraId }}>
+                <ArrowLeft className="mr-2 h-4 w-4" /> Voltar
+              </Link>
+            </Button>
+          </div>
         }
       />
+
       <div className="space-y-6 p-8">
         {/* ITENS */}
         <Card>
@@ -593,6 +651,24 @@ function CompraDetalhePage() {
                       </div>
                     </div>
 
+                    <label className="flex items-center gap-2 rounded-md border bg-muted/30 p-2 text-sm">
+                      <input
+                        type="checkbox"
+                        checked={aVista}
+                        onChange={(e) => {
+                          setAVista(e.target.checked);
+                          if (e.target.checked) setGerarForm((f) => ({ ...f, qtd_parcelas: "1" }));
+                        }}
+                        disabled={gerarForm.forma_pagamento === "cartao"}
+                      />
+                      <span>
+                        <strong>À vista</strong> — 1 parcela na data de emissão
+                        {gerarForm.forma_pagamento === "cartao" && (
+                          <em className="ml-1 text-muted-foreground">(indisponível no cartão)</em>
+                        )}
+                      </span>
+                    </label>
+
                     {gerarForm.forma_pagamento === "cartao" ? (
                       <div className="grid grid-cols-2 gap-3">
                         <div className="space-y-2">
@@ -617,7 +693,7 @@ function CompraDetalhePage() {
                             onChange={(e) => setGerarForm({ ...gerarForm, qtd_parcelas: e.target.value })} />
                         </div>
                       </div>
-                    ) : (
+                    ) : aVista ? null : (
                       <div className="grid grid-cols-3 gap-3">
                         <div className="space-y-2">
                           <Label>1ª parcela vence *</Label>
@@ -631,8 +707,9 @@ function CompraDetalhePage() {
                         </div>
                         <div className="space-y-2">
                           <Label>Intervalo (dias) *</Label>
-                          <Input type="number" min={1} required value={gerarForm.intervalo_dias}
+                          <Input type="number" min={0} required value={gerarForm.intervalo_dias}
                             onChange={(e) => setGerarForm({ ...gerarForm, intervalo_dias: e.target.value })} />
+                          <p className="text-[10px] text-muted-foreground">Use 0 para todas no mesmo dia.</p>
                         </div>
                       </div>
                     )}
@@ -645,12 +722,13 @@ function CompraDetalhePage() {
                       </p>
                       {preview.parcelas.map((p) => (
                         <div key={p.n} className="flex justify-between text-xs">
-                          <span>Parcela {p.n}/{preview.parcelas.length} — vence {new Date(p.venc).toLocaleDateString("pt-BR")}</span>
+                          <span>Parcela {p.n}/{preview.parcelas.length} — vence {fmtBR(p.venc)}</span>
                           <span className="tabular-nums font-medium">{brl(p.valor)}</span>
                         </div>
                       ))}
                     </div>
                   )}
+
 
                   <div className="space-y-2">
                     <Label>Observações</Label>
@@ -672,7 +750,7 @@ function CompraDetalhePage() {
                 <div>
                   <p className="text-sm font-medium">{cp.descricao}</p>
                   <p className="text-xs text-muted-foreground">
-                    Vence {new Date(cp.vencimento).toLocaleDateString("pt-BR")}
+                    Vence {fmtBR(cp.vencimento)}
                     {cp.fatura_cartao_id ? " · via fatura do cartão" : ""}
                   </p>
                 </div>

@@ -1,6 +1,6 @@
 import { createFileRoute } from "@tanstack/react-router";
 import { useEffect, useState, type FormEvent } from "react";
-import { Plus, Receipt, CheckCircle2, XCircle, Undo2, Download } from "lucide-react";
+import { Plus, Receipt, CheckCircle2, XCircle, Undo2, Download, Trash2 } from "lucide-react";
 import { downloadCsv, fmtNum, fmtDate } from "@/lib/csv-export";
 import { PageHeader } from "@/components/admin/PageHeader";
 import { Card, CardContent } from "@/components/ui/card";
@@ -114,6 +114,15 @@ function ContasPagarPage() {
     if (error) return toast.error("Erro", { description: error.message });
     toast.success("Cancelada"); void carregar();
   };
+
+  const excluir = async (c: CP) => {
+    if (c.status !== "pendente") return toast.error("Só é possível excluir contas pendentes");
+    if (!confirm(`Excluir a conta "${c.descricao}"? Esta ação não pode ser desfeita.`)) return;
+    const { error } = await supabase.from("contas_pagar").delete().eq("id", c.id);
+    if (error) return toast.error("Erro", { description: error.message });
+    toast.success("Conta excluída"); void carregar();
+  };
+
 
   const [estornando, setEstornando] = useState<CP | null>(null);
   const [motivoEstorno, setMotivoEstorno] = useState("");
@@ -290,7 +299,7 @@ function ContasPagarPage() {
                   <div>
                     <p className="font-medium">{c.descricao}</p>
                     <p className="text-xs text-muted-foreground">
-                      Venc: {new Date(venc).toLocaleDateString("pt-BR")}
+                      Venc: {(() => { const [y,m,d]=venc.slice(0,10).split("-"); return `${d}/${m}/${y}`; })()}
                       {c.origem !== "manual" && ` · ${c.origem}`}
                     </p>
                   </div>
@@ -304,8 +313,11 @@ function ContasPagarPage() {
                       <Button size="sm" onClick={() => { setPaying(c); setPagto({ ...pagto, valor_pago: String(c.valor) }); }}>
                         <CheckCircle2 className="mr-1 h-4 w-4" /> Pagar
                       </Button>
-                      <Button size="sm" variant="ghost" onClick={() => cancelar(c.id)}>
+                      <Button size="sm" variant="ghost" onClick={() => cancelar(c.id)} title="Cancelar">
                         <XCircle className="h-4 w-4" />
+                      </Button>
+                      <Button size="sm" variant="ghost" onClick={() => excluir(c)} title="Excluir">
+                        <Trash2 className="h-4 w-4 text-destructive" />
                       </Button>
                     </>
                   )}
@@ -315,6 +327,7 @@ function ContasPagarPage() {
                     </Button>
                   )}
                 </div>
+
               </CardContent>
             </Card>
           );
