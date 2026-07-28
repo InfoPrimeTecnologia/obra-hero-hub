@@ -180,13 +180,14 @@ function CompraDetalhePage() {
 
 
   const carregar = async () => {
-    const [{ data: c }, { data: is }, { data: es }, { data: subs }, { data: cts }, { data: cps }] = await Promise.all([
+    const [{ data: c }, { data: is }, { data: es }, { data: subs }, { data: cts }, { data: cps }, { data: parc }] = await Promise.all([
       supabase.from("compras").select("*").eq("id", compraId).single(),
       supabase.from("compra_itens").select("*").eq("compra_id", compraId).order("created_at"),
       supabase.from("orcamento_etapas").select("id,nome").eq("obra_id", obraId).order("ordem"),
       supabase.from("orcamento_subetapas").select("id,etapa_id,nome").order("ordem"),
       supabase.from("cartoes").select("id,nome,ultimos_4,dia_fechamento,dia_vencimento").eq("ativo", true).order("nome"),
       supabase.from("contas_pagar").select("id,descricao,valor,vencimento,status,fatura_cartao_id").eq("compra_id", compraId).order("vencimento"),
+      supabase.from("compra_parcelas").select("id,status").eq("compra_id", compraId),
     ]);
     setCompra(c as Compra | null);
     setItens((is ?? []) as Item[]);
@@ -194,14 +195,21 @@ function CompraDetalhePage() {
     setSubetapas((subs ?? []) as Subetapa[]);
     setCartoes((cts ?? []) as Cartao[]);
     setContasPagar((cps ?? []) as ContaPagarLite[]);
+    setParcelasCartao((parc ?? []).length);
 
-    // Sincroniza status da compra com base nas contas a pagar (poka-yoke visual)
+    // Sincroniza status da compra: considera contas_pagar (não-cartão) e compra_parcelas (cartão)
     if (c) {
       const list = (cps ?? []) as ContaPagarLite[];
+      const parcList = (parc ?? []) as { status: string }[];
       let novo = "pendente";
       if (list.length > 0) {
         const pagas = list.filter((p) => p.status === "pago").length;
         if (pagas === list.length) novo = "paga";
+        else if (pagas > 0) novo = "parcial";
+        else novo = "faturada";
+      } else if (parcList.length > 0) {
+        const pagas = parcList.filter((p) => p.status === "pago").length;
+        if (pagas === parcList.length) novo = "paga";
         else if (pagas > 0) novo = "parcial";
         else novo = "faturada";
       }
@@ -211,6 +219,7 @@ function CompraDetalhePage() {
     }
   };
   useEffect(() => { void carregar(); }, [compraId]);
+
 
   const totalItens = useMemo(
     () => itens.reduce((s, i) => s + Number(i.valor_total), 0),
