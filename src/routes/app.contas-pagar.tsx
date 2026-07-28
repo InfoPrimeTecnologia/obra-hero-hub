@@ -115,6 +115,15 @@ function ContasPagarPage() {
     toast.success("Cancelada"); void carregar();
   };
 
+  const excluir = async (c: CP) => {
+    if (c.status !== "pendente") return toast.error("Só é possível excluir contas pendentes");
+    if (!confirm(`Excluir a conta "${c.descricao}"? Esta ação não pode ser desfeita.`)) return;
+    const { error } = await supabase.from("contas_pagar").delete().eq("id", c.id);
+    if (error) return toast.error("Erro", { description: error.message });
+    toast.success("Conta excluída"); void carregar();
+  };
+
+
   const [estornando, setEstornando] = useState<CP | null>(null);
   const [motivoEstorno, setMotivoEstorno] = useState("");
 
