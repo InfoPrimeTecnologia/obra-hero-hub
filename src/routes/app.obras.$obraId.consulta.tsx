@@ -23,11 +23,11 @@ type Compra = {
   numero: string | null;
   descricao: string | null;
   fornecedor_id: string | null;
-  forma_pagamento: string;
+  forma_pagamento: string | null;
   valor_total: number;
   data_compra: string;
   status: string;
-  qtd_parcelas: number;
+  qtd_parcelas: number | null;
 };
 
 const formaLabels: Record<string, string> = {
@@ -139,9 +139,9 @@ function ConsultaPage() {
                 <SelectContent>
                   <SelectItem value="todos">Todos</SelectItem>
                   <SelectItem value="pendente">Pendente</SelectItem>
+                  <SelectItem value="faturada">Faturada</SelectItem>
                   <SelectItem value="parcial">Parcial</SelectItem>
-                  <SelectItem value="pago">Pago</SelectItem>
-                  <SelectItem value="cancelada">Cancelada</SelectItem>
+                  <SelectItem value="paga">Paga</SelectItem>
                 </SelectContent>
               </Select>
             </div>
@@ -187,14 +187,21 @@ function ConsultaPage() {
                     <div className="flex flex-wrap items-center gap-2">
                       <span className="font-semibold">{c.numero ?? "s/nº"}</span>
                       <Badge variant="outline">{nomeFornecedor(c.fornecedor_id)}</Badge>
-                      <Badge variant="secondary">{formaLabels[c.forma_pagamento] ?? c.forma_pagamento}</Badge>
-                      <Badge>{c.status}</Badge>
+                      <Badge variant="secondary">{c.forma_pagamento ? (formaLabels[c.forma_pagamento] ?? c.forma_pagamento) : "—"}</Badge>
+                      {(() => {
+                        const s = c.status;
+                        if (s === "paga") return <Badge className="bg-emerald-600 text-white hover:bg-emerald-600/90">Paga</Badge>;
+                        if (s === "parcial") return <Badge className="bg-amber-500 text-white hover:bg-amber-500/90">Parcial</Badge>;
+                        if (s === "faturada") return <Badge variant="secondary">Faturada</Badge>;
+                        return <Badge variant="destructive">Pendente</Badge>;
+                      })()}
                     </div>
                     {c.descricao && (
                       <p className="mt-1 truncate text-sm text-muted-foreground">{c.descricao}</p>
                     )}
                     <p className="mt-1 text-xs text-muted-foreground">
-                      {new Date(c.data_compra).toLocaleDateString("pt-BR")} · {c.qtd_parcelas}x
+                      {new Date(c.data_compra).toLocaleDateString("pt-BR")}
+                      {c.qtd_parcelas && c.qtd_parcelas > 0 ? ` · ${c.qtd_parcelas}x` : ""}
                     </p>
                   </div>
                   <div className="text-right">

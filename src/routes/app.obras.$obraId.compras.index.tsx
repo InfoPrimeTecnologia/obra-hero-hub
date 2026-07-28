@@ -36,11 +36,11 @@ type Compra = {
   id: string;
   numero: string | null;
   descricao: string | null;
-  forma_pagamento: string;
+  forma_pagamento: string | null;
   valor_total: number;
   data_compra: string;
   status: string;
-  qtd_parcelas: number;
+  qtd_parcelas: number | null;
   fornecedor_id: string | null;
   cartao_id: string | null;
   etapa_id: string | null;
@@ -182,9 +182,9 @@ function ComprasPage() {
       ...emptyForm(c.etapa_id ?? "", c.subetapa_id ?? ""),
       fornecedor_id: c.fornecedor_id ?? "",
       descricao: c.descricao ?? "",
-      forma_pagamento: c.forma_pagamento,
+      forma_pagamento: c.forma_pagamento ?? "dinheiro",
       cartao_id: c.cartao_id ?? "",
-      qtd_parcelas: String(c.qtd_parcelas),
+      qtd_parcelas: String(c.qtd_parcelas ?? 1),
       data_compra: c.data_compra,
     });
   };
@@ -569,13 +569,22 @@ function ComprasPage() {
                                               </p>
                                               <p className="truncate text-xs text-muted-foreground">
                                                 {new Date(c.data_compra).toLocaleDateString("pt-BR")}
-                                                {f ? ` · ${f.nome}` : ""} · {formaLabels[c.forma_pagamento]} · {c.qtd_parcelas}x
+                                                {f ? ` · ${f.nome}` : ""}
+                                                {c.forma_pagamento ? ` · ${formaLabels[c.forma_pagamento] ?? c.forma_pagamento}` : ""}
+                                                {c.qtd_parcelas && c.qtd_parcelas > 0 ? ` · ${c.qtd_parcelas}x` : ""}
                                               </p>
                                             </div>
                                           </button>
                                           <div className="flex items-center gap-2">
                                             <span className="text-sm font-semibold tabular-nums">{brl(Number(c.valor_total))}</span>
-                                            <Badge variant={c.status === "recebida" ? "default" : "secondary"}>{c.status}</Badge>
+                                            {(() => {
+                                              const s = c.status;
+                                              if (s === "paga") return <Badge className="bg-emerald-600 text-white hover:bg-emerald-600/90">Paga</Badge>;
+                                              if (s === "parcial") return <Badge className="bg-amber-500 text-white hover:bg-amber-500/90">Parcial</Badge>;
+                                              if (s === "faturada") return <Badge variant="secondary">Faturada</Badge>;
+                                              if (s === "recebida") return <Badge>Recebida</Badge>;
+                                              return <Badge variant="destructive">Pendente</Badge>;
+                                            })()}
                                             {c.aprovacao_status === "pendente" && (
                                               <Badge className="bg-amber-500 text-white hover:bg-amber-500/90">Pend. aprovação</Badge>
                                             )}
