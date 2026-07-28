@@ -569,13 +569,22 @@ function ComprasPage() {
                                               </p>
                                               <p className="truncate text-xs text-muted-foreground">
                                                 {new Date(c.data_compra).toLocaleDateString("pt-BR")}
-                                                {f ? ` · ${f.nome}` : ""} · {formaLabels[c.forma_pagamento]} · {c.qtd_parcelas}x
+                                                {f ? ` · ${f.nome}` : ""}
+                                                {c.forma_pagamento ? ` · ${formaLabels[c.forma_pagamento] ?? c.forma_pagamento}` : ""}
+                                                {c.qtd_parcelas && c.qtd_parcelas > 0 ? ` · ${c.qtd_parcelas}x` : ""}
                                               </p>
                                             </div>
                                           </button>
                                           <div className="flex items-center gap-2">
                                             <span className="text-sm font-semibold tabular-nums">{brl(Number(c.valor_total))}</span>
-                                            <Badge variant={c.status === "recebida" ? "default" : "secondary"}>{c.status}</Badge>
+                                            {(() => {
+                                              const s = c.status;
+                                              if (s === "paga") return <Badge className="bg-emerald-600 text-white hover:bg-emerald-600/90">Paga</Badge>;
+                                              if (s === "parcial") return <Badge className="bg-amber-500 text-white hover:bg-amber-500/90">Parcial</Badge>;
+                                              if (s === "faturada") return <Badge variant="secondary">Faturada</Badge>;
+                                              if (s === "recebida") return <Badge>Recebida</Badge>;
+                                              return <Badge variant="destructive">Pendente</Badge>;
+                                            })()}
                                             {c.aprovacao_status === "pendente" && (
                                               <Badge className="bg-amber-500 text-white hover:bg-amber-500/90">Pend. aprovação</Badge>
                                             )}
