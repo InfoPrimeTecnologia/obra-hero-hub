@@ -313,8 +313,11 @@ function ContasPagarPage() {
                       <Button size="sm" onClick={() => { setPaying(c); setPagto({ ...pagto, valor_pago: String(c.valor) }); }}>
                         <CheckCircle2 className="mr-1 h-4 w-4" /> Pagar
                       </Button>
-                      <Button size="sm" variant="ghost" onClick={() => cancelar(c.id)}>
+                      <Button size="sm" variant="ghost" onClick={() => cancelar(c.id)} title="Cancelar">
                         <XCircle className="h-4 w-4" />
+                      </Button>
+                      <Button size="sm" variant="ghost" onClick={() => excluir(c)} title="Excluir">
+                        <Trash2 className="h-4 w-4 text-destructive" />
                       </Button>
                     </>
                   )}
@@ -324,6 +327,7 @@ function ContasPagarPage() {
                     </Button>
                   )}
                 </div>
+
               </CardContent>
             </Card>
           );
