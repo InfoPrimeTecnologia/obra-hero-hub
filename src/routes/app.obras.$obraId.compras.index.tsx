@@ -182,9 +182,9 @@ function ComprasPage() {
       ...emptyForm(c.etapa_id ?? "", c.subetapa_id ?? ""),
       fornecedor_id: c.fornecedor_id ?? "",
       descricao: c.descricao ?? "",
-      forma_pagamento: c.forma_pagamento,
+      forma_pagamento: c.forma_pagamento ?? "dinheiro",
       cartao_id: c.cartao_id ?? "",
-      qtd_parcelas: String(c.qtd_parcelas),
+      qtd_parcelas: String(c.qtd_parcelas ?? 1),
       data_compra: c.data_compra,
     });
   };
