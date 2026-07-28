@@ -23,11 +23,11 @@ type Compra = {
   numero: string | null;
   descricao: string | null;
   fornecedor_id: string | null;
-  forma_pagamento: string;
+  forma_pagamento: string | null;
   valor_total: number;
   data_compra: string;
   status: string;
-  qtd_parcelas: number;
+  qtd_parcelas: number | null;
 };
 
 const formaLabels: Record<string, string> = {
