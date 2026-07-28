@@ -1,7 +1,7 @@
 import { createFileRoute, Link } from "@tanstack/react-router";
 import { useEffect, useMemo, useState, type FormEvent } from "react";
 import {
-  Plus, ArrowLeft, Trash2, Package, CheckCircle2, Ruler, Pencil, Undo2, Receipt,
+  Plus, ArrowLeft, Trash2, Pencil, Undo2, Receipt, AlertTriangle,
 } from "lucide-react";
 import { PageHeader } from "@/components/admin/PageHeader";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
