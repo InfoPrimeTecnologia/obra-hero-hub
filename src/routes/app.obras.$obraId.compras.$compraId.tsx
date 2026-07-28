@@ -1,7 +1,7 @@
 import { createFileRoute, Link } from "@tanstack/react-router";
 import { useEffect, useMemo, useState, type FormEvent } from "react";
 import {
-  Plus, ArrowLeft, Trash2, Pencil, Undo2, Receipt, AlertTriangle,
+  Plus, ArrowLeft, Trash2, Pencil, Receipt, AlertTriangle,
 } from "lucide-react";
 import { PageHeader } from "@/components/admin/PageHeader";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
@@ -27,7 +27,6 @@ import { CompraNotasFiscais } from "@/components/app/CompraNotasFiscais";
 import { usePlanModules } from "@/lib/use-plan-modules";
 import { checkOrcamentoAlert, brl as brlAlert, type OrcamentoAlertResult } from "@/lib/orcamento-alert";
 
-
 export const Route = createFileRoute("/app/obras/$obraId/compras/$compraId")({
   component: CompraDetalhePage,
 });
@@ -38,9 +37,9 @@ type Compra = {
   obra_id: string;
   fornecedor_id: string | null;
   descricao: string | null;
-  forma_pagamento: string;
+  forma_pagamento: string | null;
   cartao_id: string | null;
-  qtd_parcelas: number;
+  qtd_parcelas: number | null;
   valor_total: number;
   data_compra: string;
   data_primeira_parcela: string | null;
@@ -56,35 +55,74 @@ type Item = {
   quantidade: number;
   valor_unitario: number;
   valor_total: number;
-  qtd_recebida: number;
-  qtd_medida: number;
   etapa_id: string | null;
   subetapa_id: string | null;
 };
-type Parcela = {
-  id: string;
-  numero: number;
-  vencimento: string;
-  valor: number;
-  status: string;
-  pago_em: string | null;
-  fatura_cartao_id: string | null;
-};
 type Etapa = { id: string; nome: string };
 type Subetapa = { id: string; etapa_id: string; nome: string };
-type Recebimento = { id: string; data: string; recebido_por: string | null; observacoes: string | null };
-type Medicao = { id: string; numero: number; data: string; valor_total: number; observacoes: string | null };
+type Cartao = { id: string; nome: string; ultimos_4: string | null; dia_fechamento: number; dia_vencimento: number };
+type ContaPagarLite = {
+  id: string;
+  descricao: string;
+  valor: number;
+  vencimento: string;
+  status: string;
+  fatura_cartao_id: string | null;
+};
+
+const brl = (n: number) => `R$ ${Number(n).toLocaleString("pt-BR", { minimumFractionDigits: 2 })}`;
+
+/** Calcula vencimentos de fatura de cartão para N parcelas a partir da data da compra. */
+function calcularVencimentosCartao(dataCompra: string, dias: { fechamento: number; vencimento: number }, n: number): string[] {
+  const [ay, am, ad] = dataCompra.split("-").map(Number);
+  const base = new Date(ay, am - 1, ad);
+  const out: string[] = [];
+  for (let i = 0; i < n; i++) {
+    const ref = new Date(base.getFullYear(), base.getMonth() + i, base.getDate());
+    let y = ref.getFullYear();
+    let m = ref.getMonth() + 1;
+    if (ref.getDate() > dias.fechamento) {
+      m += 1;
+      if (m > 12) { m = 1; y += 1; }
+    }
+    // vencimento
+    let vy = y, vm = m;
+    if (dias.vencimento <= dias.fechamento) {
+      vm += 1;
+      if (vm > 12) { vm = 1; vy += 1; }
+    }
+    const lastDay = new Date(vy, vm, 0).getDate();
+    const day = Math.min(dias.vencimento, lastDay);
+    out.push(`${vy}-${String(vm).padStart(2, "0")}-${String(day).padStart(2, "0")}`);
+  }
+  return out;
+}
+
+function calcularVencimentosIntervalo(dataPrimeira: string, intervaloDias: number, n: number): string[] {
+  const [y, m, d] = dataPrimeira.split("-").map(Number);
+  const base = new Date(y, m - 1, d);
+  const out: string[] = [];
+  for (let i = 0; i < n; i++) {
+    const dt = new Date(base);
+    if (intervaloDias === 30) {
+      dt.setMonth(base.getMonth() + i);
+    } else {
+      dt.setDate(base.getDate() + i * intervaloDias);
+    }
+    out.push(`${dt.getFullYear()}-${String(dt.getMonth() + 1).padStart(2, "0")}-${String(dt.getDate()).padStart(2, "0")}`);
+  }
+  return out;
+}
 
 function CompraDetalhePage() {
   const { obraId, compraId } = Route.useParams();
   const { user } = useAuth();
   const [compra, setCompra] = useState<Compra | null>(null);
   const [itens, setItens] = useState<Item[]>([]);
-  const [parcelas, setParcelas] = useState<Parcela[]>([]);
   const [etapas, setEtapas] = useState<Etapa[]>([]);
   const [subetapas, setSubetapas] = useState<Subetapa[]>([]);
-  const [recebimentos, setRecebimentos] = useState<Recebimento[]>([]);
-  const [medicoes, setMedicoes] = useState<Medicao[]>([]);
+  const [cartoes, setCartoes] = useState<Cartao[]>([]);
+  const [contasPagar, setContasPagar] = useState<ContaPagarLite[]>([]);
 
   const [openItem, setOpenItem] = useState(false);
   const [editingItem, setEditingItem] = useState<Item | null>(null);
@@ -108,50 +146,58 @@ function CompraDetalhePage() {
     editingId?: string;
   } | null>(null);
 
-  const [openReceb, setOpenReceb] = useState(false);
-  const [recebForm, setRecebForm] = useState({
-    data: new Date().toISOString().slice(0, 10),
-    recebido_por: "", observacoes: "",
-    quantidades: {} as Record<string, string>,
-  });
-
-  const [openMed, setOpenMed] = useState(false);
-  const [medForm, setMedForm] = useState({
-    data: new Date().toISOString().slice(0, 10),
+  const [openGerar, setOpenGerar] = useState(false);
+  const [gerando, setGerando] = useState(false);
+  const [gerarForm, setGerarForm] = useState({
+    data_emissao: new Date().toISOString().slice(0, 10),
     data_primeira_parcela: new Date(Date.now() + 30 * 86400000).toISOString().slice(0, 10),
     forma_pagamento: "boleto",
+    cartao_id: "",
     qtd_parcelas: "1",
+    intervalo_dias: "30",
     observacoes: "",
     quantidades: {} as Record<string, string>,
   });
 
-
-
   const carregar = async () => {
-    const [{ data: c }, { data: is }, { data: ps }, { data: es }, { data: subs }, { data: rs }, { data: ms }] = await Promise.all([
+    const [{ data: c }, { data: is }, { data: es }, { data: subs }, { data: cts }, { data: cps }] = await Promise.all([
       supabase.from("compras").select("*").eq("id", compraId).single(),
       supabase.from("compra_itens").select("*").eq("compra_id", compraId).order("created_at"),
-      supabase.from("compra_parcelas").select("*").eq("compra_id", compraId).order("numero"),
       supabase.from("orcamento_etapas").select("id,nome").eq("obra_id", obraId).order("ordem"),
       supabase.from("orcamento_subetapas").select("id,etapa_id,nome").order("ordem"),
-      supabase.from("recebimentos").select("*").eq("compra_id", compraId).order("data", { ascending: false }),
-      supabase.from("medicoes").select("*").eq("compra_id", compraId).order("numero"),
+      supabase.from("cartoes").select("id,nome,ultimos_4,dia_fechamento,dia_vencimento").eq("ativo", true).order("nome"),
+      supabase.from("contas_pagar").select("id,descricao,valor,vencimento,status,fatura_cartao_id").eq("compra_id", compraId).order("vencimento"),
     ]);
     setCompra(c as Compra | null);
     setItens((is ?? []) as Item[]);
-    setParcelas((ps ?? []) as Parcela[]);
     setEtapas((es ?? []) as Etapa[]);
     setSubetapas((subs ?? []) as Subetapa[]);
-    setRecebimentos((rs ?? []) as Recebimento[]);
-    setMedicoes((ms ?? []) as Medicao[]);
-  };
+    setCartoes((cts ?? []) as Cartao[]);
+    setContasPagar((cps ?? []) as ContaPagarLite[]);
 
+    // Sincroniza status da compra com base nas contas a pagar (poka-yoke visual)
+    if (c) {
+      const list = (cps ?? []) as ContaPagarLite[];
+      let novo = "pendente";
+      if (list.length > 0) {
+        const pagas = list.filter((p) => p.status === "pago").length;
+        if (pagas === list.length) novo = "paga";
+        else if (pagas > 0) novo = "parcial";
+        else novo = "faturada";
+      }
+      if ((c as Compra).status !== novo) {
+        await supabase.from("compras").update({ status: novo }).eq("id", compraId);
+      }
+    }
+  };
   useEffect(() => { void carregar(); }, [compraId]);
 
   const totalItens = useMemo(
     () => itens.reduce((s, i) => s + Number(i.valor_total), 0),
     [itens]
   );
+
+  const jaFaturada = contasPagar.length > 0;
 
   // ==== ITENS ====
   const resetItemForm = () => {
@@ -212,18 +258,13 @@ function CompraDetalhePage() {
       subetapa_id: itemForm.subetapa_id,
     };
 
-    // Delta do lançamento: se editando, subtrai o valor antigo (se subetapa é a mesma)
     let delta = valorItem;
     if (editingItem) {
       const mesmaSub = editingItem.subetapa_id === itemForm.subetapa_id;
       if (mesmaSub) delta = valorItem - Number(editingItem.valor_total ?? 0);
     }
     if (delta > 0) {
-      const check = await checkOrcamentoAlert(
-        itemForm.subetapa_id,
-        delta,
-        compra.customer_id,
-      );
+      const check = await checkOrcamentoAlert(itemForm.subetapa_id, delta, compra.customer_id);
       if (check.shouldWarn) {
         setAlertOrc(check);
         setPendingItemPayload({ payload, isEdit: !!editingItem, editingId: editingItem?.id });
@@ -261,171 +302,100 @@ function CompraDetalhePage() {
     const { data } = await supabase.from("compra_itens").select("valor_total").eq("compra_id", compraId);
     const total = (data ?? []).reduce((s: number, r: any) => s + Number(r.valor_total), 0);
     await supabase.from("compras").update({ valor_total: total }).eq("id", compraId);
-    // regenera parcelas
-    if (compra) await regerarParcelas(total);
   };
 
-  const regerarParcelas = async (total: number) => {
-    if (!compra) return;
-    await supabase.from("compra_parcelas").delete().eq("compra_id", compraId).eq("status", "pendente");
-    if (!compra.qtd_parcelas || compra.qtd_parcelas <= 0) return;
-    const qtd = compra.qtd_parcelas;
-    const start = compra.data_primeira_parcela ? new Date(compra.data_primeira_parcela) : new Date(compra.data_compra);
-    const valor = Number((total / qtd).toFixed(2));
-    const rows: any[] = [];
-    for (let n = 1; n <= qtd; n++) {
-      const v = new Date(start);
-      v.setMonth(v.getMonth() + (n - 1));
-      const valorFinal = n === qtd ? Number((total - valor * (qtd - 1)).toFixed(2)) : valor;
-      rows.push({
-        customer_id: compra.customer_id, compra_id: compraId, numero: n,
-        vencimento: v.toISOString().slice(0, 10), valor: valorFinal, status: "pendente",
-      });
-    }
-    if (rows.length) await supabase.from("compra_parcelas").insert(rows);
-  };
-
-  // ==== PARCELAS ====
-  const togglePagamento = async (p: Parcela) => {
-    const novo = p.status === "pago" ? "pendente" : "pago";
-    const { error } = await supabase.from("compra_parcelas").update({
-      status: novo, pago_em: novo === "pago" ? new Date().toISOString() : null,
-    }).eq("id", p.id);
-    if (error) return toast.error("Erro", { description: error.message });
-    void carregar();
-  };
-
-  // ==== RECEBIMENTO ====
-  const salvarRecebimento = async (e: FormEvent) => {
-    e.preventDefault();
-    if (!compra) return;
-    const { data: rec, error } = await supabase.from("recebimentos").insert({
-      customer_id: compra.customer_id, compra_id: compraId,
-      data: recebForm.data, recebido_por: recebForm.recebido_por || null,
-      observacoes: recebForm.observacoes || null, created_by: user!.id,
-    }).select("id").single();
-    if (error) return toast.error("Erro", { description: error.message });
-    const linhas: any[] = [];
-    for (const it of itens) {
-      const q = Number(recebForm.quantidades[it.id] || 0);
-      if (q > 0) {
-        linhas.push({
-          customer_id: compra.customer_id, recebimento_id: rec!.id,
-          compra_item_id: it.id, quantidade: q,
-        });
-        await supabase.from("compra_itens").update({
-          qtd_recebida: Number(it.qtd_recebida) + q,
-        }).eq("id", it.id);
-      }
-    }
-    if (linhas.length) await supabase.from("recebimento_itens").insert(linhas);
-    // marca compra como recebida se tudo recebido
-    const totalRec = itens.reduce((s, i) => s + Number(i.qtd_recebida) + Number(recebForm.quantidades[i.id] || 0), 0);
-    const totalQtd = itens.reduce((s, i) => s + Number(i.quantidade), 0);
-    if (totalQtd > 0 && totalRec >= totalQtd) {
-      await supabase.from("compras").update({ status: "recebida" }).eq("id", compraId);
-    }
-    setOpenReceb(false);
-    setRecebForm({ data: new Date().toISOString().slice(0, 10), recebido_por: "", observacoes: "", quantidades: {} });
-    toast.success("Recebimento registrado"); void carregar();
-  };
-
-  // ==== MEDIÇÃO ====
-  const salvarMedicao = async (e: FormEvent) => {
-    e.preventDefault();
-    if (!compra) return;
+  // ==== GERAR CONTAS A PAGAR ====
+  const preview = useMemo(() => {
+    if (!compra) return { total: 0, parcelas: [] as { n: number; venc: string; valor: number }[] };
     let total = 0;
-    const linhas: any[] = [];
     for (const it of itens) {
-      const q = Number(medForm.quantidades[it.id] || 0);
-      if (q > 0) {
-        const v = q * Number(it.valor_unitario);
-        total += v;
-        linhas.push({
-          customer_id: compra.customer_id, compra_item_id: it.id,
-          quantidade: q, valor: v,
-        });
-      }
+      const q = Number(gerarForm.quantidades[it.id] || 0);
+      if (q > 0) total += q * Number(it.valor_unitario);
     }
-    if (linhas.length === 0) return toast.error("Informe quantidade em ao menos um item");
-    const nParc = Math.max(1, parseInt(medForm.qtd_parcelas || "1", 10));
-    const numero = (medicoes[medicoes.length - 1]?.numero ?? 0) + 1;
-    const { data: med, error } = await supabase.from("medicoes").insert({
-      customer_id: compra.customer_id, compra_id: compraId,
-      numero, data: medForm.data, valor_total: total,
-      observacoes:
-        `Emissão: ${medForm.data} · ${medForm.forma_pagamento} · ${nParc}x` +
-        (medForm.observacoes ? ` · ${medForm.observacoes}` : ""),
-      created_by: user!.id,
-    }).select("id").single();
-    if (error) return toast.error("Erro", { description: error.message });
-    const itensPayload = linhas.map((l) => ({ ...l, medicao_id: med!.id }));
-    await supabase.from("medicao_itens").insert(itensPayload);
-    for (const l of linhas) {
-      const it = itens.find((i) => i.id === l.compra_item_id)!;
-      await supabase.from("compra_itens").update({
-        qtd_medida: Number(it.qtd_medida) + Number(l.quantidade),
-      }).eq("id", it.id);
+    const n = Math.max(1, parseInt(gerarForm.qtd_parcelas || "1", 10));
+    let vencs: string[] = [];
+    if (gerarForm.forma_pagamento === "cartao" && gerarForm.cartao_id) {
+      const cart = cartoes.find((c) => c.id === gerarForm.cartao_id);
+      if (cart) vencs = calcularVencimentosCartao(compra.data_compra, { fechamento: cart.dia_fechamento, vencimento: cart.dia_vencimento }, n);
+    } else {
+      const dias = Math.max(1, parseInt(gerarForm.intervalo_dias || "30", 10));
+      vencs = calcularVencimentosIntervalo(gerarForm.data_primeira_parcela, dias, n);
     }
+    const vp = Math.round((total / n) * 100) / 100;
+    const parcelas = vencs.map((v, i) => ({
+      n: i + 1,
+      venc: v,
+      valor: i === n - 1 ? Number((total - vp * (n - 1)).toFixed(2)) : vp,
+    }));
+    return { total, parcelas };
+  }, [gerarForm, itens, compra, cartoes]);
 
-    // Gerar contas a pagar (N parcelas)
-    const valorParcela = Math.round((total / nParc) * 100) / 100;
-    const [ano, mes, dia] = medForm.data_primeira_parcela.split("-").map(Number);
-    const cpsPayload: any[] = [];
-    for (let i = 0; i < nParc; i++) {
-      const d = new Date(ano, (mes - 1) + i, dia);
-      const venc = `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, "0")}-${String(d.getDate()).padStart(2, "0")}`;
-      const valor = i === nParc - 1 ? Number((total - valorParcela * (nParc - 1)).toFixed(2)) : valorParcela;
-      cpsPayload.push({
+  const gerarContasPagar = async (e: FormEvent) => {
+    e.preventDefault();
+    if (!compra) return;
+    if (preview.total <= 0) return toast.error("Informe quantidade em ao menos um item");
+    if (gerarForm.forma_pagamento === "cartao" && !gerarForm.cartao_id) {
+      return toast.error("Selecione o cartão");
+    }
+    setGerando(true);
+
+    const nParc = preview.parcelas.length;
+    const isCartao = gerarForm.forma_pagamento === "cartao";
+
+    // Atualiza compra com dados financeiros (uso pelo trigger de cartão)
+    await supabase.from("compras").update({
+      forma_pagamento: gerarForm.forma_pagamento,
+      cartao_id: isCartao ? gerarForm.cartao_id : null,
+      qtd_parcelas: nParc,
+      data_primeira_parcela: isCartao ? null : gerarForm.data_primeira_parcela,
+    }).eq("id", compraId);
+
+    if (isCartao) {
+      // Insere em compra_parcelas → trigger cria fatura e (ao fechar) conta a pagar.
+      // Trigger recalcula vencimento pela regra do cartão.
+      const rows = preview.parcelas.map((p) => ({
+        customer_id: compra.customer_id,
+        compra_id: compraId,
+        numero: p.n,
+        vencimento: p.venc,
+        valor: p.valor,
+        status: "pendente",
+      }));
+      const { error } = await supabase.from("compra_parcelas").insert(rows);
+      if (error) { setGerando(false); return toast.error("Erro", { description: error.message }); }
+      toast.success(`${nParc} parcela(s) lançada(s) na fatura do cartão`);
+    } else {
+      // Insere direto em contas_pagar
+      const rows = preview.parcelas.map((p) => ({
         customer_id: compra.customer_id,
         obra_id: compra.obra_id,
         fornecedor_id: compra.fornecedor_id,
         compra_id: compraId,
-        descricao: `${compra.descricao || "Compra"} - Medição #${numero} - Parcela ${i + 1}/${nParc}`,
-        valor,
-        vencimento: venc,
+        descricao: `${compra.descricao || "Compra"} - Parcela ${p.n}/${nParc}`,
+        valor: p.valor,
+        vencimento: p.venc,
         status: "pendente",
         origem: "compra",
-        observacoes: `Emissão ${medForm.data} · ${medForm.forma_pagamento}`,
+        observacoes: `Emissão ${gerarForm.data_emissao} · ${gerarForm.forma_pagamento}${gerarForm.observacoes ? ` · ${gerarForm.observacoes}` : ""}`,
         created_by: user!.id,
-      });
+      }));
+      const { error } = await supabase.from("contas_pagar").insert(rows);
+      if (error) { setGerando(false); return toast.error("Erro", { description: error.message }); }
+      toast.success(`${nParc} conta(s) a pagar gerada(s) — ${brl(preview.total)}`);
     }
-    const { error: eCp } = await supabase.from("contas_pagar").insert(cpsPayload);
-    if (eCp) toast.error("Contas a pagar não geradas", { description: eCp.message });
 
-    setOpenMed(false);
-    setMedForm({
-      data: new Date().toISOString().slice(0, 10),
+    setGerando(false);
+    setOpenGerar(false);
+    setGerarForm({
+      data_emissao: new Date().toISOString().slice(0, 10),
       data_primeira_parcela: new Date(Date.now() + 30 * 86400000).toISOString().slice(0, 10),
       forma_pagamento: "boleto",
+      cartao_id: "",
       qtd_parcelas: "1",
+      intervalo_dias: "30",
       observacoes: "",
       quantidades: {},
     });
-    toast.success(`Medição #${numero} registrada · ${nParc} conta(s) a pagar geradas (R$ ${total.toFixed(2)})`);
-    void carregar();
-  };
-
-
-  const desfazerMedicao = async (med: Medicao) => {
-    if (!compra) return;
-    if (!confirm(`Desfazer medição #${med.numero}? Os itens serão revertidos.`)) return;
-    // buscar itens da medição
-    const { data: linhas, error: e1 } = await supabase
-      .from("medicao_itens").select("*").eq("medicao_id", med.id);
-    if (e1) return toast.error("Erro", { description: e1.message });
-    // reverter qtd_medida em cada compra_item
-    for (const l of linhas ?? []) {
-      const it = itens.find((i) => i.id === l.compra_item_id);
-      if (!it) continue;
-      const novaQtd = Math.max(0, Number(it.qtd_medida) - Number(l.quantidade));
-      await supabase.from("compra_itens").update({ qtd_medida: novaQtd }).eq("id", it.id);
-    }
-    // deletar itens da medição e a medição
-    await supabase.from("medicao_itens").delete().eq("medicao_id", med.id);
-    const { error: e2 } = await supabase.from("medicoes").delete().eq("id", med.id);
-    if (e2) return toast.error("Erro", { description: e2.message });
-    toast.success(`Medição #${med.numero} desfeita`);
     void carregar();
   };
 
@@ -440,8 +410,8 @@ function CompraDetalhePage() {
         description={(() => {
           const et = etapas.find((x) => x.id === compra.etapa_id);
           const sb = subetapas.find((x) => x.id === compra.subetapa_id);
-          const parcInfo = compra.qtd_parcelas > 0 ? ` · ${compra.qtd_parcelas}x` : "";
-          const base = `${new Date(compra.data_compra).toLocaleDateString("pt-BR")}${parcInfo} · R$ ${Number(compra.valor_total).toLocaleString("pt-BR", { minimumFractionDigits: 2 })}`;
+          const parcInfo = compra.qtd_parcelas && compra.qtd_parcelas > 0 ? ` · ${compra.qtd_parcelas}x` : "";
+          const base = `${new Date(compra.data_compra).toLocaleDateString("pt-BR")}${parcInfo} · ${brl(Number(compra.valor_total))}`;
           return et || sb ? `${base} · ${et?.nome ?? ""}${sb ? ` › ${sb.nome}` : ""}` : base;
         })()}
         actions={
@@ -525,6 +495,7 @@ function CompraDetalhePage() {
               <p className="text-sm text-muted-foreground">Nenhum item.</p>
             ) : itens.map((i) => {
               const etapa = etapas.find((e) => e.id === i.etapa_id);
+              const sub = subetapas.find((s) => s.id === i.subetapa_id);
               return (
                 <div key={i.id} className="flex flex-wrap items-center justify-between gap-2 rounded-md border p-3">
                   <div>
@@ -532,9 +503,7 @@ function CompraDetalhePage() {
                       {i.descricao} <span className="text-muted-foreground">· {Number(i.quantidade)} {i.unidade ?? ""} × R$ {Number(i.valor_unitario).toFixed(2)}</span>
                     </p>
                     <p className="text-xs text-muted-foreground">
-                      {etapa ? `${etapa.nome} · ` : ""}
-                      Recebido: {Number(i.qtd_recebida)} / {Number(i.quantidade)} ·
-                      Medido: {Number(i.qtd_medida)} / {Number(i.quantidade)}
+                      {etapa ? etapa.nome : ""}{sub ? ` › ${sub.nome}` : ""}
                     </p>
                   </div>
                   <div className="flex items-center gap-2">
@@ -551,108 +520,36 @@ function CompraDetalhePage() {
           </CardContent>
         </Card>
 
-
-        {/* PARCELAS */}
-        <Card>
-          <CardHeader><CardTitle className="text-base">Parcelas</CardTitle></CardHeader>
-          <CardContent className="space-y-2">
-            {parcelas.length === 0 ? (
-              <p className="text-sm text-muted-foreground">Adicione itens para gerar as parcelas.</p>
-            ) : parcelas.map((p) => (
-              <div key={p.id} className="flex items-center justify-between gap-2 rounded-md border p-3">
-                <div>
-                  <p className="text-sm font-medium">Parcela {p.numero}/{compra.qtd_parcelas}</p>
-                  <p className="text-xs text-muted-foreground">
-                    Vence {new Date(p.vencimento).toLocaleDateString("pt-BR")}
-                    {p.pago_em && ` · Pago em ${new Date(p.pago_em).toLocaleDateString("pt-BR")}`}
-                  </p>
-                </div>
-                <div className="flex items-center gap-2">
-                  {(() => {
-                    const hoje = new Date().toISOString().slice(0, 10);
-                    const atrasada = p.status !== "pago" && p.vencimento < hoje;
-                    const label = p.status === "pago" ? "Paga" : atrasada ? "Atrasada" : "A pagar";
-                    const variant = p.status === "pago" ? "default" : atrasada ? "destructive" : "secondary";
-                    return <Badge variant={variant as "default" | "destructive" | "secondary"}>{label}</Badge>;
-                  })()}
-                  <span className="text-sm font-semibold">R$ {Number(p.valor).toFixed(2)}</span>
-                  <Button variant="outline" size="sm" onClick={() => togglePagamento(p)}>
-                    {p.status === "pago" ? "Estornar" : "Marcar pago"}
-                  </Button>
-                </div>
-              </div>
-            ))}
-          </CardContent>
-        </Card>
-
-        {/* RECEBIMENTOS */}
-        <Card>
+        {/* CONTAS A PAGAR */}
+        <Card className={jaFaturada ? "" : "border-destructive/60 bg-destructive/5"}>
           <CardHeader className="flex flex-row items-center justify-between">
-            <CardTitle className="text-base">Recebimentos</CardTitle>
-            <Dialog open={openReceb} onOpenChange={setOpenReceb}>
-              <DialogTrigger asChild>
-                <Button size="sm" disabled={itens.length === 0}><Package className="mr-2 h-4 w-4" /> Registrar recebimento</Button>
-              </DialogTrigger>
-              <DialogContent className="max-w-lg">
-                <DialogHeader><DialogTitle>Registrar recebimento</DialogTitle></DialogHeader>
-                <form onSubmit={salvarRecebimento} className="space-y-3">
-                  <div className="grid grid-cols-2 gap-3">
-                    <div className="space-y-2"><Label>Data *</Label>
-                      <Input type="date" required value={recebForm.data} onChange={(e) => setRecebForm({ ...recebForm, data: e.target.value })} /></div>
-                    <div className="space-y-2"><Label>Recebido por</Label>
-                      <Input value={recebForm.recebido_por} onChange={(e) => setRecebForm({ ...recebForm, recebido_por: e.target.value })} /></div>
-                  </div>
-                  <div className="space-y-2">
-                    <Label>Quantidades recebidas</Label>
-                    {itens.map((it) => (
-                      <div key={it.id} className="flex items-center gap-2">
-                        <span className="flex-1 text-sm">{it.descricao} <span className="text-muted-foreground">(faltam {Number(it.quantidade) - Number(it.qtd_recebida)})</span></span>
-                        <Input type="number" step="0.01" className="w-28" value={recebForm.quantidades[it.id] ?? ""}
-                          onChange={(e) => setRecebForm({ ...recebForm, quantidades: { ...recebForm.quantidades, [it.id]: e.target.value } })} />
-                      </div>
-                    ))}
-                  </div>
-                  <div className="space-y-2"><Label>Observações</Label>
-                    <Textarea rows={2} value={recebForm.observacoes} onChange={(e) => setRecebForm({ ...recebForm, observacoes: e.target.value })} /></div>
-                  <DialogFooter><Button type="submit">Salvar</Button></DialogFooter>
-                </form>
-              </DialogContent>
-            </Dialog>
-          </CardHeader>
-          <CardContent className="space-y-2">
-            {recebimentos.length === 0 ? (
-              <p className="text-sm text-muted-foreground">Nenhum recebimento.</p>
-            ) : recebimentos.map((r) => (
-              <div key={r.id} className="rounded-md border p-3">
-                <p className="text-sm font-medium flex items-center gap-2">
-                  <CheckCircle2 className="h-4 w-4 text-primary" />
-                  {new Date(r.data).toLocaleDateString("pt-BR")}
-                  {r.recebido_por && <span className="text-muted-foreground">· {r.recebido_por}</span>}
+            <div className="space-y-1">
+              <CardTitle className="text-base flex items-center gap-2">
+                {!jaFaturada && <AlertTriangle className="h-4 w-4 text-destructive" />}
+                Contas a pagar geradas
+              </CardTitle>
+              {!jaFaturada && (
+                <p className="text-xs font-medium text-destructive">
+                  Compra ainda não faturada — gere as contas a pagar.
                 </p>
-                {r.observacoes && <p className="text-xs text-muted-foreground mt-1">{r.observacoes}</p>}
-              </div>
-            ))}
-          </CardContent>
-        </Card>
-
-        {/* GERAR CONTAS A PAGAR (a partir da medição) */}
-        <Card>
-          <CardHeader className="flex flex-row items-center justify-between">
-            <CardTitle className="text-base">Contas a pagar geradas</CardTitle>
-            <Dialog open={openMed} onOpenChange={setOpenMed}>
+              )}
+            </div>
+            <Dialog open={openGerar} onOpenChange={setOpenGerar}>
               <DialogTrigger asChild>
-                <Button size="sm" disabled={itens.length === 0}>
-                  <Receipt className="mr-2 h-4 w-4" /> Gerar contas a pagar
+                <Button size="sm" disabled={itens.length === 0 || jaFaturada}
+                  title={jaFaturada ? "Contas a pagar já geradas — exclua-as primeiro para refazer" : undefined}>
+                  <Receipt className="mr-2 h-4 w-4" />
+                  {jaFaturada ? "Contas a pagar já geradas" : "Gerar contas a pagar"}
                 </Button>
               </DialogTrigger>
-              <DialogContent className="max-w-lg">
+              <DialogContent className="max-w-xl">
                 <DialogHeader>
                   <DialogTitle>Gerar contas a pagar</DialogTitle>
                   <p className="text-xs text-muted-foreground">
-                    Informe a quantidade a medir de cada item e os dados financeiros. Serão criadas contas a pagar conforme o número de parcelas.
+                    Informe a quantidade a medir de cada item e os dados financeiros.
                   </p>
                 </DialogHeader>
-                <form onSubmit={salvarMedicao} className="space-y-3">
+                <form onSubmit={gerarContasPagar} className="space-y-3">
                   <div className="space-y-2">
                     <Label>Quantidade a medir por item</Label>
                     {itens.map((it) => (
@@ -660,13 +557,13 @@ function CompraDetalhePage() {
                         <span className="flex-1 text-sm">
                           {it.descricao}{" "}
                           <span className="text-muted-foreground">
-                            (restam {Number(it.quantidade) - Number(it.qtd_medida)} {it.unidade ?? ""})
+                            (até {Number(it.quantidade)} {it.unidade ?? ""})
                           </span>
                         </span>
                         <Input
                           type="number" step="0.01" className="w-28"
-                          value={medForm.quantidades[it.id] ?? ""}
-                          onChange={(e) => setMedForm({ ...medForm, quantidades: { ...medForm.quantidades, [it.id]: e.target.value } })}
+                          value={gerarForm.quantidades[it.id] ?? ""}
+                          onChange={(e) => setGerarForm({ ...gerarForm, quantidades: { ...gerarForm.quantidades, [it.id]: e.target.value } })}
                         />
                       </div>
                     ))}
@@ -677,68 +574,118 @@ function CompraDetalhePage() {
                     <div className="grid grid-cols-2 gap-3">
                       <div className="space-y-2">
                         <Label>Data de emissão *</Label>
-                        <Input type="date" required value={medForm.data}
-                          onChange={(e) => setMedForm({ ...medForm, data: e.target.value })} />
+                        <Input type="date" required value={gerarForm.data_emissao}
+                          onChange={(e) => setGerarForm({ ...gerarForm, data_emissao: e.target.value })} />
                       </div>
-                      <div className="space-y-2">
-                        <Label>1ª parcela vence *</Label>
-                        <Input type="date" required value={medForm.data_primeira_parcela}
-                          onChange={(e) => setMedForm({ ...medForm, data_primeira_parcela: e.target.value })} />
-                      </div>
-                    </div>
-                    <div className="grid grid-cols-2 gap-3">
                       <div className="space-y-2">
                         <Label>Meio de pagamento *</Label>
-                        <Select value={medForm.forma_pagamento} onValueChange={(v) => setMedForm({ ...medForm, forma_pagamento: v })}>
+                        <Select value={gerarForm.forma_pagamento} onValueChange={(v) => setGerarForm({ ...gerarForm, forma_pagamento: v })}>
                           <SelectTrigger><SelectValue /></SelectTrigger>
                           <SelectContent>
                             <SelectItem value="boleto">Boleto</SelectItem>
                             <SelectItem value="pix">PIX</SelectItem>
                             <SelectItem value="transferencia">Transferência</SelectItem>
-                            <SelectItem value="cartao">Cartão</SelectItem>
+                            <SelectItem value="cartao">Cartão de crédito</SelectItem>
                             <SelectItem value="dinheiro">Dinheiro</SelectItem>
                             <SelectItem value="cheque">Cheque</SelectItem>
                           </SelectContent>
                         </Select>
                       </div>
-                      <div className="space-y-2">
-                        <Label>Nº de parcelas *</Label>
-                        <Input type="number" min={1} required value={medForm.qtd_parcelas}
-                          onChange={(e) => setMedForm({ ...medForm, qtd_parcelas: e.target.value })} />
-                      </div>
                     </div>
+
+                    {gerarForm.forma_pagamento === "cartao" ? (
+                      <div className="grid grid-cols-2 gap-3">
+                        <div className="space-y-2">
+                          <Label>Cartão *</Label>
+                          <Select value={gerarForm.cartao_id} onValueChange={(v) => setGerarForm({ ...gerarForm, cartao_id: v })}>
+                            <SelectTrigger><SelectValue placeholder="Selecione" /></SelectTrigger>
+                            <SelectContent>
+                              {cartoes.map((c) => (
+                                <SelectItem key={c.id} value={c.id}>
+                                  {c.ultimos_4 ? `${c.nome} •••• ${c.ultimos_4}` : c.nome}
+                                </SelectItem>
+                              ))}
+                            </SelectContent>
+                          </Select>
+                          <p className="text-[10px] text-muted-foreground">
+                            Vencimentos calculados pela regra do cartão (fechamento/vencimento).
+                          </p>
+                        </div>
+                        <div className="space-y-2">
+                          <Label>Nº de parcelas *</Label>
+                          <Input type="number" min={1} required value={gerarForm.qtd_parcelas}
+                            onChange={(e) => setGerarForm({ ...gerarForm, qtd_parcelas: e.target.value })} />
+                        </div>
+                      </div>
+                    ) : (
+                      <div className="grid grid-cols-3 gap-3">
+                        <div className="space-y-2">
+                          <Label>1ª parcela vence *</Label>
+                          <Input type="date" required value={gerarForm.data_primeira_parcela}
+                            onChange={(e) => setGerarForm({ ...gerarForm, data_primeira_parcela: e.target.value })} />
+                        </div>
+                        <div className="space-y-2">
+                          <Label>Nº de parcelas *</Label>
+                          <Input type="number" min={1} required value={gerarForm.qtd_parcelas}
+                            onChange={(e) => setGerarForm({ ...gerarForm, qtd_parcelas: e.target.value })} />
+                        </div>
+                        <div className="space-y-2">
+                          <Label>Intervalo (dias) *</Label>
+                          <Input type="number" min={1} required value={gerarForm.intervalo_dias}
+                            onChange={(e) => setGerarForm({ ...gerarForm, intervalo_dias: e.target.value })} />
+                        </div>
+                      </div>
+                    )}
                   </div>
+
+                  {preview.total > 0 && (
+                    <div className="rounded-md border p-3 space-y-1">
+                      <p className="text-xs font-semibold uppercase tracking-wide text-muted-foreground">
+                        Preview · Total {brl(preview.total)}
+                      </p>
+                      {preview.parcelas.map((p) => (
+                        <div key={p.n} className="flex justify-between text-xs">
+                          <span>Parcela {p.n}/{preview.parcelas.length} — vence {new Date(p.venc).toLocaleDateString("pt-BR")}</span>
+                          <span className="tabular-nums font-medium">{brl(p.valor)}</span>
+                        </div>
+                      ))}
+                    </div>
+                  )}
 
                   <div className="space-y-2">
                     <Label>Observações</Label>
-                    <Textarea rows={2} value={medForm.observacoes}
-                      onChange={(e) => setMedForm({ ...medForm, observacoes: e.target.value })} />
+                    <Textarea rows={2} value={gerarForm.observacoes}
+                      onChange={(e) => setGerarForm({ ...gerarForm, observacoes: e.target.value })} />
                   </div>
-                  <DialogFooter><Button type="submit">Gerar</Button></DialogFooter>
+                  <DialogFooter>
+                    <Button type="submit" disabled={gerando}>{gerando ? "Gerando..." : "Gerar"}</Button>
+                  </DialogFooter>
                 </form>
               </DialogContent>
             </Dialog>
           </CardHeader>
           <CardContent className="space-y-2">
-            {medicoes.length === 0 ? (
+            {contasPagar.length === 0 ? (
               <p className="text-sm text-muted-foreground">Nenhuma conta a pagar gerada.</p>
-            ) : medicoes.map((m) => (
-              <div key={m.id} className="flex items-center justify-between gap-2 rounded-md border p-3">
+            ) : contasPagar.map((cp) => (
+              <div key={cp.id} className="flex items-center justify-between gap-2 rounded-md border p-3">
                 <div>
-                  <p className="text-sm font-medium">Medição #{m.numero} · {new Date(m.data).toLocaleDateString("pt-BR")}</p>
-                  {m.observacoes && <p className="text-xs text-muted-foreground">{m.observacoes}</p>}
+                  <p className="text-sm font-medium">{cp.descricao}</p>
+                  <p className="text-xs text-muted-foreground">
+                    Vence {new Date(cp.vencimento).toLocaleDateString("pt-BR")}
+                    {cp.fatura_cartao_id ? " · via fatura do cartão" : ""}
+                  </p>
                 </div>
                 <div className="flex items-center gap-2">
-                  <span className="text-sm font-semibold">R$ {Number(m.valor_total).toFixed(2)}</span>
-                  <Button variant="ghost" size="sm" onClick={() => desfazerMedicao(m)} title="Desfazer (não remove contas a pagar já geradas)">
-                    <Undo2 className="h-4 w-4" />
-                  </Button>
+                  <Badge variant={cp.status === "pago" ? "default" : "secondary"}>
+                    {cp.status === "pago" ? "Paga" : "A pagar"}
+                  </Badge>
+                  <span className="text-sm font-semibold">{brl(Number(cp.valor))}</span>
                 </div>
               </div>
             ))}
           </CardContent>
         </Card>
-
 
         {/* NOTAS FISCAIS */}
         <NotasFiscaisSection compraId={compraId} customerId={compra.customer_id} />
@@ -763,9 +710,7 @@ function CompraDetalhePage() {
                   <div>Gasto atual: {brlAlert(alertOrc?.gastoAtual ?? 0)} ({alertOrc?.pctAtual.toFixed(1)}%)</div>
                   <div>Após este lançamento: <strong>{brlAlert(alertOrc?.novoGasto ?? 0)}</strong></div>
                 </div>
-                <p className="text-muted-foreground">
-                  Deseja continuar mesmo assim?
-                </p>
+                <p className="text-muted-foreground">Deseja continuar mesmo assim?</p>
               </div>
             </AlertDialogDescription>
           </AlertDialogHeader>
@@ -796,4 +741,3 @@ function NotasFiscaisSection({ compraId, customerId }: { compraId: string; custo
   const { hasFeature } = usePlanModules();
   return <CompraNotasFiscais compraId={compraId} customerId={customerId} empresarial={hasFeature("nf_xml")} />;
 }
-
