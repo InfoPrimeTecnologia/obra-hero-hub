@@ -435,8 +435,8 @@ function CompraDetalhePage() {
     setGerando(false);
     setOpenGerar(false);
     setGerarForm({
-      data_emissao: new Date().toISOString().slice(0, 10),
-      data_primeira_parcela: new Date(Date.now() + 30 * 86400000).toISOString().slice(0, 10),
+      data_emissao: hojeYMD(),
+      data_primeira_parcela: hojeYMD(),
       forma_pagamento: "boleto",
       cartao_id: "",
       qtd_parcelas: "1",
@@ -444,6 +444,8 @@ function CompraDetalhePage() {
       observacoes: "",
       quantidades: {},
     });
+    setAVista(false);
+
     void carregar();
   };
 
