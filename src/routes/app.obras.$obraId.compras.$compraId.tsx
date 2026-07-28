@@ -226,7 +226,22 @@ function CompraDetalhePage() {
     [itens]
   );
 
-  const jaFaturada = contasPagar.length > 0;
+  const jaFaturada = contasPagar.length > 0 || parcelasCartao > 0;
+
+  const excluirCompra = async () => {
+    if (jaFaturada) return toast.error("Exclua as contas a pagar antes");
+    if (!confirm("Excluir esta compra e todos os seus itens? Esta ação não pode ser desfeita.")) return;
+    setExcluindoCompra(true);
+    // Cascata manual (sem FK ON DELETE definida no schema)
+    await supabase.from("compra_notas_fiscais").delete().eq("compra_id", compraId);
+    await supabase.from("compra_itens").delete().eq("compra_id", compraId);
+    const { error } = await supabase.from("compras").delete().eq("id", compraId);
+    setExcluindoCompra(false);
+    if (error) return toast.error("Erro", { description: error.message });
+    toast.success("Compra excluída");
+    navigate({ to: "/app/obras/$obraId/compras", params: { obraId } });
+  };
+
 
   // ==== ITENS ====
   const resetItemForm = () => {
