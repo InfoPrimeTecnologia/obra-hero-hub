@@ -73,6 +73,19 @@ type ContaPagarLite = {
 
 const brl = (n: number) => `R$ ${Number(n).toLocaleString("pt-BR", { minimumFractionDigits: 2 })}`;
 
+/** Formata "YYYY-MM-DD" como dd/mm/yyyy sem passar por Date (evita bug de timezone). */
+function fmtBR(ymd: string | null | undefined): string {
+  if (!ymd) return "";
+  const [y, m, d] = ymd.slice(0, 10).split("-");
+  return `${d}/${m}/${y}`;
+}
+/** Data de hoje em "YYYY-MM-DD" no fuso local. */
+function hojeYMD(): string {
+  const d = new Date();
+  return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, "0")}-${String(d.getDate()).padStart(2, "0")}`;
+}
+
+
 /** Calcula vencimentos de fatura de cartão para N parcelas a partir da data da compra. */
 function calcularVencimentosCartao(dataCompra: string, dias: { fechamento: number; vencimento: number }, n: number): string[] {
   const [ay, am, ad] = dataCompra.split("-").map(Number);
