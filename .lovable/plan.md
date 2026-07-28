@@ -1,59 +1,69 @@
-## Feedback do cliente (22/07)
+## Feedback do cliente (27/07)
 
-O fluxo de cadastro de compra está fragmentado: usuário preenche cabeçalho → salva → só depois lança itens → e ainda vê pop-up. Além disso, há campos financeiros (forma de pagamento, parcelas, 1ª parcela) misturados na compra — que só deveriam aparecer no passo "Gerar contas a pagar".
+Cinco pontos, todos concentrados no fluxo Compras → Contas a pagar → Cartão.
 
-## Objetivo
+## 1. Tela da compra — limpeza visual
 
-Uma única tela `/compras/nova` com toda a compra (cabeçalho + itens) preenchida antes de salvar. Ao salvar, ir direto para a tela da compra criada, onde já existe o botão **Gerar contas a pagar** (etapa financeira).
+Arquivo: `src/routes/app.obras.$obraId.compras.$compraId.tsx`
 
-## Alterações
+- **Remover** o bloco "Parcelas" ("Adicione itens para as parcelas") — vestígio do fluxo antigo, não serve para nada agora que parcelas nascem em "Gerar contas a pagar".
+- **Remover** o bloco "Recebimentos" da tela de compra. Recebimento é controle de estoque; será exibido só para quem tiver o módulo de estoque (hoje removido do menu). Também escondo os contadores "Recebida: 0 / X" nos itens.
+- **Destacar em vermelho** o cartão "Contas a pagar geradas" quando `nenhuma conta ainda foi gerada` (badge/borda `destructive` + texto "Compra ainda não faturada"). Assim que existe pelo menos 1 parcela, volta ao visual neutro.
 
-### 1. `src/routes/app.obras.$obraId.compras.nova.tsx` (reescrever)
-- **Remover** os campos: Forma de pagamento, Parcelas, 1ª parcela (movem-se para "Gerar contas a pagar").
-- **Manter** cabeçalho: Importar NF, Fornecedor (+ Novo), Descrição, Etapa*, Subetapa* (+ criar nova), Natureza*, Data da compra*, Desconto, Acréscimo.
-- **Adicionar seção "Itens" inline** na mesma página (não modal/pop-up):
-  - Tabela editável linha a linha: Descrição, QTD, UND, Valor unit., Total (calc.), Ação (remover).
-  - Botão "+ Adicionar item".
-  - Total geral dos itens somado ao final.
-- Botão **"Criar compra"**:
-  - Validação: precisa etapa, subetapa, natureza, data e ≥1 item.
-  - Salva `compras` (sem forma_pagamento/parcelas — usar defaults ou tornar nullable, ver seção SQL).
-  - Salva `compra_itens` em lote.
-  - Redireciona para `/app/obras/$obraId/compras/$compraId` (tela detalhada onde já existe "Gerar contas a pagar").
+## 2. "Gerar contas a pagar" — regras por meio de pagamento
 
-### 2. `src/routes/app.obras.$obraId.compras.$compraId.tsx`
-- Confirmar que o botão **Gerar contas a pagar** continua funcionando e agora é o único lugar que coleta forma_pagamento / qtd_parcelas / data 1ª parcela.
-- Ajustar cabeçalho da compra para não exibir mais "1x" se não houver parcelas ainda.
+Mesmo arquivo, no diálogo/seção "Gerar contas a pagar".
 
-### 3. Remover o modal/pop-up de item
-- Localizar o componente atual de adicionar item (dialog) usado em `compras.$compraId.tsx` e substituir por inclusão inline (mesma UX da tela nova).
+- Data de emissão: já vem por default da data da compra — manter.
+- **Cartão de crédito**: quando o meio selecionado for um cartão, esconder "1ª parcela vence" e "Intervalo entre parcelas". As datas de vencimento passam a ser calculadas pela regra do cartão (`dia_fechamento`, `dia_vencimento`): cada parcela cai no vencimento da fatura correspondente ao mês em que ela é lançada, a partir da data da compra. Mostrar preview das datas antes de confirmar.
+- **Demais meios (pix, boleto, transferência, dinheiro)**: manter "1ª parcela vence" e **adicionar** campo "Intervalo entre parcelas (dias)" com default 30, aceitando 10/15/qualquer valor. Vencimentos passam a ser `1ª parcela + (n-1) × intervalo`.
+- Preview das parcelas (data + valor) renderizado antes do botão "Gerar", para o usuário conferir.
+
+## 3. Compra faturada não pode gerar contas de novo (poka-yoke)
+
+Mesmo arquivo.
+
+- Se `contas_pagar_geradas.length > 0`, desabilitar o botão "Gerar contas a pagar" e trocar o texto por "Contas a pagar já geradas". Tooltip explica que para refazer é preciso excluir as parcelas existentes.
+- Na árvore de compras (`compras.index.tsx`) e na Consulta de compras (`consulta.tsx`), o status "pendente" hoje é fixo. Passar a calcular:
+  - `faturada` (cinza) — tem contas a pagar geradas, nenhuma paga ainda.
+  - `paga` (verde) — todas as contas a pagar da compra estão com `status = 'pago'`.
+  - `parcial` (âmbar) — mistura.
+  - `pendente` (vermelho) — nenhuma conta gerada.
+- Botão "Gerar contas a pagar" só aparece quando status = `pendente`.
+
+## 4. Compras no cartão precisam aparecer em "Faturas de cartão"
+
+Arquivos: `src/routes/app.faturas-cartao.tsx`, `src/routes/app.obras.$obraId.faturas.tsx`.
+
+Hoje a tela lista lançamentos manuais. Passar a agregar também as **parcelas de `contas_pagar` cujo `cartao_id` está preenchido**, agrupadas pela fatura em que caem (competência = mês/ano do vencimento derivado da regra do cartão). Cada linha mostra data da compra, fornecedor, descrição, parcela n/total, valor. Total da fatura = soma das parcelas do período.
+
+Sem migração — só passa a ler o que já existe.
+
+## 5. Item "Recebimento" (esclarecimento)
+
+Confirmar com o cliente que recebimento é módulo de estoque. Como estoque está desativado, esconder completamente da UI de compras (já coberto no item 1). Se um dia o módulo voltar, reativa via feature flag.
 
 ## SQL para produção
 
-A tabela `compras` hoje tem `forma_pagamento text not null` e `qtd_parcelas integer not null`. Como a criação passa a ocorrer antes da definição financeira, precisamos permitir criar sem esses campos.
+**Nenhuma alteração de schema.** Todos os campos necessários (`cartao_id`, `dia_fechamento`, `dia_vencimento` em `cartoes`; `status`, `data_vencimento` em `contas_pagar`) já existem. O único SQL será o registro no changelog:
 
-Arquivo a ser gerado: **`sql/producao-1.6.0-compra-sem-financeiro.sql`** (idempotente)
+Arquivo: `sql/producao-1.7.0-compras-fluxo-cartao.sql` (idempotente)
 
 ```sql
--- Torna campos financeiros opcionais na criação da compra
-ALTER TABLE public.compras ALTER COLUMN forma_pagamento DROP NOT NULL;
-ALTER TABLE public.compras ALTER COLUMN qtd_parcelas DROP NOT NULL;
-ALTER TABLE public.compras ALTER COLUMN qtd_parcelas SET DEFAULT 0;
-
--- Registro no changelog
-INSERT INTO public.app_releases (version, highlight, items)
-VALUES ('1.6.0',
-  'Fluxo de compra simplificado',
-  '["Nova compra em tela única com itens inline","Campos financeiros movidos para Gerar contas a pagar","Remoção do pop-up de item"]'::jsonb)
-ON CONFLICT (version) DO NOTHING;
+INSERT INTO public.app_releases (version, highlight, items, released_at)
+SELECT '1.7.0',
+       'Compras, contas a pagar e faturas de cartão',
+       '["Tela da compra limpa (parcelas/recebimento removidos)","Alerta vermelho quando a compra ainda não foi faturada","Cartão de crédito usa regra do próprio cartão para calcular vencimentos","Intervalo configurável entre parcelas em pix/boleto/transferência","Botão Gerar contas a pagar bloqueado quando já existem parcelas (poka-yoke)","Status real da compra: pendente / faturada / parcial / paga","Compras no cartão passam a aparecer em Faturas de cartão"]'::jsonb,
+       now()
+WHERE NOT EXISTS (SELECT 1 FROM public.app_releases WHERE version = '1.7.0');
 ```
 
-## Fora de escopo (não vou mexer)
+## Fora de escopo
 
-- Lógica de "Gerar contas a pagar" existente — permanece como está.
-- Estrutura de `compra_itens` — sem alteração.
-- Tela de listagem/árvore de compras.
+- Reativar módulo de estoque / recebimento.
+- Mudar estrutura de `contas_pagar` ou `cartoes`.
+- Redesenho da tela de faturas — só passa a incluir a nova fonte de dados.
 
 ## Entrega
 
-Um turno só. Após aprovação, entrego código + arquivo SQL para rodar em produção.
+Um turno. Após aprovação: código + `sql/producao-1.7.0-compras-fluxo-cartao.sql` para rodar no Supabase de produção.
