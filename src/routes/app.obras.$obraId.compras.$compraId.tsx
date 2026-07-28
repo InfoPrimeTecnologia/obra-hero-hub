@@ -131,6 +131,7 @@ function calcularVencimentosIntervalo(dataPrimeira: string, intervaloDias: numbe
 
 function CompraDetalhePage() {
   const { obraId, compraId } = Route.useParams();
+  const navigate = useNavigate();
   const { user } = useAuth();
   const [compra, setCompra] = useState<Compra | null>(null);
   const [itens, setItens] = useState<Item[]>([]);
@@ -138,6 +139,8 @@ function CompraDetalhePage() {
   const [subetapas, setSubetapas] = useState<Subetapa[]>([]);
   const [cartoes, setCartoes] = useState<Cartao[]>([]);
   const [contasPagar, setContasPagar] = useState<ContaPagarLite[]>([]);
+  const [parcelasCartao, setParcelasCartao] = useState<number>(0);
+  const [excluindoCompra, setExcluindoCompra] = useState(false);
 
   const [openItem, setOpenItem] = useState(false);
   const [editingItem, setEditingItem] = useState<Item | null>(null);
@@ -163,9 +166,10 @@ function CompraDetalhePage() {
 
   const [openGerar, setOpenGerar] = useState(false);
   const [gerando, setGerando] = useState(false);
+  const [aVista, setAVista] = useState(false);
   const [gerarForm, setGerarForm] = useState({
-    data_emissao: new Date().toISOString().slice(0, 10),
-    data_primeira_parcela: new Date(Date.now() + 30 * 86400000).toISOString().slice(0, 10),
+    data_emissao: hojeYMD(),
+    data_primeira_parcela: hojeYMD(),
     forma_pagamento: "boleto",
     cartao_id: "",
     qtd_parcelas: "1",
@@ -173,6 +177,7 @@ function CompraDetalhePage() {
     observacoes: "",
     quantidades: {} as Record<string, string>,
   });
+
 
   const carregar = async () => {
     const [{ data: c }, { data: is }, { data: es }, { data: subs }, { data: cts }, { data: cps }] = await Promise.all([
