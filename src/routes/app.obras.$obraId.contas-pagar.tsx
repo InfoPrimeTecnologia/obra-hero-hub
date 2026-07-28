@@ -301,18 +301,23 @@ function ContasPagarObra() {
                     </Badge>
                   </div>
                   <p className="text-xs text-muted-foreground">
-                    {fornName(cp.fornecedor_id)} • venc.{" "}
-                    {new Date(cp.vencimento).toLocaleDateString("pt-BR")}
+                    {fornName(cp.fornecedor_id)} • venc. {fmtBR(cp.vencimento)}
                   </p>
                 </div>
                 <div className="flex items-center gap-3">
                   <span className="font-semibold tabular-nums">{brl(Number(cp.valor))}</span>
                   {cp.status === "pendente" && (
-                    <Button size="sm" onClick={() => setPaying(cp)}>
-                      <CheckCircle2 className="mr-2 h-4 w-4" /> Pagar
-                    </Button>
+                    <>
+                      <Button size="sm" onClick={() => setPaying(cp)}>
+                        <CheckCircle2 className="mr-2 h-4 w-4" /> Pagar
+                      </Button>
+                      <Button size="sm" variant="ghost" onClick={() => excluir(cp)} title="Excluir">
+                        <Trash2 className="h-4 w-4 text-destructive" />
+                      </Button>
+                    </>
                   )}
                 </div>
+
               </CardContent>
             </Card>
           ))
