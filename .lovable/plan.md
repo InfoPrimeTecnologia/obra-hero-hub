@@ -1,69 +1,106 @@
-## Feedback do cliente (27/07)
+## Feedback do cliente (28/07) — 4 pontos
 
-Cinco pontos, todos concentrados no fluxo Compras → Contas a pagar → Cartão.
+Todos concentrados em Compras → Contas a pagar → Fatura de cartão. Nenhuma alteração de schema exceto o registro do release; o SQL vai idempotente para o Editor do Supabase de produção.
 
-## 1. Tela da compra — limpeza visual
+## 1. Compra à vista no mesmo dia (bug de data)
 
 Arquivo: `src/routes/app.obras.$obraId.compras.$compraId.tsx`
 
-- **Remover** o bloco "Parcelas" ("Adicione itens para as parcelas") — vestígio do fluxo antigo, não serve para nada agora que parcelas nascem em "Gerar contas a pagar".
-- **Remover** o bloco "Recebimentos" da tela de compra. Recebimento é controle de estoque; será exibido só para quem tiver o módulo de estoque (hoje removido do menu). Também escondo os contadores "Recebida: 0 / X" nos itens.
-- **Destacar em vermelho** o cartão "Contas a pagar geradas" quando `nenhuma conta ainda foi gerada` (badge/borda `destructive` + texto "Compra ainda não faturada"). Assim que existe pelo menos 1 parcela, volta ao visual neutro.
+Sintomas relatados:
+- Ao gerar contas a pagar "à vista", o default vem 30 dias à frente.
+- Ao trocar a data da 1ª parcela para hoje, a data salva volta 1 dia (efeito timezone: `new Date("2026-07-28")` vira 21h do dia 27 em UTC-3).
 
-## 2. "Gerar contas a pagar" — regras por meio de pagamento
+Ajustes:
+- Novo botão/opção **"À vista"** no diálogo "Gerar contas a pagar" — força `qtd_parcelas = 1`, `data_vencimento = data_emissao`, esconde intervalo.
+- Quando `qtd_parcelas = 1`, esconder o campo "Intervalo entre parcelas".
+- Corrigir parsing/formatação de datas para usar sempre string `YYYY-MM-DD` local (sem `new Date(iso)` que aplica timezone). Preview e insert usam a mesma helper.
+- Default do intervalo continua 30 quando `qtd_parcelas > 1`; mínimo aceito `0` (mesmo dia) em vez de `1`.
 
-Mesmo arquivo, no diálogo/seção "Gerar contas a pagar".
+## 2. Pagamento da fatura de cartão indicando conta bancária
 
-- Data de emissão: já vem por default da data da compra — manter.
-- **Cartão de crédito**: quando o meio selecionado for um cartão, esconder "1ª parcela vence" e "Intervalo entre parcelas". As datas de vencimento passam a ser calculadas pela regra do cartão (`dia_fechamento`, `dia_vencimento`): cada parcela cai no vencimento da fatura correspondente ao mês em que ela é lançada, a partir da data da compra. Mostrar preview das datas antes de confirmar.
-- **Demais meios (pix, boleto, transferência, dinheiro)**: manter "1ª parcela vence" e **adicionar** campo "Intervalo entre parcelas (dias)" com default 30, aceitando 10/15/qualquer valor. Vencimentos passam a ser `1ª parcela + (n-1) × intervalo`.
-- Preview das parcelas (data + valor) renderizado antes do botão "Gerar", para o usuário conferir.
+Arquivos: `src/routes/app.faturas-cartao.tsx` (+ helper de baixa).
 
-## 3. Compra faturada não pode gerar contas de novo (poka-yoke)
+Hoje "Fechar fatura" gera uma conta a pagar, mas não há botão para **pagar** a fatura escolhendo a conta bancária de saída.
 
-Mesmo arquivo.
+Ajustes:
+- Novo botão **"Pagar fatura"** em faturas com status `fechada` (e opcionalmente em `aberta`, respeitando data).
+- Diálogo pede: **conta bancária** (select de `contas_bancarias` ativas do escopo), **data do pagamento** (default = hoje), **valor pago** (default = `valor_total`).
+- Ao confirmar:
+  - marca `faturas_cartao.status = 'paga'`, `valor_pago`, `dt_pagamento`, `conta_bancaria_id`.
+  - marca a `contas_pagar` gerada da fatura (`fatura_cartao_id = f.id`) como `pago` com a mesma conta/data/valor.
+  - as parcelas individuais da fatura seguem o status da conta agregada (não vira 1 lançamento por parcela no extrato — só o pagamento consolidado da fatura, que é o comportamento contábil correto).
 
-- Se `contas_pagar_geradas.length > 0`, desabilitar o botão "Gerar contas a pagar" e trocar o texto por "Contas a pagar já geradas". Tooltip explica que para refazer é preciso excluir as parcelas existentes.
-- Na árvore de compras (`compras.index.tsx`) e na Consulta de compras (`consulta.tsx`), o status "pendente" hoje é fixo. Passar a calcular:
-  - `faturada` (cinza) — tem contas a pagar geradas, nenhuma paga ainda.
-  - `paga` (verde) — todas as contas a pagar da compra estão com `status = 'pago'`.
-  - `parcial` (âmbar) — mistura.
-  - `pendente` (vermelho) — nenhuma conta gerada.
-- Botão "Gerar contas a pagar" só aparece quando status = `pendente`.
+## 3. Poka-yoke: não gerar contas duplicadas para compra no cartão
 
-## 4. Compras no cartão precisam aparecer em "Faturas de cartão"
+Arquivo: `src/routes/app.obras.$obraId.compras.$compraId.tsx`.
 
-Arquivos: `src/routes/app.faturas-cartao.tsx`, `src/routes/app.obras.$obraId.faturas.tsx`.
+Já bloqueamos quando `contas_pagar_geradas.length > 0`. Falta considerar as parcelas que caem em cartão: elas vivem em `compra_parcelas` (para o trigger de fatura) e não estão sendo contadas.
 
-Hoje a tela lista lançamentos manuais. Passar a agregar também as **parcelas de `contas_pagar` cujo `cartao_id` está preenchido**, agrupadas pela fatura em que caem (competência = mês/ano do vencimento derivado da regra do cartão). Cada linha mostra data da compra, fornecedor, descrição, parcela n/total, valor. Total da fatura = soma das parcelas do período.
+Ajustes:
+- Ao carregar a compra, também buscar `compra_parcelas` daquela compra. Se existir qualquer parcela (cartão) **ou** qualquer `contas_pagar` (demais meios), considerar `jaFaturada = true`.
+- Botão "Gerar contas a pagar" desabilitado com tooltip "Contas a pagar já geradas". Status do card e da árvore respeita a mesma regra.
+- Cálculo de status na listagem (`compras.index.tsx`, `consulta.tsx`) passa a olhar as duas origens.
 
-Sem migração — só passa a ler o que já existe.
+## 4. Fluxo de reversão (estorno → excluir conta → excluir compra)
 
-## 5. Item "Recebimento" (esclarecimento)
+Requisito contábil: nada é apagado silenciosamente depois de pago; o extrato bancário guarda o histórico via **estorno**.
 
-Confirmar com o cliente que recebimento é módulo de estoque. Como estoque está desativado, esconder completamente da UI de compras (já coberto no item 1). Se um dia o módulo voltar, reativa via feature flag.
+Fluxo aprovado:
 
-## SQL para produção
+```text
+Compra paga
+   │  1) Estornar pagamento (na conta a pagar OU no lançamento bancário)
+   ▼
+Conta a pagar volta a "pendente"; lançamento de estorno aparece no extrato
+   │  2) Excluir conta a pagar
+   ▼
+Compra volta a "pendente" (sem faturamento)
+   │  3) Excluir compra
+   ▼
+Compra removida
+```
 
-**Nenhuma alteração de schema.** Todos os campos necessários (`cartao_id`, `dia_fechamento`, `dia_vencimento` em `cartoes`; `status`, `data_vencimento` em `contas_pagar`) já existem. O único SQL será o registro no changelog:
+Arquivos:
+- `src/routes/app.contas-pagar.tsx` e `src/routes/app.obras.$obraId.contas-pagar.tsx`
+  - Botão **"Estornar pagamento"** em contas `pago`: reabre a conta (`status = 'pendente'`, limpa `dt_pagamento`, `conta_bancaria_id`, `valor_pago`) **e** insere um lançamento de estorno na `contas_bancarias_lancamentos` (tipo `credito`, descrição "Estorno – <descrição original>", vinculado ao mesmo `origem_id`) para preservar histórico do banco.
+  - Botão **"Excluir conta a pagar"** só habilitado quando `status = 'pendente'`. Confirmação explicando que a compra volta a "pendente".
+- `src/routes/app.obras.$obraId.compras.$compraId.tsx` e `compras.index.tsx`
+  - Botão **"Excluir compra"** só habilitado quando `jaFaturada = false` (nenhuma parcela em `compra_parcelas` e nenhuma conta em `contas_pagar`). Se houver itens/anexos, remove em cascata via query.
+- Fatura de cartão: quando a última parcela de uma fatura é removida (via exclusão de conta a pagar de cartão), o trigger existente já recalcula. Se todas as parcelas somem, marcar a fatura como `cancelada` (fallback via UI ao excluir a conta agregada de fatura).
 
-Arquivo: `sql/producao-1.7.0-compras-fluxo-cartao.sql` (idempotente)
+## Detalhes técnicos
+
+- Datas: helpers `toLocalYMD(date)` e `fromYMD(str)` centralizadas no arquivo, sem `new Date(iso)`. Preview de vencimentos usa aritmética em `Date` local + `toLocalYMD`.
+- Estorno bancário reutiliza a estrutura já existente de `contas_bancarias_lancamentos` (nenhuma coluna nova). Se algum registro obrigatório for identificado na leitura do schema, será documentado antes de ativar o botão.
+- "Pagar fatura" só aparece se existir a `contas_pagar` gerada pelo fechamento (já mapeada por `cpByFatura`). Caso o cliente ainda não tenha fechado, o botão "Fechar e pagar" combina os dois passos.
+
+## SQL para o Editor do Supabase (produção)
+
+Arquivo novo: `sql/producao-1.7.1-compras-estorno-fatura.sql` — idempotente, sem DDL, só registro no changelog:
 
 ```sql
 INSERT INTO public.app_releases (version, highlight, items, released_at)
-SELECT '1.7.0',
-       'Compras, contas a pagar e faturas de cartão',
-       '["Tela da compra limpa (parcelas/recebimento removidos)","Alerta vermelho quando a compra ainda não foi faturada","Cartão de crédito usa regra do próprio cartão para calcular vencimentos","Intervalo configurável entre parcelas em pix/boleto/transferência","Botão Gerar contas a pagar bloqueado quando já existem parcelas (poka-yoke)","Status real da compra: pendente / faturada / parcial / paga","Compras no cartão passam a aparecer em Faturas de cartão"]'::jsonb,
+SELECT '1.7.1',
+       'Correções em compras, faturas de cartão e estorno',
+       '[
+         "Compra à vista no mesmo dia (data local, sem defasagem de timezone)",
+         "Pagamento de fatura de cartão indicando conta bancária de saída",
+         "Bloqueio de geração duplicada de contas para compras no cartão",
+         "Fluxo de reversão: estornar pagamento → excluir conta a pagar → excluir compra",
+         "Estorno preserva histórico no extrato bancário (auditoria)"
+       ]'::jsonb,
        now()
-WHERE NOT EXISTS (SELECT 1 FROM public.app_releases WHERE version = '1.7.0');
+WHERE NOT EXISTS (SELECT 1 FROM public.app_releases WHERE version = '1.7.1');
 ```
+
+Se, ao ler o schema real de `contas_bancarias_lancamentos` durante a implementação, faltar alguma coluna para representar estorno de forma limpa (ex.: `estorno_de_id`), aviso antes e incluo o `ALTER TABLE` idempotente no mesmo arquivo.
 
 ## Fora de escopo
 
-- Reativar módulo de estoque / recebimento.
-- Mudar estrutura de `contas_pagar` ou `cartoes`.
-- Redesenho da tela de faturas — só passa a incluir a nova fonte de dados.
+- Redesenho da tela de faturas de cartão.
+- Mudanças estruturais em `compra_parcelas` ou `faturas_cartao`.
+- Regras de aprovação para estorno (por ora qualquer usuário com permissão de baixa pode estornar).
 
 ## Entrega
 
-Um turno. Após aprovação: código + `sql/producao-1.7.0-compras-fluxo-cartao.sql` para rodar no Supabase de produção.
+Um turno após aprovação: código + `sql/producao-1.7.1-compras-estorno-fatura.sql`.
