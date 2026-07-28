@@ -299,7 +299,7 @@ function ContasPagarPage() {
                   <div>
                     <p className="font-medium">{c.descricao}</p>
                     <p className="text-xs text-muted-foreground">
-                      Venc: {new Date(venc).toLocaleDateString("pt-BR")}
+                      Venc: {(() => { const [y,m,d]=venc.slice(0,10).split("-"); return `${d}/${m}/${y}`; })()}
                       {c.origem !== "manual" && ` · ${c.origem}`}
                     </p>
                   </div>
