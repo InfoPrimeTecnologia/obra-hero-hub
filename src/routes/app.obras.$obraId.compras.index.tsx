@@ -36,11 +36,11 @@ type Compra = {
   id: string;
   numero: string | null;
   descricao: string | null;
-  forma_pagamento: string;
+  forma_pagamento: string | null;
   valor_total: number;
   data_compra: string;
   status: string;
-  qtd_parcelas: number;
+  qtd_parcelas: number | null;
   fornecedor_id: string | null;
   cartao_id: string | null;
   etapa_id: string | null;
