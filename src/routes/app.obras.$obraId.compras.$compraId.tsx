@@ -128,6 +128,7 @@ function calcularVencimentosIntervalo(dataPrimeira: string, intervaloDias: numbe
   return out;
 }
 
+
 function CompraDetalhePage() {
   const { obraId, compraId } = Route.useParams();
   const { user } = useAuth();
