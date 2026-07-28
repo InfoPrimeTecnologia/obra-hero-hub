@@ -651,6 +651,24 @@ function CompraDetalhePage() {
                       </div>
                     </div>
 
+                    <label className="flex items-center gap-2 rounded-md border bg-muted/30 p-2 text-sm">
+                      <input
+                        type="checkbox"
+                        checked={aVista}
+                        onChange={(e) => {
+                          setAVista(e.target.checked);
+                          if (e.target.checked) setGerarForm((f) => ({ ...f, qtd_parcelas: "1" }));
+                        }}
+                        disabled={gerarForm.forma_pagamento === "cartao"}
+                      />
+                      <span>
+                        <strong>À vista</strong> — 1 parcela na data de emissão
+                        {gerarForm.forma_pagamento === "cartao" && (
+                          <em className="ml-1 text-muted-foreground">(indisponível no cartão)</em>
+                        )}
+                      </span>
+                    </label>
+
                     {gerarForm.forma_pagamento === "cartao" ? (
                       <div className="grid grid-cols-2 gap-3">
                         <div className="space-y-2">
@@ -675,7 +693,7 @@ function CompraDetalhePage() {
                             onChange={(e) => setGerarForm({ ...gerarForm, qtd_parcelas: e.target.value })} />
                         </div>
                       </div>
-                    ) : (
+                    ) : aVista ? null : (
                       <div className="grid grid-cols-3 gap-3">
                         <div className="space-y-2">
                           <Label>1ª parcela vence *</Label>
@@ -689,8 +707,9 @@ function CompraDetalhePage() {
                         </div>
                         <div className="space-y-2">
                           <Label>Intervalo (dias) *</Label>
-                          <Input type="number" min={1} required value={gerarForm.intervalo_dias}
+                          <Input type="number" min={0} required value={gerarForm.intervalo_dias}
                             onChange={(e) => setGerarForm({ ...gerarForm, intervalo_dias: e.target.value })} />
+                          <p className="text-[10px] text-muted-foreground">Use 0 para todas no mesmo dia.</p>
                         </div>
                       </div>
                     )}
@@ -703,12 +722,13 @@ function CompraDetalhePage() {
                       </p>
                       {preview.parcelas.map((p) => (
                         <div key={p.n} className="flex justify-between text-xs">
-                          <span>Parcela {p.n}/{preview.parcelas.length} — vence {new Date(p.venc).toLocaleDateString("pt-BR")}</span>
+                          <span>Parcela {p.n}/{preview.parcelas.length} — vence {fmtBR(p.venc)}</span>
                           <span className="tabular-nums font-medium">{brl(p.valor)}</span>
                         </div>
                       ))}
                     </div>
                   )}
+
 
                   <div className="space-y-2">
                     <Label>Observações</Label>
