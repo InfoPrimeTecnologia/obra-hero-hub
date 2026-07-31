@@ -389,7 +389,7 @@ function ContasPagarObra() {
           </DialogHeader>
           <div className="space-y-3">
             <div className="space-y-2">
-              <Label>Conta bancária *</Label>
+              <Label>Conta bancária da obra *</Label>
               <Select
                 value={pagto.conta_bancaria_id}
                 onValueChange={(v) => setPagto((p) => ({ ...p, conta_bancaria_id: v }))}
@@ -400,7 +400,7 @@ function ContasPagarObra() {
                 <SelectContent>
                   {contas.map((c) => (
                     <SelectItem key={c.id} value={c.id}>
-                      {c.nome}
+                      {c.nome}{c.obra_id ? "" : " (global)"}
                     </SelectItem>
                   ))}
                 </SelectContent>
@@ -420,6 +420,28 @@ function ContasPagarObra() {
           </DialogFooter>
         </DialogContent>
       </Dialog>
+
+      <Dialog open={!!estornando} onOpenChange={(v) => { if (!v) { setEstornando(null); setMotivoEstorno(""); } }}>
+        <DialogContent>
+          <DialogHeader>
+            <DialogTitle>Estornar pagamento</DialogTitle>
+          </DialogHeader>
+          <div className="space-y-3">
+            <p className="text-sm text-muted-foreground">
+              A conta volta para <strong>pendente</strong>, o valor é devolvido à conta bancária e um
+              lançamento de estorno fica registrado no caixa da obra.
+            </p>
+            <div className="space-y-2">
+              <Label>Motivo *</Label>
+              <Textarea rows={2} value={motivoEstorno} onChange={(e) => setMotivoEstorno(e.target.value)} />
+            </div>
+          </div>
+          <DialogFooter>
+            <Button variant="destructive" onClick={estornarBaixa}>Confirmar estorno</Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
     </div>
+
   );
 }
