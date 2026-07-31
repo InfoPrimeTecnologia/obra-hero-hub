@@ -368,7 +368,13 @@ function ContasPagarObra() {
                       </Button>
                     </>
                   )}
+                  {cp.status === "pago" && (
+                    <Button size="sm" variant="outline" onClick={() => setEstornando(cp)}>
+                      <Undo2 className="mr-2 h-4 w-4" /> Estornar
+                    </Button>
+                  )}
                 </div>
+
 
               </CardContent>
             </Card>
