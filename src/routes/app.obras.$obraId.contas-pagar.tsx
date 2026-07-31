@@ -70,7 +70,7 @@ function ContasPagarObra() {
     const [{ data }, { data: f }, { data: c }, { data: cb }] = await Promise.all([
       supabase
         .from("contas_pagar")
-        .select("id,descricao,valor,vencimento,status,fornecedor_id")
+        .select("id,descricao,valor,vencimento,status,fornecedor_id,estornado")
         .eq("obra_id", obraId)
         .order("vencimento"),
       supabase.from("fornecedores").select("id,nome").eq("ativo", true).order("nome"),
@@ -79,7 +79,12 @@ function ContasPagarObra() {
         .select("id,nome")
         .eq("tipo", "despesa")
         .eq("ativo", true),
-      supabase.from("contas_bancarias").select("id,nome").eq("ativo", true),
+      supabase
+        .from("contas_bancarias")
+        .select("id,nome,obra_id")
+        .eq("ativo", true)
+        .or(`obra_id.eq.${obraId},obra_id.is.null`)
+        .order("nome"),
     ]);
     setItems((data as CP[]) ?? []);
     setFornec((f as any) ?? []);
