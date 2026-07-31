@@ -38,6 +38,7 @@ type CP = {
   vencimento: string;
   status: string;
   fornecedor_id: string | null;
+  estornado?: boolean | null;
 };
 
 function ContasPagarObra() {
@@ -46,10 +47,12 @@ function ContasPagarObra() {
   const [items, setItems] = useState<CP[]>([]);
   const [fornec, setFornec] = useState<{ id: string; nome: string }[]>([]);
   const [cats, setCats] = useState<{ id: string; nome: string }[]>([]);
-  const [contas, setContas] = useState<{ id: string; nome: string }[]>([]);
+  const [contas, setContas] = useState<{ id: string; nome: string; obra_id: string | null }[]>([]);
   const [filtro, setFiltro] = useState<"todos" | "pendente" | "pago">("pendente");
   const [open, setOpen] = useState(false);
   const [paying, setPaying] = useState<CP | null>(null);
+  const [estornando, setEstornando] = useState<CP | null>(null);
+  const [motivoEstorno, setMotivoEstorno] = useState("");
   const [form, setForm] = useState({
     descricao: "",
     valor: "",
