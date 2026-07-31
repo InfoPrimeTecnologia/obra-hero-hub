@@ -318,11 +318,24 @@ function CaixaObraPage() {
                         • {contaNome(l.conta_bancaria_id)}
                       </span>
                     </div>
-                    <span
-                      className={l.tipo === "entrada" ? "text-emerald-600" : "text-destructive"}
-                    >
-                      {l.tipo === "entrada" ? "+" : "-"} {brl(Number(l.valor))}
-                    </span>
+                    <div className="flex items-center gap-2">
+                      <span
+                        className={l.tipo === "entrada" ? "text-emerald-600" : "text-destructive"}
+                      >
+                        {l.tipo === "entrada" ? "+" : "-"} {brl(Number(l.valor))}
+                      </span>
+                      {!l.estornado && l.conta_pagar_id && (
+                        <Button
+                          size="sm"
+                          variant="ghost"
+                          title="Estornar — devolve o valor à conta e reabre a compra"
+                          onClick={() => void estornarLancamento(l)}
+                        >
+                          <Undo2 className="h-4 w-4 text-destructive" />
+                        </Button>
+                      )}
+                    </div>
+
                   </div>
                 ))}
               </div>
