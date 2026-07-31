@@ -187,7 +187,7 @@ function CompraDetalhePage() {
       supabase.from("orcamento_subetapas").select("id,etapa_id,nome").order("ordem"),
       supabase.from("cartoes").select("id,nome,ultimos_4,dia_fechamento,dia_vencimento").eq("ativo", true).order("nome"),
       supabase.from("contas_pagar").select("id,descricao,valor,vencimento,status,fatura_cartao_id").eq("compra_id", compraId).order("vencimento"),
-      supabase.from("compra_parcelas").select("id,status").eq("compra_id", compraId),
+      supabase.from("compra_parcelas").select("id,status,valor").eq("compra_id", compraId),
     ]);
     setCompra(c as Compra | null);
     setItens((is ?? []) as Item[]);
@@ -195,22 +195,24 @@ function CompraDetalhePage() {
     setSubetapas((subs ?? []) as Subetapa[]);
     setCartoes((cts ?? []) as Cartao[]);
     setContasPagar((cps ?? []) as ContaPagarLite[]);
-    setParcelasCartao((parc ?? []).length);
+    setParcelas((parc ?? []) as { status: string; valor: number }[]);
 
     // Sincroniza status da compra: considera contas_pagar (não-cartão) e compra_parcelas (cartão)
     if (c) {
       const list = (cps ?? []) as ContaPagarLite[];
-      const parcList = (parc ?? []) as { status: string }[];
+      const parcList = (parc ?? []) as { status: string; valor: number }[];
+      const total = Number((c as Compra).valor_total ?? 0);
+      const faturado =
+        list.reduce((s, p) => s + Number(p.valor), 0) +
+        parcList.reduce((s, p) => s + Number(p.valor), 0);
+      const pago =
+        list.filter((p) => p.status === "pago").reduce((s, p) => s + Number(p.valor), 0) +
+        parcList.filter((p) => p.status === "pago").reduce((s, p) => s + Number(p.valor), 0);
+
       let novo = "pendente";
-      if (list.length > 0) {
-        const pagas = list.filter((p) => p.status === "pago").length;
-        if (pagas === list.length) novo = "paga";
-        else if (pagas > 0) novo = "parcial";
-        else novo = "faturada";
-      } else if (parcList.length > 0) {
-        const pagas = parcList.filter((p) => p.status === "pago").length;
-        if (pagas === parcList.length) novo = "paga";
-        else if (pagas > 0) novo = "parcial";
+      if (faturado > 0.009) {
+        if (pago >= total - 0.009 && faturado >= total - 0.009) novo = "paga";
+        else if (pago > 0.009 || faturado < total - 0.009) novo = "parcial";
         else novo = "faturada";
       }
       if ((c as Compra).status !== novo) {
@@ -226,7 +228,18 @@ function CompraDetalhePage() {
     [itens]
   );
 
-  const jaFaturada = contasPagar.length > 0 || parcelasCartao > 0;
+  const valorFaturado =
+    contasPagar.reduce((s, p) => s + Number(p.valor), 0) +
+    parcelas.reduce((s, p) => s + Number(p.valor), 0);
+  const valorPago =
+    contasPagar.filter((p) => p.status === "pago").reduce((s, p) => s + Number(p.valor), 0) +
+    parcelas.filter((p) => p.status === "pago").reduce((s, p) => s + Number(p.valor), 0);
+  const jaFaturada = valorFaturado > 0.009;
+  const restanteFaturar = Math.max(0, Number((totalItens - valorFaturado).toFixed(2)));
+  const podeGerar = restanteFaturar > 0.009;
+  const temPagamento = valorPago > 0.009;
+  const bloqueadoItens = jaFaturada && temPagamento;
+
 
   const excluirCompra = async () => {
     if (jaFaturada) return toast.error("Exclua as contas a pagar antes");
