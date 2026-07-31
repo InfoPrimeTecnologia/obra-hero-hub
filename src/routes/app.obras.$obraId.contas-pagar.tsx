@@ -1,6 +1,6 @@
 import { createFileRoute } from "@tanstack/react-router";
 import { useEffect, useState, type FormEvent } from "react";
-import { Plus, Receipt, CheckCircle2, Trash2 } from "lucide-react";
+import { Plus, Receipt, CheckCircle2, Trash2, Undo2 } from "lucide-react";
 import { PageHeader } from "@/components/admin/PageHeader";
 import { Card, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
@@ -38,6 +38,7 @@ type CP = {
   vencimento: string;
   status: string;
   fornecedor_id: string | null;
+  estornado?: boolean | null;
 };
 
 function ContasPagarObra() {
@@ -46,10 +47,12 @@ function ContasPagarObra() {
   const [items, setItems] = useState<CP[]>([]);
   const [fornec, setFornec] = useState<{ id: string; nome: string }[]>([]);
   const [cats, setCats] = useState<{ id: string; nome: string }[]>([]);
-  const [contas, setContas] = useState<{ id: string; nome: string }[]>([]);
+  const [contas, setContas] = useState<{ id: string; nome: string; obra_id: string | null }[]>([]);
   const [filtro, setFiltro] = useState<"todos" | "pendente" | "pago">("pendente");
   const [open, setOpen] = useState(false);
   const [paying, setPaying] = useState<CP | null>(null);
+  const [estornando, setEstornando] = useState<CP | null>(null);
+  const [motivoEstorno, setMotivoEstorno] = useState("");
   const [form, setForm] = useState({
     descricao: "",
     valor: "",
@@ -67,7 +70,7 @@ function ContasPagarObra() {
     const [{ data }, { data: f }, { data: c }, { data: cb }] = await Promise.all([
       supabase
         .from("contas_pagar")
-        .select("id,descricao,valor,vencimento,status,fornecedor_id")
+        .select("id,descricao,valor,vencimento,status,fornecedor_id,estornado")
         .eq("obra_id", obraId)
         .order("vencimento"),
       supabase.from("fornecedores").select("id,nome").eq("ativo", true).order("nome"),
@@ -76,7 +79,12 @@ function ContasPagarObra() {
         .select("id,nome")
         .eq("tipo", "despesa")
         .eq("ativo", true),
-      supabase.from("contas_bancarias").select("id,nome").eq("ativo", true),
+      supabase
+        .from("contas_bancarias")
+        .select("id,nome,obra_id")
+        .eq("ativo", true)
+        .or(`obra_id.eq.${obraId},obra_id.is.null`)
+        .order("nome"),
     ]);
     setItems((data as CP[]) ?? []);
     setFornec((f as any) ?? []);
@@ -138,6 +146,50 @@ function ContasPagarObra() {
     toast.success("Conta paga");
     setPaying(null);
     void carregar();
+  };
+
+  const estornarBaixa = async () => {
+    if (!estornando) return;
+    if (!motivoEstorno.trim()) return toast.error("Informe o motivo");
+    const token = crypto.randomUUID();
+    const { data: lancs } = await supabase
+      .from("lancamentos").select("*")
+      .eq("conta_pagar_id", estornando.id).eq("estornado", false);
+    for (const l of lancs ?? []) {
+      await supabase.from("lancamentos").update({ estornado: true, estorno_token: token }).eq("id", l.id);
+      await supabase.from("lancamentos").insert({
+        customer_id: l.customer_id,
+        conta_bancaria_id: l.conta_bancaria_id,
+        obra_id: l.obra_id ?? obraId,
+        tipo: "entrada",
+        valor: l.valor,
+        data: new Date().toISOString().slice(0, 10),
+        descricao: `ESTORNO: ${l.descricao} - ${motivoEstorno}`,
+        estorno_token: token,
+        created_by: user!.id,
+      });
+      const { data: c } = await supabase.from("contas_bancarias")
+        .select("saldo_atual").eq("id", l.conta_bancaria_id).maybeSingle();
+      if (c) {
+        await supabase.from("contas_bancarias")
+          .update({ saldo_atual: Number(c.saldo_atual) + Number(l.valor) })
+          .eq("id", l.conta_bancaria_id);
+      }
+    }
+    const { error } = await supabase.from("contas_pagar").update({
+      status: "pendente",
+      pago_em: null,
+      valor_pago: 0,
+      conta_bancaria_id: null,
+      estornado: true,
+      estorno_token: token,
+      estornado_em: new Date().toISOString(),
+      estornado_por: user!.id,
+      motivo_estorno: motivoEstorno,
+    } as any).eq("id", estornando.id);
+    if (error) return toast.error("Erro", { description: error.message });
+    toast.success("Pagamento estornado — conta voltou a pendente");
+    setEstornando(null); setMotivoEstorno(""); void carregar();
   };
 
   const excluir = async (cp: CP) => {
@@ -316,7 +368,13 @@ function ContasPagarObra() {
                       </Button>
                     </>
                   )}
+                  {cp.status === "pago" && (
+                    <Button size="sm" variant="outline" onClick={() => setEstornando(cp)}>
+                      <Undo2 className="mr-2 h-4 w-4" /> Estornar
+                    </Button>
+                  )}
                 </div>
+
 
               </CardContent>
             </Card>
@@ -331,7 +389,7 @@ function ContasPagarObra() {
           </DialogHeader>
           <div className="space-y-3">
             <div className="space-y-2">
-              <Label>Conta bancária *</Label>
+              <Label>Conta bancária da obra *</Label>
               <Select
                 value={pagto.conta_bancaria_id}
                 onValueChange={(v) => setPagto((p) => ({ ...p, conta_bancaria_id: v }))}
@@ -342,7 +400,7 @@ function ContasPagarObra() {
                 <SelectContent>
                   {contas.map((c) => (
                     <SelectItem key={c.id} value={c.id}>
-                      {c.nome}
+                      {c.nome}{c.obra_id ? "" : " (global)"}
                     </SelectItem>
                   ))}
                 </SelectContent>
@@ -362,6 +420,28 @@ function ContasPagarObra() {
           </DialogFooter>
         </DialogContent>
       </Dialog>
+
+      <Dialog open={!!estornando} onOpenChange={(v) => { if (!v) { setEstornando(null); setMotivoEstorno(""); } }}>
+        <DialogContent>
+          <DialogHeader>
+            <DialogTitle>Estornar pagamento</DialogTitle>
+          </DialogHeader>
+          <div className="space-y-3">
+            <p className="text-sm text-muted-foreground">
+              A conta volta para <strong>pendente</strong>, o valor é devolvido à conta bancária e um
+              lançamento de estorno fica registrado no caixa da obra.
+            </p>
+            <div className="space-y-2">
+              <Label>Motivo *</Label>
+              <Textarea rows={2} value={motivoEstorno} onChange={(e) => setMotivoEstorno(e.target.value)} />
+            </div>
+          </div>
+          <DialogFooter>
+            <Button variant="destructive" onClick={estornarBaixa}>Confirmar estorno</Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
     </div>
+
   );
 }

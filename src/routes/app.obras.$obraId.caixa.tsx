@@ -1,6 +1,6 @@
 import { createFileRoute, Link } from "@tanstack/react-router";
 import { useEffect, useState, type FormEvent } from "react";
-import { TrendingUp, ArrowLeftRight, Banknote, Plus } from "lucide-react";
+import { TrendingUp, ArrowLeftRight, Banknote, Plus, Undo2 } from "lucide-react";
 import { PageHeader } from "@/components/admin/PageHeader";
 import { Card, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
@@ -39,6 +39,8 @@ type Lanc = {
   descricao: string;
   conta_bancaria_id: string;
   estornado: boolean | null;
+  conta_pagar_id: string | null;
+  customer_id: string;
 };
 type Conta = { id: string; nome: string; saldo_atual: number };
 
@@ -63,10 +65,14 @@ function CaixaObraPage() {
 
   const carregar = async () => {
     const [{ data: cb }, { data: l }] = await Promise.all([
-      supabase.from("contas_bancarias").select("id,nome,saldo_atual").eq("ativo", true),
+      supabase
+        .from("contas_bancarias")
+        .select("id,nome,saldo_atual")
+        .eq("ativo", true)
+        .or(`obra_id.eq.${obraId},obra_id.is.null`),
       supabase
         .from("lancamentos")
-        .select("id,tipo,valor,data,descricao,conta_bancaria_id,estornado")
+        .select("id,tipo,valor,data,descricao,conta_bancaria_id,estornado,conta_pagar_id,customer_id")
         .eq("obra_id", obraId)
         .gte("data", de)
         .lte("data", ate)
@@ -75,6 +81,56 @@ function CaixaObraPage() {
     setContas((cb as Conta[]) ?? []);
     setLancs((l as Lanc[]) ?? []);
   };
+
+  const estornarLancamento = async (l: Lanc) => {
+    if (!l.conta_pagar_id) return toast.error("Lançamento sem conta a pagar vinculada");
+    const motivo = window.prompt("Motivo do estorno:");
+    if (!motivo || !motivo.trim()) return;
+    const token = crypto.randomUUID();
+
+    await supabase.from("lancamentos").update({ estornado: true, estorno_token: token }).eq("id", l.id);
+    await supabase.from("lancamentos").insert({
+      customer_id: l.customer_id,
+      conta_bancaria_id: l.conta_bancaria_id,
+      obra_id: obraId,
+      tipo: l.tipo === "saida" ? "entrada" : "saida",
+      valor: l.valor,
+      data: new Date().toISOString().slice(0, 10),
+      descricao: `ESTORNO: ${l.descricao} - ${motivo.trim()}`,
+      estorno_token: token,
+      created_by: user!.id,
+    });
+    const { data: c } = await supabase
+      .from("contas_bancarias").select("saldo_atual").eq("id", l.conta_bancaria_id).maybeSingle();
+    if (c) {
+      const delta = l.tipo === "saida" ? Number(l.valor) : -Number(l.valor);
+      await supabase.from("contas_bancarias")
+        .update({ saldo_atual: Number(c.saldo_atual) + delta })
+        .eq("id", l.conta_bancaria_id);
+    }
+
+    const { data: cp } = await supabase
+      .from("contas_pagar").select("id,compra_id").eq("id", l.conta_pagar_id).maybeSingle();
+    await supabase.from("contas_pagar").update({
+      status: "pendente",
+      pago_em: null,
+      valor_pago: 0,
+      conta_bancaria_id: null,
+      estornado: true,
+      estorno_token: token,
+      estornado_em: new Date().toISOString(),
+      estornado_por: user!.id,
+      motivo_estorno: motivo.trim(),
+    } as any).eq("id", l.conta_pagar_id);
+
+    if (cp?.compra_id) {
+      await supabase.from("compras").update({ status: "pendente" }).eq("id", cp.compra_id);
+    }
+
+    toast.success("Estorno realizado — compra e conta voltaram para pendente");
+    void carregar();
+  };
+
 
   useEffect(() => {
     void carregar();
@@ -262,11 +318,24 @@ function CaixaObraPage() {
                         • {contaNome(l.conta_bancaria_id)}
                       </span>
                     </div>
-                    <span
-                      className={l.tipo === "entrada" ? "text-emerald-600" : "text-destructive"}
-                    >
-                      {l.tipo === "entrada" ? "+" : "-"} {brl(Number(l.valor))}
-                    </span>
+                    <div className="flex items-center gap-2">
+                      <span
+                        className={l.tipo === "entrada" ? "text-emerald-600" : "text-destructive"}
+                      >
+                        {l.tipo === "entrada" ? "+" : "-"} {brl(Number(l.valor))}
+                      </span>
+                      {!l.estornado && l.conta_pagar_id && (
+                        <Button
+                          size="sm"
+                          variant="ghost"
+                          title="Estornar — devolve o valor à conta e reabre a compra"
+                          onClick={() => void estornarLancamento(l)}
+                        >
+                          <Undo2 className="h-4 w-4 text-destructive" />
+                        </Button>
+                      )}
+                    </div>
+
                   </div>
                 ))}
               </div>

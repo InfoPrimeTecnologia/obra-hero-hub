@@ -139,7 +139,7 @@ function CompraDetalhePage() {
   const [subetapas, setSubetapas] = useState<Subetapa[]>([]);
   const [cartoes, setCartoes] = useState<Cartao[]>([]);
   const [contasPagar, setContasPagar] = useState<ContaPagarLite[]>([]);
-  const [parcelasCartao, setParcelasCartao] = useState<number>(0);
+  const [parcelas, setParcelas] = useState<{ status: string; valor: number }[]>([]);
   const [excluindoCompra, setExcluindoCompra] = useState(false);
 
   const [openItem, setOpenItem] = useState(false);
@@ -187,7 +187,7 @@ function CompraDetalhePage() {
       supabase.from("orcamento_subetapas").select("id,etapa_id,nome").order("ordem"),
       supabase.from("cartoes").select("id,nome,ultimos_4,dia_fechamento,dia_vencimento").eq("ativo", true).order("nome"),
       supabase.from("contas_pagar").select("id,descricao,valor,vencimento,status,fatura_cartao_id").eq("compra_id", compraId).order("vencimento"),
-      supabase.from("compra_parcelas").select("id,status").eq("compra_id", compraId),
+      supabase.from("compra_parcelas").select("id,status,valor").eq("compra_id", compraId),
     ]);
     setCompra(c as Compra | null);
     setItens((is ?? []) as Item[]);
@@ -195,22 +195,24 @@ function CompraDetalhePage() {
     setSubetapas((subs ?? []) as Subetapa[]);
     setCartoes((cts ?? []) as Cartao[]);
     setContasPagar((cps ?? []) as ContaPagarLite[]);
-    setParcelasCartao((parc ?? []).length);
+    setParcelas((parc ?? []) as { status: string; valor: number }[]);
 
     // Sincroniza status da compra: considera contas_pagar (não-cartão) e compra_parcelas (cartão)
     if (c) {
       const list = (cps ?? []) as ContaPagarLite[];
-      const parcList = (parc ?? []) as { status: string }[];
+      const parcList = (parc ?? []) as { status: string; valor: number }[];
+      const total = Number((c as Compra).valor_total ?? 0);
+      const faturado =
+        list.reduce((s, p) => s + Number(p.valor), 0) +
+        parcList.reduce((s, p) => s + Number(p.valor), 0);
+      const pago =
+        list.filter((p) => p.status === "pago").reduce((s, p) => s + Number(p.valor), 0) +
+        parcList.filter((p) => p.status === "pago").reduce((s, p) => s + Number(p.valor), 0);
+
       let novo = "pendente";
-      if (list.length > 0) {
-        const pagas = list.filter((p) => p.status === "pago").length;
-        if (pagas === list.length) novo = "paga";
-        else if (pagas > 0) novo = "parcial";
-        else novo = "faturada";
-      } else if (parcList.length > 0) {
-        const pagas = parcList.filter((p) => p.status === "pago").length;
-        if (pagas === parcList.length) novo = "paga";
-        else if (pagas > 0) novo = "parcial";
+      if (faturado > 0.009) {
+        if (pago >= total - 0.009 && faturado >= total - 0.009) novo = "paga";
+        else if (pago > 0.009 || faturado < total - 0.009) novo = "parcial";
         else novo = "faturada";
       }
       if ((c as Compra).status !== novo) {
@@ -226,7 +228,18 @@ function CompraDetalhePage() {
     [itens]
   );
 
-  const jaFaturada = contasPagar.length > 0 || parcelasCartao > 0;
+  const valorFaturado =
+    contasPagar.reduce((s, p) => s + Number(p.valor), 0) +
+    parcelas.reduce((s, p) => s + Number(p.valor), 0);
+  const valorPago =
+    contasPagar.filter((p) => p.status === "pago").reduce((s, p) => s + Number(p.valor), 0) +
+    parcelas.filter((p) => p.status === "pago").reduce((s, p) => s + Number(p.valor), 0);
+  const jaFaturada = valorFaturado > 0.009;
+  const restanteFaturar = Math.max(0, Number((totalItens - valorFaturado).toFixed(2)));
+  const podeGerar = restanteFaturar > 0.009;
+  const temPagamento = valorPago > 0.009;
+  const bloqueadoItens = jaFaturada && temPagamento;
+
 
   const excluirCompra = async () => {
     if (jaFaturada) return toast.error("Exclua as contas a pagar antes");
@@ -382,6 +395,9 @@ function CompraDetalhePage() {
     e.preventDefault();
     if (!compra) return;
     if (preview.total <= 0) return toast.error("Informe quantidade em ao menos um item");
+    if (preview.total > restanteFaturar + 0.009) {
+      return toast.error(`Valor acima do saldo a faturar (${brl(restanteFaturar)})`);
+    }
     if (gerarForm.forma_pagamento === "cartao" && !gerarForm.cartao_id) {
       return toast.error("Selecione o cartão");
     }
@@ -484,11 +500,21 @@ function CompraDetalhePage() {
         {/* ITENS */}
         <Card>
           <CardHeader className="flex flex-row items-center justify-between">
-            <CardTitle className="text-base">Itens</CardTitle>
-            <Button size="sm" onClick={() => { if (openItem) { setOpenItem(false); resetItemForm(); } else { resetItemForm(); setOpenItem(true); } }}>
+            <div className="space-y-1">
+              <CardTitle className="text-base">Itens</CardTitle>
+              {bloqueadoItens && (
+                <p className="text-xs text-muted-foreground">
+                  Compra já faturada e paga — itens bloqueados para alteração.
+                </p>
+              )}
+            </div>
+            <Button size="sm" disabled={bloqueadoItens}
+              title={bloqueadoItens ? "Compra já faturada e paga — não é possível adicionar itens" : undefined}
+              onClick={() => { if (openItem) { setOpenItem(false); resetItemForm(); } else { resetItemForm(); setOpenItem(true); } }}>
               <Plus className="mr-2 h-4 w-4" /> {openItem ? "Fechar" : "Adicionar item"}
             </Button>
           </CardHeader>
+
           <CardContent className="space-y-2">
             {openItem && (
               <form onSubmit={salvarItem} className="space-y-3 rounded-md border bg-muted/30 p-3">
@@ -566,8 +592,8 @@ function CompraDetalhePage() {
                   </div>
                   <div className="flex items-center gap-2">
                     <span className="text-sm font-semibold">R$ {Number(i.valor_total).toFixed(2)}</span>
-                    <Button variant="ghost" size="sm" onClick={() => abrirEdicaoItem(i)}><Pencil className="h-4 w-4" /></Button>
-                    <Button variant="ghost" size="sm" onClick={() => excluirItem(i.id)}><Trash2 className="h-4 w-4" /></Button>
+                    <Button variant="ghost" size="sm" disabled={bloqueadoItens} onClick={() => abrirEdicaoItem(i)}><Pencil className="h-4 w-4" /></Button>
+                    <Button variant="ghost" size="sm" disabled={bloqueadoItens} onClick={() => excluirItem(i.id)}><Trash2 className="h-4 w-4" /></Button>
                   </div>
                 </div>
               );
@@ -579,25 +605,27 @@ function CompraDetalhePage() {
         </Card>
 
         {/* CONTAS A PAGAR */}
-        <Card className={jaFaturada ? "" : "border-destructive/60 bg-destructive/5"}>
+        <Card className={jaFaturada && !podeGerar ? "" : "border-destructive/60 bg-destructive/5"}>
           <CardHeader className="flex flex-row items-center justify-between">
             <div className="space-y-1">
               <CardTitle className="text-base flex items-center gap-2">
-                {!jaFaturada && <AlertTriangle className="h-4 w-4 text-destructive" />}
+                {podeGerar && <AlertTriangle className="h-4 w-4 text-destructive" />}
                 Contas a pagar geradas
               </CardTitle>
-              {!jaFaturada && (
+              {podeGerar && (
                 <p className="text-xs font-medium text-destructive">
-                  Compra ainda não faturada — gere as contas a pagar.
+                  {jaFaturada
+                    ? `Faturamento parcial — ${brl(valorFaturado)} de ${brl(totalItens)}. Falta gerar ${brl(restanteFaturar)}.`
+                    : "Compra ainda não faturada — gere as contas a pagar."}
                 </p>
               )}
             </div>
             <Dialog open={openGerar} onOpenChange={setOpenGerar}>
               <DialogTrigger asChild>
-                <Button size="sm" disabled={itens.length === 0 || jaFaturada}
-                  title={jaFaturada ? "Contas a pagar já geradas — exclua-as primeiro para refazer" : undefined}>
+                <Button size="sm" disabled={itens.length === 0 || !podeGerar}
+                  title={!podeGerar ? "Compra totalmente faturada" : undefined}>
                   <Receipt className="mr-2 h-4 w-4" />
-                  {jaFaturada ? "Contas a pagar já geradas" : "Gerar contas a pagar"}
+                  {!podeGerar ? "Compra totalmente faturada" : jaFaturada ? "Gerar contas do restante" : "Gerar contas a pagar"}
                 </Button>
               </DialogTrigger>
               <DialogContent className="max-w-xl">
@@ -605,8 +633,10 @@ function CompraDetalhePage() {
                   <DialogTitle>Gerar contas a pagar</DialogTitle>
                   <p className="text-xs text-muted-foreground">
                     Informe a quantidade a medir de cada item e os dados financeiros.
+                    {jaFaturada && ` Saldo restante desta compra: ${brl(restanteFaturar)}.`}
                   </p>
                 </DialogHeader>
+
                 <form onSubmit={gerarContasPagar} className="space-y-3">
                   <div className="space-y-2">
                     <Label>Quantidade a medir por item</Label>
