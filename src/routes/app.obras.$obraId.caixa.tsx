@@ -39,6 +39,8 @@ type Lanc = {
   descricao: string;
   conta_bancaria_id: string;
   estornado: boolean | null;
+  conta_pagar_id: string | null;
+  customer_id: string;
 };
 type Conta = { id: string; nome: string; saldo_atual: number };
 
