@@ -497,11 +497,21 @@ function CompraDetalhePage() {
         {/* ITENS */}
         <Card>
           <CardHeader className="flex flex-row items-center justify-between">
-            <CardTitle className="text-base">Itens</CardTitle>
-            <Button size="sm" onClick={() => { if (openItem) { setOpenItem(false); resetItemForm(); } else { resetItemForm(); setOpenItem(true); } }}>
+            <div className="space-y-1">
+              <CardTitle className="text-base">Itens</CardTitle>
+              {bloqueadoItens && (
+                <p className="text-xs text-muted-foreground">
+                  Compra já faturada e paga — itens bloqueados para alteração.
+                </p>
+              )}
+            </div>
+            <Button size="sm" disabled={bloqueadoItens}
+              title={bloqueadoItens ? "Compra já faturada e paga — não é possível adicionar itens" : undefined}
+              onClick={() => { if (openItem) { setOpenItem(false); resetItemForm(); } else { resetItemForm(); setOpenItem(true); } }}>
               <Plus className="mr-2 h-4 w-4" /> {openItem ? "Fechar" : "Adicionar item"}
             </Button>
           </CardHeader>
+
           <CardContent className="space-y-2">
             {openItem && (
               <form onSubmit={salvarItem} className="space-y-3 rounded-md border bg-muted/30 p-3">
