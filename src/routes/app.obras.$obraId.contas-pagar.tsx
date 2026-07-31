@@ -148,6 +148,50 @@ function ContasPagarObra() {
     void carregar();
   };
 
+  const estornarBaixa = async () => {
+    if (!estornando) return;
+    if (!motivoEstorno.trim()) return toast.error("Informe o motivo");
+    const token = crypto.randomUUID();
+    const { data: lancs } = await supabase
+      .from("lancamentos").select("*")
+      .eq("conta_pagar_id", estornando.id).eq("estornado", false);
+    for (const l of lancs ?? []) {
+      await supabase.from("lancamentos").update({ estornado: true, estorno_token: token }).eq("id", l.id);
+      await supabase.from("lancamentos").insert({
+        customer_id: l.customer_id,
+        conta_bancaria_id: l.conta_bancaria_id,
+        obra_id: l.obra_id ?? obraId,
+        tipo: "entrada",
+        valor: l.valor,
+        data: new Date().toISOString().slice(0, 10),
+        descricao: `ESTORNO: ${l.descricao} - ${motivoEstorno}`,
+        estorno_token: token,
+        created_by: user!.id,
+      });
+      const { data: c } = await supabase.from("contas_bancarias")
+        .select("saldo_atual").eq("id", l.conta_bancaria_id).maybeSingle();
+      if (c) {
+        await supabase.from("contas_bancarias")
+          .update({ saldo_atual: Number(c.saldo_atual) + Number(l.valor) })
+          .eq("id", l.conta_bancaria_id);
+      }
+    }
+    const { error } = await supabase.from("contas_pagar").update({
+      status: "pendente",
+      pago_em: null,
+      valor_pago: 0,
+      conta_bancaria_id: null,
+      estornado: true,
+      estorno_token: token,
+      estornado_em: new Date().toISOString(),
+      estornado_por: user!.id,
+      motivo_estorno: motivoEstorno,
+    } as any).eq("id", estornando.id);
+    if (error) return toast.error("Erro", { description: error.message });
+    toast.success("Pagamento estornado — conta voltou a pendente");
+    setEstornando(null); setMotivoEstorno(""); void carregar();
+  };
+
   const excluir = async (cp: CP) => {
     if (cp.status !== "pendente") return toast.error("Só é possível excluir contas pendentes");
     if (!confirm(`Excluir a conta "${cp.descricao}"?`)) return;
