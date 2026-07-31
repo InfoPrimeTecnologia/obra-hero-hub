@@ -139,7 +139,7 @@ function CompraDetalhePage() {
   const [subetapas, setSubetapas] = useState<Subetapa[]>([]);
   const [cartoes, setCartoes] = useState<Cartao[]>([]);
   const [contasPagar, setContasPagar] = useState<ContaPagarLite[]>([]);
-  const [parcelasCartao, setParcelasCartao] = useState<number>(0);
+  const [parcelas, setParcelas] = useState<{ status: string; valor: number }[]>([]);
   const [excluindoCompra, setExcluindoCompra] = useState(false);
 
   const [openItem, setOpenItem] = useState(false);
