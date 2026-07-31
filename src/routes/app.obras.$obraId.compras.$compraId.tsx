@@ -589,8 +589,8 @@ function CompraDetalhePage() {
                   </div>
                   <div className="flex items-center gap-2">
                     <span className="text-sm font-semibold">R$ {Number(i.valor_total).toFixed(2)}</span>
-                    <Button variant="ghost" size="sm" onClick={() => abrirEdicaoItem(i)}><Pencil className="h-4 w-4" /></Button>
-                    <Button variant="ghost" size="sm" onClick={() => excluirItem(i.id)}><Trash2 className="h-4 w-4" /></Button>
+                    <Button variant="ghost" size="sm" disabled={bloqueadoItens} onClick={() => abrirEdicaoItem(i)}><Pencil className="h-4 w-4" /></Button>
+                    <Button variant="ghost" size="sm" disabled={bloqueadoItens} onClick={() => excluirItem(i.id)}><Trash2 className="h-4 w-4" /></Button>
                   </div>
                 </div>
               );
@@ -602,25 +602,27 @@ function CompraDetalhePage() {
         </Card>
 
         {/* CONTAS A PAGAR */}
-        <Card className={jaFaturada ? "" : "border-destructive/60 bg-destructive/5"}>
+        <Card className={jaFaturada && !podeGerar ? "" : "border-destructive/60 bg-destructive/5"}>
           <CardHeader className="flex flex-row items-center justify-between">
             <div className="space-y-1">
               <CardTitle className="text-base flex items-center gap-2">
-                {!jaFaturada && <AlertTriangle className="h-4 w-4 text-destructive" />}
+                {podeGerar && <AlertTriangle className="h-4 w-4 text-destructive" />}
                 Contas a pagar geradas
               </CardTitle>
-              {!jaFaturada && (
+              {podeGerar && (
                 <p className="text-xs font-medium text-destructive">
-                  Compra ainda não faturada — gere as contas a pagar.
+                  {jaFaturada
+                    ? `Faturamento parcial — ${brl(valorFaturado)} de ${brl(totalItens)}. Falta gerar ${brl(restanteFaturar)}.`
+                    : "Compra ainda não faturada — gere as contas a pagar."}
                 </p>
               )}
             </div>
             <Dialog open={openGerar} onOpenChange={setOpenGerar}>
               <DialogTrigger asChild>
-                <Button size="sm" disabled={itens.length === 0 || jaFaturada}
-                  title={jaFaturada ? "Contas a pagar já geradas — exclua-as primeiro para refazer" : undefined}>
+                <Button size="sm" disabled={itens.length === 0 || !podeGerar}
+                  title={!podeGerar ? "Compra totalmente faturada" : undefined}>
                   <Receipt className="mr-2 h-4 w-4" />
-                  {jaFaturada ? "Contas a pagar já geradas" : "Gerar contas a pagar"}
+                  {!podeGerar ? "Compra totalmente faturada" : jaFaturada ? "Gerar contas do restante" : "Gerar contas a pagar"}
                 </Button>
               </DialogTrigger>
               <DialogContent className="max-w-xl">
@@ -628,8 +630,10 @@ function CompraDetalhePage() {
                   <DialogTitle>Gerar contas a pagar</DialogTitle>
                   <p className="text-xs text-muted-foreground">
                     Informe a quantidade a medir de cada item e os dados financeiros.
+                    {jaFaturada && ` Saldo restante desta compra: ${brl(restanteFaturar)}.`}
                   </p>
                 </DialogHeader>
+
                 <form onSubmit={gerarContasPagar} className="space-y-3">
                   <div className="space-y-2">
                     <Label>Quantidade a medir por item</Label>
