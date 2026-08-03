@@ -13,7 +13,6 @@ import {
   Search,
   Wallet,
   Receipt,
-  CreditCard,
   Banknote,
   FileBarChart2,
   ChevronDown,
