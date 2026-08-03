@@ -182,6 +182,57 @@ function ContasPagarObra() {
     void carregar();
   };
 
+  const nomeCartao = (id: string) => {
+    const c = cartoes.find((x) => x.id === id);
+    if (!c) return "Cartão";
+    return c.ultimos_4 ? `${c.nome} •••• ${c.ultimos_4}` : c.nome;
+  };
+
+  const pagarFatura = async () => {
+    if (!payingFat) return;
+    if (!pagto.conta_bancaria_id) return toast.error("Selecione a conta bancária da obra");
+    setSalvandoFat(true);
+    try {
+      const f = payingFat;
+      if (f.status === "aberta") {
+        const { error } = await supabase.from("faturas_cartao").update({ status: "fechada" }).eq("id", f.id);
+        if (error) throw error;
+      }
+      const { data: cp } = await supabase
+        .from("contas_pagar").select("id").eq("fatura_cartao_id", f.id).maybeSingle();
+      if (!cp?.id) throw new Error("Conta a pagar da fatura não encontrada");
+
+      const { error: e1 } = await supabase.from("contas_pagar").update({
+        status: "pago",
+        pago_em: pagto.data,
+        valor_pago: f.valor_total,
+        conta_bancaria_id: pagto.conta_bancaria_id,
+        obra_id: obraId,
+      }).eq("id", cp.id);
+      if (e1) throw e1;
+
+      await supabase.from("faturas_cartao").update({
+        status: "paga",
+        valor_pago: f.valor_total,
+        pago_em: new Date().toISOString(),
+      }).eq("id", f.id);
+      await supabase.from("compra_parcelas").update({
+        status: "pago",
+        pago_em: new Date().toISOString(),
+      }).eq("fatura_cartao_id", f.id);
+
+      toast.success("Fatura paga e debitada da conta da obra");
+      setPayingFat(null);
+      void carregar();
+    } catch (err: any) {
+      toast.error("Erro", { description: err?.message ?? String(err) });
+    } finally {
+      setSalvandoFat(false);
+    }
+  };
+
+
+
   const estornarBaixa = async () => {
     if (!estornando) return;
     if (!motivoEstorno.trim()) return toast.error("Informe o motivo");
