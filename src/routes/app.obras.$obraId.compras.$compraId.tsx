@@ -375,11 +375,15 @@ function CompraDetalhePage() {
 
   // ==== GERAR CONTAS A PAGAR ====
   const preview = useMemo(() => {
-    if (!compra) return { total: 0, parcelas: [] as { n: number; venc: string; valor: number }[] };
+    if (!compra) return { total: 0, parcelas: [] as { n: number; venc: string; valor: number }[], excedeu: false };
     let total = 0;
+    let excedeu = false;
     for (const it of itens) {
+      const disponivel = Math.max(0, Number(it.quantidade) - Number(it.qtd_faturada ?? 0));
       const q = Number(gerarForm.quantidades[it.id] || 0);
-      if (q > 0) total += q * Number(it.valor_unitario);
+      if (q > disponivel + 0.0001) excedeu = true;
+      const usada = Math.min(q, disponivel);
+      if (usada > 0) total += usada * Number(it.valor_unitario);
     }
     // À vista força 1 parcela vencendo na data de emissão
     const n = aVista ? 1 : Math.max(1, parseInt(gerarForm.qtd_parcelas || "1", 10));
