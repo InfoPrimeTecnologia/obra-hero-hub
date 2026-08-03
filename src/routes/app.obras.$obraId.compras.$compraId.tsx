@@ -247,6 +247,11 @@ function CompraDetalhePage() {
   const temPagamento = valorPago > 0.009;
   const bloqueadoItens = jaFaturada && temPagamento;
 
+  /** Quantidade ainda disponível para faturar em cada item. */
+  const qtdRestante = (it: Item) =>
+    Math.max(0, Number((Number(it.quantidade) - Number(it.qtd_faturada ?? 0)).toFixed(4)));
+  const itensFaturaveis = itens.filter((i) => qtdRestante(i) > 0.0001);
+
 
   const excluirCompra = async () => {
     if (jaFaturada) return toast.error("Exclua as contas a pagar antes");
