@@ -168,13 +168,8 @@ function ContasPagarObra() {
         estorno_token: token,
         created_by: user!.id,
       });
-      const { data: c } = await supabase.from("contas_bancarias")
-        .select("saldo_atual").eq("id", l.conta_bancaria_id).maybeSingle();
-      if (c) {
-        await supabase.from("contas_bancarias")
-          .update({ saldo_atual: Number(c.saldo_atual) + Number(l.valor) })
-          .eq("id", l.conta_bancaria_id);
-      }
+      // O saldo da conta é ajustado pelo trigger a partir do contra-lançamento
+
     }
     const { error } = await supabase.from("contas_pagar").update({
       status: "pendente",
