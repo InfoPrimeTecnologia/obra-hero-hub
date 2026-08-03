@@ -89,7 +89,6 @@ export function ObraSidebar({ obraId }: { obraId: string }) {
       items: [
         { to: `${base}/pagamentos`, label: "Meio de pagamentos", icon: Wallet },
         { to: `${base}/contas-pagar`, label: "Contas a pagar", icon: Receipt },
-        { to: `${base}/faturas`, label: "Faturas cartão", icon: CreditCard },
         { to: `${base}/caixa`, label: "Caixa e bancos", icon: Banknote },
       ],
     },

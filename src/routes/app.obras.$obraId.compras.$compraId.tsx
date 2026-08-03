@@ -811,7 +811,7 @@ function CompraDetalhePage() {
                       onChange={(e) => setGerarForm({ ...gerarForm, observacoes: e.target.value })} />
                   </div>
                   <DialogFooter>
-                    <Button type="submit" disabled={gerando}>{gerando ? "Gerando..." : "Gerar"}</Button>
+                    <Button type="submit" disabled={gerando || preview.excedeu}>{gerando ? "Gerando..." : "Gerar"}</Button>
                   </DialogFooter>
                 </form>
               </DialogContent>
