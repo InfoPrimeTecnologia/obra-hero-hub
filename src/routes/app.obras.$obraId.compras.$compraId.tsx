@@ -403,7 +403,7 @@ function CompraDetalhePage() {
       venc: v,
       valor: i === n - 1 ? Number((total - vp * (n - 1)).toFixed(2)) : vp,
     }));
-    return { total, parcelas };
+    return { total, parcelas, excedeu };
   }, [gerarForm, itens, compra, cartoes, aVista]);
 
 
