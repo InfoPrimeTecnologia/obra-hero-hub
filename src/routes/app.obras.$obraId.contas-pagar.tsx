@@ -41,6 +41,15 @@ type CP = {
   estornado?: boolean | null;
 };
 
+type Fatura = {
+  id: string;
+  cartao_id: string;
+  competencia: string;
+  dt_vencimento: string;
+  valor_total: number;
+  status: string;
+};
+
 function ContasPagarObra() {
   const { obraId } = Route.useParams();
   const { user } = useAuth();
@@ -48,6 +57,10 @@ function ContasPagarObra() {
   const [fornec, setFornec] = useState<{ id: string; nome: string }[]>([]);
   const [cats, setCats] = useState<{ id: string; nome: string }[]>([]);
   const [contas, setContas] = useState<{ id: string; nome: string; obra_id: string | null }[]>([]);
+  const [faturas, setFaturas] = useState<Fatura[]>([]);
+  const [cartoes, setCartoes] = useState<{ id: string; nome: string; ultimos_4: string | null }[]>([]);
+  const [payingFat, setPayingFat] = useState<Fatura | null>(null);
+  const [salvandoFat, setSalvandoFat] = useState(false);
   const [filtro, setFiltro] = useState<"todos" | "pendente" | "pago">("pendente");
   const [open, setOpen] = useState(false);
   const [paying, setPaying] = useState<CP | null>(null);
@@ -67,7 +80,7 @@ function ContasPagarObra() {
   });
 
   const carregar = async () => {
-    const [{ data }, { data: f }, { data: c }, { data: cb }] = await Promise.all([
+    const [{ data }, { data: f }, { data: c }, { data: cb }, { data: cts }] = await Promise.all([
       supabase
         .from("contas_pagar")
         .select("id,descricao,valor,vencimento,status,fornecedor_id,estornado")
@@ -85,11 +98,32 @@ function ContasPagarObra() {
         .eq("ativo", true)
         .or(`obra_id.eq.${obraId},obra_id.is.null`)
         .order("nome"),
+      supabase.from("cartoes").select("id,nome,ultimos_4").eq("ativo", true).order("nome"),
     ]);
     setItems((data as CP[]) ?? []);
     setFornec((f as any) ?? []);
     setCats((c as any) ?? []);
     setContas((cb as any) ?? []);
+    setCartoes((cts as any) ?? []);
+
+    // Faturas de cartão com parcelas de compras desta obra
+    const { data: compras } = await supabase.from("compras").select("id").eq("obra_id", obraId);
+    const compraIds = (compras ?? []).map((x: any) => x.id);
+    if (compraIds.length) {
+      const { data: parc } = await supabase
+        .from("compra_parcelas").select("fatura_cartao_id").in("compra_id", compraIds);
+      const fatIds = Array.from(new Set((parc ?? []).map((p: any) => p.fatura_cartao_id).filter(Boolean)));
+      if (fatIds.length) {
+        const { data: fats } = await supabase
+          .from("faturas_cartao")
+          .select("id,cartao_id,competencia,dt_vencimento,valor_total,status")
+          .in("id", fatIds)
+          .order("dt_vencimento");
+        setFaturas((fats as any) ?? []);
+        return;
+      }
+    }
+    setFaturas([]);
   };
 
   useEffect(() => {
