@@ -41,6 +41,15 @@ type CP = {
   estornado?: boolean | null;
 };
 
+type Fatura = {
+  id: string;
+  cartao_id: string;
+  competencia: string;
+  dt_vencimento: string;
+  valor_total: number;
+  status: string;
+};
+
 function ContasPagarObra() {
   const { obraId } = Route.useParams();
   const { user } = useAuth();
@@ -48,6 +57,10 @@ function ContasPagarObra() {
   const [fornec, setFornec] = useState<{ id: string; nome: string }[]>([]);
   const [cats, setCats] = useState<{ id: string; nome: string }[]>([]);
   const [contas, setContas] = useState<{ id: string; nome: string; obra_id: string | null }[]>([]);
+  const [faturas, setFaturas] = useState<Fatura[]>([]);
+  const [cartoes, setCartoes] = useState<{ id: string; nome: string; ultimos_4: string | null }[]>([]);
+  const [payingFat, setPayingFat] = useState<Fatura | null>(null);
+  const [salvandoFat, setSalvandoFat] = useState(false);
   const [filtro, setFiltro] = useState<"todos" | "pendente" | "pago">("pendente");
   const [open, setOpen] = useState(false);
   const [paying, setPaying] = useState<CP | null>(null);
@@ -67,7 +80,7 @@ function ContasPagarObra() {
   });
 
   const carregar = async () => {
-    const [{ data }, { data: f }, { data: c }, { data: cb }] = await Promise.all([
+    const [{ data }, { data: f }, { data: c }, { data: cb }, { data: cts }] = await Promise.all([
       supabase
         .from("contas_pagar")
         .select("id,descricao,valor,vencimento,status,fornecedor_id,estornado")
@@ -85,11 +98,32 @@ function ContasPagarObra() {
         .eq("ativo", true)
         .or(`obra_id.eq.${obraId},obra_id.is.null`)
         .order("nome"),
+      supabase.from("cartoes").select("id,nome,ultimos_4").eq("ativo", true).order("nome"),
     ]);
     setItems((data as CP[]) ?? []);
     setFornec((f as any) ?? []);
     setCats((c as any) ?? []);
     setContas((cb as any) ?? []);
+    setCartoes((cts as any) ?? []);
+
+    // Faturas de cartão com parcelas de compras desta obra
+    const { data: compras } = await supabase.from("compras").select("id").eq("obra_id", obraId);
+    const compraIds = (compras ?? []).map((x: any) => x.id);
+    if (compraIds.length) {
+      const { data: parc } = await supabase
+        .from("compra_parcelas").select("fatura_cartao_id").in("compra_id", compraIds);
+      const fatIds = Array.from(new Set((parc ?? []).map((p: any) => p.fatura_cartao_id).filter(Boolean)));
+      if (fatIds.length) {
+        const { data: fats } = await supabase
+          .from("faturas_cartao")
+          .select("id,cartao_id,competencia,dt_vencimento,valor_total,status")
+          .in("id", fatIds)
+          .order("dt_vencimento");
+        setFaturas((fats as any) ?? []);
+        return;
+      }
+    }
+    setFaturas([]);
   };
 
   useEffect(() => {
@@ -148,6 +182,57 @@ function ContasPagarObra() {
     void carregar();
   };
 
+  const nomeCartao = (id: string) => {
+    const c = cartoes.find((x) => x.id === id);
+    if (!c) return "Cartão";
+    return c.ultimos_4 ? `${c.nome} •••• ${c.ultimos_4}` : c.nome;
+  };
+
+  const pagarFatura = async () => {
+    if (!payingFat) return;
+    if (!pagto.conta_bancaria_id) return toast.error("Selecione a conta bancária da obra");
+    setSalvandoFat(true);
+    try {
+      const f = payingFat;
+      if (f.status === "aberta") {
+        const { error } = await supabase.from("faturas_cartao").update({ status: "fechada" }).eq("id", f.id);
+        if (error) throw error;
+      }
+      const { data: cp } = await supabase
+        .from("contas_pagar").select("id").eq("fatura_cartao_id", f.id).maybeSingle();
+      if (!cp?.id) throw new Error("Conta a pagar da fatura não encontrada");
+
+      const { error: e1 } = await supabase.from("contas_pagar").update({
+        status: "pago",
+        pago_em: pagto.data,
+        valor_pago: f.valor_total,
+        conta_bancaria_id: pagto.conta_bancaria_id,
+        obra_id: obraId,
+      }).eq("id", cp.id);
+      if (e1) throw e1;
+
+      await supabase.from("faturas_cartao").update({
+        status: "paga",
+        valor_pago: f.valor_total,
+        pago_em: new Date().toISOString(),
+      }).eq("id", f.id);
+      await supabase.from("compra_parcelas").update({
+        status: "pago",
+        pago_em: new Date().toISOString(),
+      }).eq("fatura_cartao_id", f.id);
+
+      toast.success("Fatura paga e debitada da conta da obra");
+      setPayingFat(null);
+      void carregar();
+    } catch (err: any) {
+      toast.error("Erro", { description: err?.message ?? String(err) });
+    } finally {
+      setSalvandoFat(false);
+    }
+  };
+
+
+
   const estornarBaixa = async () => {
     if (!estornando) return;
     if (!motivoEstorno.trim()) return toast.error("Informe o motivo");
@@ -168,13 +253,8 @@ function ContasPagarObra() {
         estorno_token: token,
         created_by: user!.id,
       });
-      const { data: c } = await supabase.from("contas_bancarias")
-        .select("saldo_atual").eq("id", l.conta_bancaria_id).maybeSingle();
-      if (c) {
-        await supabase.from("contas_bancarias")
-          .update({ saldo_atual: Number(c.saldo_atual) + Number(l.valor) })
-          .eq("id", l.conta_bancaria_id);
-      }
+      // O saldo da conta é ajustado pelo trigger a partir do contra-lançamento
+
     }
     const { error } = await supabase.from("contas_pagar").update({
       status: "pendente",
@@ -327,6 +407,39 @@ function ContasPagarObra() {
           </p>
         </div>
 
+        {faturas.length > 0 && (
+          <Card>
+            <CardContent className="space-y-2 p-4">
+              <p className="text-xs font-semibold uppercase tracking-wide text-muted-foreground">
+                Faturas de cartão desta obra
+              </p>
+              {faturas.map((f) => (
+                <div key={f.id} className="flex flex-wrap items-center justify-between gap-2 border-b py-2 last:border-0">
+                  <div>
+                    <p className="text-sm font-medium">
+                      {nomeCartao(f.cartao_id)} · {f.competencia}
+                    </p>
+                    <p className="text-xs text-muted-foreground">
+                      Vence {fmtBR(f.dt_vencimento)} · {brl(Number(f.valor_total))}
+                    </p>
+                  </div>
+                  <div className="flex items-center gap-2">
+                    <Badge variant={f.status === "paga" ? "default" : f.status === "fechada" ? "secondary" : "outline"}>
+                      {f.status === "paga" ? "Paga" : f.status === "fechada" ? "Fechada" : "Aberta"}
+                    </Badge>
+                    {f.status !== "paga" && (
+                      <Button size="sm" onClick={() => { setPayingFat(f); setPagto({ data: new Date().toISOString().slice(0, 10), conta_bancaria_id: "" }); }}>
+                        <CheckCircle2 className="mr-2 h-4 w-4" /> Pagar fatura
+                      </Button>
+                    )}
+                  </div>
+                </div>
+              ))}
+            </CardContent>
+          </Card>
+        )}
+
+
         {filtrados.length === 0 ? (
           <Card>
             <CardContent className="p-8 text-center text-sm text-muted-foreground">
@@ -420,6 +533,50 @@ function ContasPagarObra() {
           </DialogFooter>
         </DialogContent>
       </Dialog>
+
+      <Dialog open={!!payingFat} onOpenChange={(o) => !o && setPayingFat(null)}>
+        <DialogContent>
+          <DialogHeader>
+            <DialogTitle>Pagar fatura do cartão</DialogTitle>
+          </DialogHeader>
+          {payingFat && (
+            <div className="space-y-3">
+              <div className="rounded-md border bg-muted/30 p-3 text-sm">
+                <p className="font-medium">{nomeCartao(payingFat.cartao_id)} · {payingFat.competencia}</p>
+                <p className="text-xs text-muted-foreground">Total {brl(Number(payingFat.valor_total))}</p>
+              </div>
+              <div className="space-y-2">
+                <Label>Conta bancária da obra *</Label>
+                <Select
+                  value={pagto.conta_bancaria_id}
+                  onValueChange={(v) => setPagto((p) => ({ ...p, conta_bancaria_id: v }))}
+                >
+                  <SelectTrigger><SelectValue placeholder="Selecione" /></SelectTrigger>
+                  <SelectContent>
+                    {contas.map((c) => (
+                      <SelectItem key={c.id} value={c.id}>
+                        {c.nome}{c.obra_id ? "" : " (global)"}
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+              </div>
+              <div className="space-y-2">
+                <Label>Data do pagamento</Label>
+                <Input type="date" value={pagto.data}
+                  onChange={(e) => setPagto((p) => ({ ...p, data: e.target.value }))} />
+              </div>
+            </div>
+          )}
+          <DialogFooter>
+            <Button onClick={pagarFatura} disabled={salvandoFat}>
+              {salvandoFat ? "Pagando..." : "Confirmar pagamento"}
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
+
+
 
       <Dialog open={!!estornando} onOpenChange={(v) => { if (!v) { setEstornando(null); setMotivoEstorno(""); } }}>
         <DialogContent>

@@ -56,6 +56,7 @@ type Item = {
   quantidade: number;
   valor_unitario: number;
   valor_total: number;
+  qtd_faturada: number | null;
   etapa_id: string | null;
   subetapa_id: string | null;
 };
@@ -218,6 +219,12 @@ function CompraDetalhePage() {
       if ((c as Compra).status !== novo) {
         await supabase.from("compras").update({ status: novo }).eq("id", compraId);
       }
+
+      // Se todo o faturamento foi removido/estornado, devolve as quantidades ao saldo a faturar
+      if (faturado <= 0.009 && (is ?? []).some((i: any) => Number(i.qtd_faturada ?? 0) > 0)) {
+        await supabase.from("compra_itens").update({ qtd_faturada: 0 }).eq("compra_id", compraId);
+        setItens(((is ?? []) as Item[]).map((i) => ({ ...i, qtd_faturada: 0 })));
+      }
     }
   };
   useEffect(() => { void carregar(); }, [compraId]);
@@ -239,6 +246,11 @@ function CompraDetalhePage() {
   const podeGerar = restanteFaturar > 0.009;
   const temPagamento = valorPago > 0.009;
   const bloqueadoItens = jaFaturada && temPagamento;
+
+  /** Quantidade ainda disponível para faturar em cada item. */
+  const qtdRestante = (it: Item) =>
+    Math.max(0, Number((Number(it.quantidade) - Number(it.qtd_faturada ?? 0)).toFixed(4)));
+  const itensFaturaveis = itens.filter((i) => qtdRestante(i) > 0.0001);
 
 
   const excluirCompra = async () => {
@@ -363,11 +375,15 @@ function CompraDetalhePage() {
 
   // ==== GERAR CONTAS A PAGAR ====
   const preview = useMemo(() => {
-    if (!compra) return { total: 0, parcelas: [] as { n: number; venc: string; valor: number }[] };
+    if (!compra) return { total: 0, parcelas: [] as { n: number; venc: string; valor: number }[], excedeu: false };
     let total = 0;
+    let excedeu = false;
     for (const it of itens) {
+      const disponivel = Math.max(0, Number(it.quantidade) - Number(it.qtd_faturada ?? 0));
       const q = Number(gerarForm.quantidades[it.id] || 0);
-      if (q > 0) total += q * Number(it.valor_unitario);
+      if (q > disponivel + 0.0001) excedeu = true;
+      const usada = Math.min(q, disponivel);
+      if (usada > 0) total += usada * Number(it.valor_unitario);
     }
     // À vista força 1 parcela vencendo na data de emissão
     const n = aVista ? 1 : Math.max(1, parseInt(gerarForm.qtd_parcelas || "1", 10));
@@ -387,7 +403,7 @@ function CompraDetalhePage() {
       venc: v,
       valor: i === n - 1 ? Number((total - vp * (n - 1)).toFixed(2)) : vp,
     }));
-    return { total, parcelas };
+    return { total, parcelas, excedeu };
   }, [gerarForm, itens, compra, cartoes, aVista]);
 
 
@@ -395,6 +411,7 @@ function CompraDetalhePage() {
     e.preventDefault();
     if (!compra) return;
     if (preview.total <= 0) return toast.error("Informe quantidade em ao menos um item");
+    if (preview.excedeu) return toast.error("Alguma quantidade excede o saldo restante do item");
     if (preview.total > restanteFaturar + 0.009) {
       return toast.error(`Valor acima do saldo a faturar (${brl(restanteFaturar)})`);
     }
@@ -446,6 +463,18 @@ function CompraDetalhePage() {
       const { error } = await supabase.from("contas_pagar").insert(rows);
       if (error) { setGerando(false); return toast.error("Erro", { description: error.message }); }
       toast.success(`${nParc} conta(s) a pagar gerada(s) — ${brl(preview.total)}`);
+    }
+
+    // Baixa as quantidades faturadas de cada item (saldo a faturar por quantidade)
+    for (const it of itens) {
+      const disponivel = Math.max(0, Number(it.quantidade) - Number(it.qtd_faturada ?? 0));
+      const usada = Math.min(Number(gerarForm.quantidades[it.id] || 0), disponivel);
+      if (usada > 0) {
+        await supabase
+          .from("compra_itens")
+          .update({ qtd_faturada: Number((Number(it.qtd_faturada ?? 0) + usada).toFixed(4)) })
+          .eq("id", it.id);
+      }
     }
 
     setGerando(false);
@@ -639,23 +668,39 @@ function CompraDetalhePage() {
 
                 <form onSubmit={gerarContasPagar} className="space-y-3">
                   <div className="space-y-2">
-                    <Label>Quantidade a medir por item</Label>
-                    {itens.map((it) => (
-                      <div key={it.id} className="flex items-center gap-2">
-                        <span className="flex-1 text-sm">
-                          {it.descricao}{" "}
-                          <span className="text-muted-foreground">
-                            (até {Number(it.quantidade)} {it.unidade ?? ""})
+                    <Label>Quantidade a faturar por item</Label>
+                    {itensFaturaveis.length === 0 && (
+                      <p className="text-xs text-muted-foreground">
+                        Todos os itens já foram faturados integralmente.
+                      </p>
+                    )}
+                    {itensFaturaveis.map((it) => {
+                      const rest = qtdRestante(it);
+                      const val = Number(gerarForm.quantidades[it.id] || 0);
+                      return (
+                        <div key={it.id} className="flex items-center gap-2">
+                          <span className="flex-1 text-sm">
+                            {it.descricao}{" "}
+                            <span className="text-muted-foreground">
+                              (restam {rest} de {Number(it.quantidade)} {it.unidade ?? ""})
+                            </span>
                           </span>
-                        </span>
-                        <Input
-                          type="number" step="0.01" className="w-28"
-                          value={gerarForm.quantidades[it.id] ?? ""}
-                          onChange={(e) => setGerarForm({ ...gerarForm, quantidades: { ...gerarForm.quantidades, [it.id]: e.target.value } })}
-                        />
-                      </div>
-                    ))}
+                          <Input
+                            type="number" step="0.01" min={0} max={rest}
+                            className={`w-28 ${val > rest + 0.0001 ? "border-destructive" : ""}`}
+                            value={gerarForm.quantidades[it.id] ?? ""}
+                            onChange={(e) => setGerarForm({ ...gerarForm, quantidades: { ...gerarForm.quantidades, [it.id]: e.target.value } })}
+                          />
+                        </div>
+                      );
+                    })}
+                    {preview.excedeu && (
+                      <p className="text-xs text-destructive">
+                        Alguma quantidade excede o saldo restante do item.
+                      </p>
+                    )}
                   </div>
+
 
                   <div className="rounded-md border bg-muted/30 p-3 space-y-3">
                     <p className="text-xs font-semibold text-muted-foreground uppercase tracking-wide">Dados financeiros</p>
@@ -766,7 +811,7 @@ function CompraDetalhePage() {
                       onChange={(e) => setGerarForm({ ...gerarForm, observacoes: e.target.value })} />
                   </div>
                   <DialogFooter>
-                    <Button type="submit" disabled={gerando}>{gerando ? "Gerando..." : "Gerar"}</Button>
+                    <Button type="submit" disabled={gerando || preview.excedeu}>{gerando ? "Gerando..." : "Gerar"}</Button>
                   </DialogFooter>
                 </form>
               </DialogContent>

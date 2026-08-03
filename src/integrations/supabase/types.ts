@@ -411,6 +411,7 @@ export type Database = {
           etapa_id: string | null
           id: string
           produto_id: string | null
+          qtd_faturada: number
           qtd_medida: number
           qtd_recebida: number
           quantidade: number
@@ -427,6 +428,7 @@ export type Database = {
           etapa_id?: string | null
           id?: string
           produto_id?: string | null
+          qtd_faturada?: number
           qtd_medida?: number
           qtd_recebida?: number
           quantidade?: number
@@ -443,6 +445,7 @@ export type Database = {
           etapa_id?: string | null
           id?: string
           produto_id?: string | null
+          qtd_faturada?: number
           qtd_medida?: number
           qtd_recebida?: number
           quantidade?: number
@@ -3429,6 +3432,10 @@ export type Database = {
           _user_id: string
         }
         Returns: boolean
+      }
+      lancamento_valor_assinado: {
+        Args: { _estornado: boolean; _tipo: string; _valor: number }
+        Returns: number
       }
       move_to_dlq: {
         Args: {

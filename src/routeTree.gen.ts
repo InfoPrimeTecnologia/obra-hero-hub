@@ -73,7 +73,6 @@ import { Route as AppObrasObraIdOrcamentoRouteImport } from './routes/app.obras.
 import { Route as AppObrasObraIdMedicoesRouteImport } from './routes/app.obras.$obraId.medicoes'
 import { Route as AppObrasObraIdGanttRouteImport } from './routes/app.obras.$obraId.gantt'
 import { Route as AppObrasObraIdFornecedoresRouteImport } from './routes/app.obras.$obraId.fornecedores'
-import { Route as AppObrasObraIdFaturasRouteImport } from './routes/app.obras.$obraId.faturas'
 import { Route as AppObrasObraIdDocumentosRouteImport } from './routes/app.obras.$obraId.documentos'
 import { Route as AppObrasObraIdContasPagarRouteImport } from './routes/app.obras.$obraId.contas-pagar'
 import { Route as AppObrasObraIdConsultaRouteImport } from './routes/app.obras.$obraId.consulta'
@@ -414,11 +413,6 @@ const AppObrasObraIdFornecedoresRoute =
     path: '/fornecedores',
     getParentRoute: () => AppObrasObraIdRoute,
   } as any)
-const AppObrasObraIdFaturasRoute = AppObrasObraIdFaturasRouteImport.update({
-  id: '/faturas',
-  path: '/faturas',
-  getParentRoute: () => AppObrasObraIdRoute,
-} as any)
 const AppObrasObraIdDocumentosRoute =
   AppObrasObraIdDocumentosRouteImport.update({
     id: '/documentos',
@@ -546,7 +540,6 @@ export interface FileRoutesByFullPath {
   '/app/obras/$obraId/consulta': typeof AppObrasObraIdConsultaRoute
   '/app/obras/$obraId/contas-pagar': typeof AppObrasObraIdContasPagarRoute
   '/app/obras/$obraId/documentos': typeof AppObrasObraIdDocumentosRoute
-  '/app/obras/$obraId/faturas': typeof AppObrasObraIdFaturasRoute
   '/app/obras/$obraId/fornecedores': typeof AppObrasObraIdFornecedoresRoute
   '/app/obras/$obraId/gantt': typeof AppObrasObraIdGanttRoute
   '/app/obras/$obraId/medicoes': typeof AppObrasObraIdMedicoesRoute
@@ -620,7 +613,6 @@ export interface FileRoutesByTo {
   '/app/obras/$obraId/consulta': typeof AppObrasObraIdConsultaRoute
   '/app/obras/$obraId/contas-pagar': typeof AppObrasObraIdContasPagarRoute
   '/app/obras/$obraId/documentos': typeof AppObrasObraIdDocumentosRoute
-  '/app/obras/$obraId/faturas': typeof AppObrasObraIdFaturasRoute
   '/app/obras/$obraId/fornecedores': typeof AppObrasObraIdFornecedoresRoute
   '/app/obras/$obraId/gantt': typeof AppObrasObraIdGanttRoute
   '/app/obras/$obraId/medicoes': typeof AppObrasObraIdMedicoesRoute
@@ -700,7 +692,6 @@ export interface FileRoutesById {
   '/app/obras/$obraId/consulta': typeof AppObrasObraIdConsultaRoute
   '/app/obras/$obraId/contas-pagar': typeof AppObrasObraIdContasPagarRoute
   '/app/obras/$obraId/documentos': typeof AppObrasObraIdDocumentosRoute
-  '/app/obras/$obraId/faturas': typeof AppObrasObraIdFaturasRoute
   '/app/obras/$obraId/fornecedores': typeof AppObrasObraIdFornecedoresRoute
   '/app/obras/$obraId/gantt': typeof AppObrasObraIdGanttRoute
   '/app/obras/$obraId/medicoes': typeof AppObrasObraIdMedicoesRoute
@@ -781,7 +772,6 @@ export interface FileRouteTypes {
     | '/app/obras/$obraId/consulta'
     | '/app/obras/$obraId/contas-pagar'
     | '/app/obras/$obraId/documentos'
-    | '/app/obras/$obraId/faturas'
     | '/app/obras/$obraId/fornecedores'
     | '/app/obras/$obraId/gantt'
     | '/app/obras/$obraId/medicoes'
@@ -855,7 +845,6 @@ export interface FileRouteTypes {
     | '/app/obras/$obraId/consulta'
     | '/app/obras/$obraId/contas-pagar'
     | '/app/obras/$obraId/documentos'
-    | '/app/obras/$obraId/faturas'
     | '/app/obras/$obraId/fornecedores'
     | '/app/obras/$obraId/gantt'
     | '/app/obras/$obraId/medicoes'
@@ -934,7 +923,6 @@ export interface FileRouteTypes {
     | '/app/obras/$obraId/consulta'
     | '/app/obras/$obraId/contas-pagar'
     | '/app/obras/$obraId/documentos'
-    | '/app/obras/$obraId/faturas'
     | '/app/obras/$obraId/fornecedores'
     | '/app/obras/$obraId/gantt'
     | '/app/obras/$obraId/medicoes'
@@ -1425,13 +1413,6 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AppObrasObraIdFornecedoresRouteImport
       parentRoute: typeof AppObrasObraIdRoute
     }
-    '/app/obras/$obraId/faturas': {
-      id: '/app/obras/$obraId/faturas'
-      path: '/faturas'
-      fullPath: '/app/obras/$obraId/faturas'
-      preLoaderRoute: typeof AppObrasObraIdFaturasRouteImport
-      parentRoute: typeof AppObrasObraIdRoute
-    }
     '/app/obras/$obraId/documentos': {
       id: '/app/obras/$obraId/documentos'
       path: '/documentos'
@@ -1592,7 +1573,6 @@ interface AppObrasObraIdRouteChildren {
   AppObrasObraIdConsultaRoute: typeof AppObrasObraIdConsultaRoute
   AppObrasObraIdContasPagarRoute: typeof AppObrasObraIdContasPagarRoute
   AppObrasObraIdDocumentosRoute: typeof AppObrasObraIdDocumentosRoute
-  AppObrasObraIdFaturasRoute: typeof AppObrasObraIdFaturasRoute
   AppObrasObraIdFornecedoresRoute: typeof AppObrasObraIdFornecedoresRoute
   AppObrasObraIdGanttRoute: typeof AppObrasObraIdGanttRoute
   AppObrasObraIdMedicoesRoute: typeof AppObrasObraIdMedicoesRoute
@@ -1613,7 +1593,6 @@ const AppObrasObraIdRouteChildren: AppObrasObraIdRouteChildren = {
   AppObrasObraIdConsultaRoute: AppObrasObraIdConsultaRoute,
   AppObrasObraIdContasPagarRoute: AppObrasObraIdContasPagarRoute,
   AppObrasObraIdDocumentosRoute: AppObrasObraIdDocumentosRoute,
-  AppObrasObraIdFaturasRoute: AppObrasObraIdFaturasRoute,
   AppObrasObraIdFornecedoresRoute: AppObrasObraIdFornecedoresRoute,
   AppObrasObraIdGanttRoute: AppObrasObraIdGanttRoute,
   AppObrasObraIdMedicoesRoute: AppObrasObraIdMedicoesRoute,
@@ -1719,13 +1698,3 @@ const rootRouteChildren: RootRouteChildren = {
 export const routeTree = rootRouteImport
   ._addFileChildren(rootRouteChildren)
   ._addFileTypes<FileRouteTypes>()
-
-import type { getRouter } from './router.tsx'
-import type { startInstance } from './start.ts'
-declare module '@tanstack/react-start' {
-  interface Register {
-    ssr: true
-    router: Awaited<ReturnType<typeof getRouter>>
-    config: Awaited<ReturnType<typeof startInstance.getOptions>>
-  }
-}
