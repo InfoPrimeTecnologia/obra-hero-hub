@@ -411,6 +411,7 @@ function CompraDetalhePage() {
     e.preventDefault();
     if (!compra) return;
     if (preview.total <= 0) return toast.error("Informe quantidade em ao menos um item");
+    if (preview.excedeu) return toast.error("Alguma quantidade excede o saldo restante do item");
     if (preview.total > restanteFaturar + 0.009) {
       return toast.error(`Valor acima do saldo a faturar (${brl(restanteFaturar)})`);
     }
