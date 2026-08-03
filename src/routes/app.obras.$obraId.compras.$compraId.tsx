@@ -56,6 +56,7 @@ type Item = {
   quantidade: number;
   valor_unitario: number;
   valor_total: number;
+  qtd_faturada: number | null;
   etapa_id: string | null;
   subetapa_id: string | null;
 };
