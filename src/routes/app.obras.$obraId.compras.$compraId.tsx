@@ -465,6 +465,18 @@ function CompraDetalhePage() {
       toast.success(`${nParc} conta(s) a pagar gerada(s) — ${brl(preview.total)}`);
     }
 
+    // Baixa as quantidades faturadas de cada item (saldo a faturar por quantidade)
+    for (const it of itens) {
+      const disponivel = Math.max(0, Number(it.quantidade) - Number(it.qtd_faturada ?? 0));
+      const usada = Math.min(Number(gerarForm.quantidades[it.id] || 0), disponivel);
+      if (usada > 0) {
+        await supabase
+          .from("compra_itens")
+          .update({ qtd_faturada: Number((Number(it.qtd_faturada ?? 0) + usada).toFixed(4)) })
+          .eq("id", it.id);
+      }
+    }
+
     setGerando(false);
     setOpenGerar(false);
     setGerarForm({
