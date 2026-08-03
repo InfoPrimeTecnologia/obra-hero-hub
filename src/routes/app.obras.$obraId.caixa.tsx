@@ -83,12 +83,12 @@ function CaixaObraPage() {
   };
 
   const estornarLancamento = async (l: Lanc) => {
-    if (!l.conta_pagar_id) return toast.error("Lançamento sem conta a pagar vinculada");
     const motivo = window.prompt("Motivo do estorno:");
     if (!motivo || !motivo.trim()) return;
     const token = crypto.randomUUID();
 
     await supabase.from("lancamentos").update({ estornado: true, estorno_token: token }).eq("id", l.id);
+    // O contra-lançamento ajusta o saldo da conta pelo trigger do banco (sem update manual)
     await supabase.from("lancamentos").insert({
       customer_id: l.customer_id,
       conta_bancaria_id: l.conta_bancaria_id,
@@ -100,34 +100,29 @@ function CaixaObraPage() {
       estorno_token: token,
       created_by: user!.id,
     });
-    const { data: c } = await supabase
-      .from("contas_bancarias").select("saldo_atual").eq("id", l.conta_bancaria_id).maybeSingle();
-    if (c) {
-      const delta = l.tipo === "saida" ? Number(l.valor) : -Number(l.valor);
-      await supabase.from("contas_bancarias")
-        .update({ saldo_atual: Number(c.saldo_atual) + delta })
-        .eq("id", l.conta_bancaria_id);
+
+    if (l.conta_pagar_id) {
+      const { data: cp } = await supabase
+        .from("contas_pagar").select("id,compra_id").eq("id", l.conta_pagar_id).maybeSingle();
+      await supabase.from("contas_pagar").update({
+        status: "pendente",
+        pago_em: null,
+        valor_pago: 0,
+        conta_bancaria_id: null,
+        estornado: true,
+        estorno_token: token,
+        estornado_em: new Date().toISOString(),
+        estornado_por: user!.id,
+        motivo_estorno: motivo.trim(),
+      } as any).eq("id", l.conta_pagar_id);
+
+      if (cp?.compra_id) {
+        await supabase.from("compras").update({ status: "pendente" }).eq("id", cp.compra_id);
+      }
+      toast.success("Estorno realizado — compra e conta voltaram para pendente");
+    } else {
+      toast.success("Lançamento estornado");
     }
-
-    const { data: cp } = await supabase
-      .from("contas_pagar").select("id,compra_id").eq("id", l.conta_pagar_id).maybeSingle();
-    await supabase.from("contas_pagar").update({
-      status: "pendente",
-      pago_em: null,
-      valor_pago: 0,
-      conta_bancaria_id: null,
-      estornado: true,
-      estorno_token: token,
-      estornado_em: new Date().toISOString(),
-      estornado_por: user!.id,
-      motivo_estorno: motivo.trim(),
-    } as any).eq("id", l.conta_pagar_id);
-
-    if (cp?.compra_id) {
-      await supabase.from("compras").update({ status: "pendente" }).eq("id", cp.compra_id);
-    }
-
-    toast.success("Estorno realizado — compra e conta voltaram para pendente");
     void carregar();
   };
 
