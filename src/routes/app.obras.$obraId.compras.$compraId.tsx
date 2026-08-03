@@ -668,23 +668,39 @@ function CompraDetalhePage() {
 
                 <form onSubmit={gerarContasPagar} className="space-y-3">
                   <div className="space-y-2">
-                    <Label>Quantidade a medir por item</Label>
-                    {itens.map((it) => (
-                      <div key={it.id} className="flex items-center gap-2">
-                        <span className="flex-1 text-sm">
-                          {it.descricao}{" "}
-                          <span className="text-muted-foreground">
-                            (até {Number(it.quantidade)} {it.unidade ?? ""})
+                    <Label>Quantidade a faturar por item</Label>
+                    {itensFaturaveis.length === 0 && (
+                      <p className="text-xs text-muted-foreground">
+                        Todos os itens já foram faturados integralmente.
+                      </p>
+                    )}
+                    {itensFaturaveis.map((it) => {
+                      const rest = qtdRestante(it);
+                      const val = Number(gerarForm.quantidades[it.id] || 0);
+                      return (
+                        <div key={it.id} className="flex items-center gap-2">
+                          <span className="flex-1 text-sm">
+                            {it.descricao}{" "}
+                            <span className="text-muted-foreground">
+                              (restam {rest} de {Number(it.quantidade)} {it.unidade ?? ""})
+                            </span>
                           </span>
-                        </span>
-                        <Input
-                          type="number" step="0.01" className="w-28"
-                          value={gerarForm.quantidades[it.id] ?? ""}
-                          onChange={(e) => setGerarForm({ ...gerarForm, quantidades: { ...gerarForm.quantidades, [it.id]: e.target.value } })}
-                        />
-                      </div>
-                    ))}
+                          <Input
+                            type="number" step="0.01" min={0} max={rest}
+                            className={`w-28 ${val > rest + 0.0001 ? "border-destructive" : ""}`}
+                            value={gerarForm.quantidades[it.id] ?? ""}
+                            onChange={(e) => setGerarForm({ ...gerarForm, quantidades: { ...gerarForm.quantidades, [it.id]: e.target.value } })}
+                          />
+                        </div>
+                      );
+                    })}
+                    {preview.excedeu && (
+                      <p className="text-xs text-destructive">
+                        Alguma quantidade excede o saldo restante do item.
+                      </p>
+                    )}
                   </div>
+
 
                   <div className="rounded-md border bg-muted/30 p-3 space-y-3">
                     <p className="text-xs font-semibold text-muted-foreground uppercase tracking-wide">Dados financeiros</p>
