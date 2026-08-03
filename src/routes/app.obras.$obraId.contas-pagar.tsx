@@ -534,6 +534,50 @@ function ContasPagarObra() {
         </DialogContent>
       </Dialog>
 
+      <Dialog open={!!payingFat} onOpenChange={(o) => !o && setPayingFat(null)}>
+        <DialogContent>
+          <DialogHeader>
+            <DialogTitle>Pagar fatura do cartão</DialogTitle>
+          </DialogHeader>
+          {payingFat && (
+            <div className="space-y-3">
+              <div className="rounded-md border bg-muted/30 p-3 text-sm">
+                <p className="font-medium">{nomeCartao(payingFat.cartao_id)} · {payingFat.competencia}</p>
+                <p className="text-xs text-muted-foreground">Total {brl(Number(payingFat.valor_total))}</p>
+              </div>
+              <div className="space-y-2">
+                <Label>Conta bancária da obra *</Label>
+                <Select
+                  value={pagto.conta_bancaria_id}
+                  onValueChange={(v) => setPagto((p) => ({ ...p, conta_bancaria_id: v }))}
+                >
+                  <SelectTrigger><SelectValue placeholder="Selecione" /></SelectTrigger>
+                  <SelectContent>
+                    {contas.map((c) => (
+                      <SelectItem key={c.id} value={c.id}>
+                        {c.nome}{c.obra_id ? "" : " (global)"}
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+              </div>
+              <div className="space-y-2">
+                <Label>Data do pagamento</Label>
+                <Input type="date" value={pagto.data}
+                  onChange={(e) => setPagto((p) => ({ ...p, data: e.target.value }))} />
+              </div>
+            </div>
+          )}
+          <DialogFooter>
+            <Button onClick={pagarFatura} disabled={salvandoFat}>
+              {salvandoFat ? "Pagando..." : "Confirmar pagamento"}
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
+
+
+
       <Dialog open={!!estornando} onOpenChange={(v) => { if (!v) { setEstornando(null); setMotivoEstorno(""); } }}>
         <DialogContent>
           <DialogHeader>
