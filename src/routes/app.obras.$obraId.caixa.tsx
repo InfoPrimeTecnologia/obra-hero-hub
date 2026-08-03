@@ -319,7 +319,7 @@ function CaixaObraPage() {
                       >
                         {l.tipo === "entrada" ? "+" : "-"} {brl(Number(l.valor))}
                       </span>
-                      {!l.estornado && l.conta_pagar_id && (
+                      {!l.estornado && (
                         <Button
                           size="sm"
                           variant="ghost"
