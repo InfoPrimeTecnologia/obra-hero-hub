@@ -407,6 +407,39 @@ function ContasPagarObra() {
           </p>
         </div>
 
+        {faturas.length > 0 && (
+          <Card>
+            <CardContent className="space-y-2 p-4">
+              <p className="text-xs font-semibold uppercase tracking-wide text-muted-foreground">
+                Faturas de cartão desta obra
+              </p>
+              {faturas.map((f) => (
+                <div key={f.id} className="flex flex-wrap items-center justify-between gap-2 border-b py-2 last:border-0">
+                  <div>
+                    <p className="text-sm font-medium">
+                      {nomeCartao(f.cartao_id)} · {f.competencia}
+                    </p>
+                    <p className="text-xs text-muted-foreground">
+                      Vence {fmtBR(f.dt_vencimento)} · {brl(Number(f.valor_total))}
+                    </p>
+                  </div>
+                  <div className="flex items-center gap-2">
+                    <Badge variant={f.status === "paga" ? "default" : f.status === "fechada" ? "secondary" : "outline"}>
+                      {f.status === "paga" ? "Paga" : f.status === "fechada" ? "Fechada" : "Aberta"}
+                    </Badge>
+                    {f.status !== "paga" && (
+                      <Button size="sm" onClick={() => { setPayingFat(f); setPagto({ data: new Date().toISOString().slice(0, 10), conta_bancaria_id: "" }); }}>
+                        <CheckCircle2 className="mr-2 h-4 w-4" /> Pagar fatura
+                      </Button>
+                    )}
+                  </div>
+                </div>
+              ))}
+            </CardContent>
+          </Card>
+        )}
+
+
         {filtrados.length === 0 ? (
           <Card>
             <CardContent className="p-8 text-center text-sm text-muted-foreground">
