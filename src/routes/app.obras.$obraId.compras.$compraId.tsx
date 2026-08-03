@@ -219,6 +219,12 @@ function CompraDetalhePage() {
       if ((c as Compra).status !== novo) {
         await supabase.from("compras").update({ status: novo }).eq("id", compraId);
       }
+
+      // Se todo o faturamento foi removido/estornado, devolve as quantidades ao saldo a faturar
+      if (faturado <= 0.009 && (is ?? []).some((i: any) => Number(i.qtd_faturada ?? 0) > 0)) {
+        await supabase.from("compra_itens").update({ qtd_faturada: 0 }).eq("compra_id", compraId);
+        setItens(((is ?? []) as Item[]).map((i) => ({ ...i, qtd_faturada: 0 })));
+      }
     }
   };
   useEffect(() => { void carregar(); }, [compraId]);
