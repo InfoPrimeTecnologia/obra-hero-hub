@@ -105,9 +105,16 @@
     "typescript-eslint": "^8.56.1",
     "vite": "^7.3.1"
   },
+  "overrides": {
+    "seroval": "1.5.3",
+    "seroval-plugins": "1.5.3"
+  },
   "pnpm": {
     "overrides": {
-      "entities": "4.5.0"
+      "entities": "4.5.0",
+      "seroval": "1.5.3",
+      "seroval-plugins": "1.5.3"
     }
   }
 }
+
