@@ -8,7 +8,7 @@ import { Logo } from "@/components/Logo";
  */
 export function RouteLoadingOverlay() {
   const isLoading = useRouterState({
-    select: (s) => s.status === "pending" || s.isLoading || s.isTransitioning,
+    select: (s) => s.status === "pending" || s.isLoading,
   });
   const [show, setShow] = useState(false);
 

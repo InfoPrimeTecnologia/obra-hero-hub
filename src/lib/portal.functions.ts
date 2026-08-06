@@ -3,11 +3,78 @@ import { z } from "zod";
 import { requireSupabaseAuth } from "@/integrations/supabase/auth-middleware";
 
 // ============================================================
+// Contrato do payload público do portal da obra.
+// Tipos explícitos mantêm um formato de retorno único e estável.
+// ============================================================
+export interface PortalEtapa {
+  id: string;
+  nome: string | null;
+  ordem: number | null;
+  percentual: number | null;
+  dt_inicio_prevista: string | null;
+  dt_fim_prevista: string | null;
+  dt_inicio_real: string | null;
+  dt_fim_real: string | null;
+}
+
+export interface PortalRdo {
+  id: string;
+  data: string | null;
+  clima_manha: string | null;
+  clima_tarde: string | null;
+  condicao: string | null;
+  responsavel: string | null;
+  observacoes: string | null;
+}
+
+export interface PortalMedicao {
+  id: string;
+  numero: number | null;
+  data: string | null;
+  valor_total: number | null;
+  status: string | null;
+}
+
+export interface PortalFoto {
+  id: string;
+  rdo_id: string;
+  legenda: string | null;
+  url: string;
+}
+
+export interface PortalEmpresa {
+  nome: string | null;
+  logo_url: string | null;
+}
+
+export interface PortalObra {
+  id: string;
+  name: string | null;
+  description: string | null;
+  cidade: string;
+  bairro: string | null;
+  status: string | null;
+  foto_url: string | null;
+  start_date: string | null;
+  expected_end_date: string | null;
+}
+
+export interface PortalPayload {
+  obra: PortalObra | null;
+  empresa: PortalEmpresa | null;
+  avancoFisico: number;
+  etapas: PortalEtapa[];
+  rdos: PortalRdo[];
+  fotos: PortalFoto[];
+  medicoes: PortalMedicao[];
+}
+
+// ============================================================
 // Público — leitura por token (sem auth)
 // ============================================================
 export const getPortalData = createServerFn({ method: "GET" })
   .inputValidator((data) => z.object({ token: z.string().uuid() }).parse(data))
-  .handler(async ({ data }) => {
+  .handler(async ({ data }): Promise<PortalPayload> => {
     const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
 
     const { data: obra, error: obraErr } = await supabaseAdmin
@@ -20,7 +87,19 @@ export const getPortalData = createServerFn({ method: "GET" })
       .maybeSingle();
 
     if (obraErr) throw new Error(obraErr.message);
-    if (!obra) return { obra: null } as const;
+    // Mantém o mesmo formato de retorno nos dois caminhos: um retorno com
+    // chaves diferentes vira uma união que o serializador não consegue estreitar.
+    if (!obra) {
+      return {
+        obra: null,
+        empresa: null,
+        avancoFisico: 0,
+        etapas: [],
+        rdos: [],
+        fotos: [],
+        medicoes: [],
+      };
+    }
 
     const [empresaRes, etapasRes, rdosRes, medRes] = await Promise.all([
       obra.empresa_id
@@ -94,7 +173,7 @@ export const getPortalData = createServerFn({ method: "GET" })
       rdos: rdosRes.data ?? [],
       fotos: fotosComUrl,
       medicoes: medRes.data ?? [],
-    } as const;
+    };
   });
 
 // ============================================================
