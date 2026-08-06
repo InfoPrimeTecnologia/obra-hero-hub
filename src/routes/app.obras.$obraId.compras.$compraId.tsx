@@ -424,28 +424,71 @@ function CompraDetalhePage() {
     const isCartao = gerarForm.forma_pagamento === "cartao";
 
     // Atualiza compra com dados financeiros (uso pelo trigger de cartão)
-    await supabase.from("compras").update({
+    const { error: eCompra } = await supabase.from("compras").update({
       forma_pagamento: gerarForm.forma_pagamento,
       cartao_id: isCartao ? gerarForm.cartao_id : null,
       qtd_parcelas: nParc,
       data_primeira_parcela: isCartao ? null : gerarForm.data_primeira_parcela,
     }).eq("id", compraId);
+    if (eCompra) { setGerando(false); return toast.error("Erro", { description: eCompra.message }); }
 
     if (isCartao) {
-      // Insere em compra_parcelas → trigger cria fatura e (ao fechar) conta a pagar.
-      // Trigger recalcula vencimento pela regra do cartão.
-      const rows = preview.parcelas.map((p) => ({
-        customer_id: compra.customer_id,
-        compra_id: compraId,
-        numero: p.n,
-        vencimento: p.venc,
-        valor: p.valor,
-        status: "pendente",
-      }));
-      const { error } = await supabase.from("compra_parcelas").insert(rows);
-      if (error) { setGerando(false); return toast.error("Erro", { description: error.message }); }
-      toast.success(`${nParc} parcela(s) lançada(s) na fatura do cartão`);
+      const cart = cartoes.find((c) => c.id === gerarForm.cartao_id);
+      if (!cart) { setGerando(false); return toast.error("Cartão não encontrado"); }
+      try {
+        // Resolve/garante a fatura de cada competência (sem depender só do gatilho)
+        const rows: any[] = [];
+        for (const p of preview.parcelas) {
+          const [ay, am] = p.venc.split("-").map(Number);
+          // Competência = mês anterior ao vencimento quando o vencimento cai após o fechamento
+          const compDate = cart.dia_vencimento <= cart.dia_fechamento
+            ? new Date(ay, am - 2, 1)
+            : new Date(ay, am - 1, 1);
+          const competencia = `${compDate.getFullYear()}-${String(compDate.getMonth() + 1).padStart(2, "0")}`;
+          const ultimoDia = new Date(compDate.getFullYear(), compDate.getMonth() + 1, 0).getDate();
+          const diaFech = Math.min(cart.dia_fechamento, ultimoDia);
+          const dtFechamento = `${competencia}-${String(diaFech).padStart(2, "0")}`;
+
+          let faturaId: string | null = null;
+          const { data: fx } = await supabase
+            .from("faturas_cartao").select("id")
+            .eq("cartao_id", cart.id).eq("competencia", competencia).maybeSingle();
+          if (fx?.id) {
+            faturaId = fx.id;
+          } else {
+            const { data: nova, error: eF } = await supabase.from("faturas_cartao").insert({
+              customer_id: compra.customer_id,
+              cartao_id: cart.id,
+              competencia,
+              dt_fechamento: dtFechamento,
+              dt_vencimento: p.venc,
+              valor_total: 0,
+              status: "aberta",
+            }).select("id").single();
+            if (eF) throw eF;
+            faturaId = nova!.id;
+          }
+
+          rows.push({
+            customer_id: compra.customer_id,
+            compra_id: compraId,
+            numero: p.n,
+            vencimento: p.venc,
+            valor: p.valor,
+            status: "pendente",
+            fatura_cartao_id: faturaId,
+          });
+        }
+
+        const { error } = await supabase.from("compra_parcelas").insert(rows);
+        if (error) throw error;
+        toast.success(`${nParc} parcela(s) lançada(s) na fatura do cartão`);
+      } catch (err: any) {
+        setGerando(false);
+        return toast.error("Erro ao lançar no cartão", { description: err?.message ?? String(err) });
+      }
     } else {
+
       // Insere direto em contas_pagar
       const rows = preview.parcelas.map((p) => ({
         customer_id: compra.customer_id,

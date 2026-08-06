@@ -198,9 +198,31 @@ function ContasPagarObra() {
         const { error } = await supabase.from("faturas_cartao").update({ status: "fechada" }).eq("id", f.id);
         if (error) throw error;
       }
-      const { data: cp } = await supabase
-        .from("contas_pagar").select("id").eq("fatura_cartao_id", f.id).maybeSingle();
-      if (!cp?.id) throw new Error("Conta a pagar da fatura não encontrada");
+      let cp: { id: string } | null = null;
+      for (let i = 0; i < 3 && !cp?.id; i++) {
+        const { data } = await supabase
+          .from("contas_pagar").select("id").eq("fatura_cartao_id", f.id).maybeSingle();
+        cp = (data as any) ?? null;
+        if (!cp?.id) await new Promise((r) => setTimeout(r, 400));
+      }
+      if (!cp?.id) {
+        // Fallback: cria a conta a pagar da fatura nesta obra
+        const { data: cust } = await supabase
+          .from("customers").select("id").eq("owner_user_id", user!.id).maybeSingle();
+        const { data: nova, error: eNova } = await supabase.from("contas_pagar").insert({
+          customer_id: cust!.id,
+          fatura_cartao_id: f.id,
+          obra_id: obraId,
+          descricao: `Fatura ${nomeCartao(f.cartao_id)} - ${f.competencia}`,
+          valor: f.valor_total,
+          vencimento: f.dt_vencimento,
+          status: "pendente",
+          origem: "fatura_cartao",
+        }).select("id").single();
+        if (eNova) throw eNova;
+        cp = nova as any;
+      }
+
 
       const { error: e1 } = await supabase.from("contas_pagar").update({
         status: "pago",
@@ -208,7 +230,7 @@ function ContasPagarObra() {
         valor_pago: f.valor_total,
         conta_bancaria_id: pagto.conta_bancaria_id,
         obra_id: obraId,
-      }).eq("id", cp.id);
+      }).eq("id", cp!.id);
       if (e1) throw e1;
 
       await supabase.from("faturas_cartao").update({
@@ -230,6 +252,61 @@ function ContasPagarObra() {
       setSalvandoFat(false);
     }
   };
+
+  const estornarFatura = async (f: Fatura) => {
+    const motivo = window.prompt("Motivo do estorno da fatura:");
+    if (!motivo || !motivo.trim()) return;
+    const token = crypto.randomUUID();
+    try {
+      const { data: cp } = await supabase
+        .from("contas_pagar").select("id").eq("fatura_cartao_id", f.id).maybeSingle();
+
+      if (cp?.id) {
+        const { data: lancs } = await supabase
+          .from("lancamentos").select("*").eq("conta_pagar_id", cp.id).eq("estornado", false);
+        for (const l of lancs ?? []) {
+          await supabase.from("lancamentos").update({ estornado: true, estorno_token: token }).eq("id", l.id);
+          const { error } = await supabase.from("lancamentos").insert({
+            customer_id: l.customer_id,
+            conta_bancaria_id: l.conta_bancaria_id,
+            obra_id: l.obra_id ?? obraId,
+            tipo: "entrada",
+            valor: l.valor,
+            data: new Date().toISOString().slice(0, 10),
+            descricao: `ESTORNO: ${l.descricao} - ${motivo.trim()}`,
+            estorno_token: token,
+            created_by: user!.id,
+          });
+          if (error) throw error;
+        }
+        const { error: e1 } = await supabase.from("contas_pagar").update({
+          status: "pendente",
+          pago_em: null,
+          valor_pago: 0,
+          conta_bancaria_id: null,
+          estornado: true,
+          estorno_token: token,
+          estornado_em: new Date().toISOString(),
+          estornado_por: user!.id,
+          motivo_estorno: motivo.trim(),
+        } as any).eq("id", cp.id);
+        if (e1) throw e1;
+      }
+
+      const { error: e2 } = await supabase.from("faturas_cartao")
+        .update({ status: "fechada", valor_pago: 0, pago_em: null }).eq("id", f.id);
+      if (e2) throw e2;
+      await supabase.from("compra_parcelas")
+        .update({ status: "pendente", pago_em: null }).eq("fatura_cartao_id", f.id);
+
+      toast.success("Pagamento da fatura estornado — valor devolvido à conta");
+      void carregar();
+    } catch (err: any) {
+      toast.error("Erro ao estornar fatura", { description: err?.message ?? String(err) });
+    }
+  };
+
+
 
 
 
@@ -427,11 +504,16 @@ function ContasPagarObra() {
                     <Badge variant={f.status === "paga" ? "default" : f.status === "fechada" ? "secondary" : "outline"}>
                       {f.status === "paga" ? "Paga" : f.status === "fechada" ? "Fechada" : "Aberta"}
                     </Badge>
-                    {f.status !== "paga" && (
+                    {f.status !== "paga" ? (
                       <Button size="sm" onClick={() => { setPayingFat(f); setPagto({ data: new Date().toISOString().slice(0, 10), conta_bancaria_id: "" }); }}>
                         <CheckCircle2 className="mr-2 h-4 w-4" /> Pagar fatura
                       </Button>
+                    ) : (
+                      <Button size="sm" variant="ghost" title="Estornar pagamento da fatura" onClick={() => void estornarFatura(f)}>
+                        <Undo2 className="mr-2 h-4 w-4 text-destructive" /> Estornar
+                      </Button>
                     )}
+
                   </div>
                 </div>
               ))}

@@ -87,44 +87,64 @@ function CaixaObraPage() {
     if (!motivo || !motivo.trim()) return;
     const token = crypto.randomUUID();
 
-    await supabase.from("lancamentos").update({ estornado: true, estorno_token: token }).eq("id", l.id);
-    // O contra-lançamento ajusta o saldo da conta pelo trigger do banco (sem update manual)
-    await supabase.from("lancamentos").insert({
-      customer_id: l.customer_id,
-      conta_bancaria_id: l.conta_bancaria_id,
-      obra_id: obraId,
-      tipo: l.tipo === "saida" ? "entrada" : "saida",
-      valor: l.valor,
-      data: new Date().toISOString().slice(0, 10),
-      descricao: `ESTORNO: ${l.descricao} - ${motivo.trim()}`,
-      estorno_token: token,
-      created_by: user!.id,
-    });
+    try {
+      const { error: e1 } = await supabase
+        .from("lancamentos")
+        .update({ estornado: true, estorno_token: token })
+        .eq("id", l.id);
+      if (e1) throw e1;
 
-    if (l.conta_pagar_id) {
-      const { data: cp } = await supabase
-        .from("contas_pagar").select("id,compra_id").eq("id", l.conta_pagar_id).maybeSingle();
-      await supabase.from("contas_pagar").update({
-        status: "pendente",
-        pago_em: null,
-        valor_pago: 0,
-        conta_bancaria_id: null,
-        estornado: true,
+      // O contra-lançamento ajusta o saldo da conta pelo trigger do banco (sem update manual)
+      const { error: e2 } = await supabase.from("lancamentos").insert({
+        customer_id: l.customer_id,
+        conta_bancaria_id: l.conta_bancaria_id,
+        obra_id: obraId,
+        tipo: l.tipo === "saida" ? "entrada" : "saida",
+        valor: l.valor,
+        data: new Date().toISOString().slice(0, 10),
+        descricao: `ESTORNO: ${l.descricao} - ${motivo.trim()}`,
         estorno_token: token,
-        estornado_em: new Date().toISOString(),
-        estornado_por: user!.id,
-        motivo_estorno: motivo.trim(),
-      } as any).eq("id", l.conta_pagar_id);
+        created_by: user!.id,
+      });
+      if (e2) throw e2;
 
-      if (cp?.compra_id) {
-        await supabase.from("compras").update({ status: "pendente" }).eq("id", cp.compra_id);
+      if (l.conta_pagar_id) {
+        const { data: cp } = await supabase
+          .from("contas_pagar").select("id,compra_id,fatura_cartao_id").eq("id", l.conta_pagar_id).maybeSingle();
+        const { error: e3 } = await supabase.from("contas_pagar").update({
+          status: "pendente",
+          pago_em: null,
+          valor_pago: 0,
+          conta_bancaria_id: null,
+          estornado: true,
+          estorno_token: token,
+          estornado_em: new Date().toISOString(),
+          estornado_por: user!.id,
+          motivo_estorno: motivo.trim(),
+        } as any).eq("id", l.conta_pagar_id);
+        if (e3) throw e3;
+
+        if (cp?.compra_id) {
+          await supabase.from("compras").update({ status: "pendente" }).eq("id", cp.compra_id);
+        }
+        if (cp?.fatura_cartao_id) {
+          await supabase.from("faturas_cartao")
+            .update({ status: "fechada", valor_pago: 0, pago_em: null })
+            .eq("id", cp.fatura_cartao_id);
+          await supabase.from("compra_parcelas")
+            .update({ status: "pendente", pago_em: null })
+            .eq("fatura_cartao_id", cp.fatura_cartao_id);
+        }
+        toast.success("Estorno realizado — conta/fatura voltou para pendente");
+      } else {
+        toast.success("Lançamento estornado");
       }
-      toast.success("Estorno realizado — compra e conta voltaram para pendente");
-    } else {
-      toast.success("Lançamento estornado");
+      void carregar();
+    } catch (err: any) {
+      toast.error("Não foi possível estornar", { description: err?.message ?? String(err) });
     }
-    void carregar();
   };
+
 
 
   useEffect(() => {
