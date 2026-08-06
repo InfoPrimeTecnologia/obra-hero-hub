@@ -231,6 +231,61 @@ function ContasPagarObra() {
     }
   };
 
+  const estornarFatura = async (f: Fatura) => {
+    const motivo = window.prompt("Motivo do estorno da fatura:");
+    if (!motivo || !motivo.trim()) return;
+    const token = crypto.randomUUID();
+    try {
+      const { data: cp } = await supabase
+        .from("contas_pagar").select("id").eq("fatura_cartao_id", f.id).maybeSingle();
+
+      if (cp?.id) {
+        const { data: lancs } = await supabase
+          .from("lancamentos").select("*").eq("conta_pagar_id", cp.id).eq("estornado", false);
+        for (const l of lancs ?? []) {
+          await supabase.from("lancamentos").update({ estornado: true, estorno_token: token }).eq("id", l.id);
+          const { error } = await supabase.from("lancamentos").insert({
+            customer_id: l.customer_id,
+            conta_bancaria_id: l.conta_bancaria_id,
+            obra_id: l.obra_id ?? obraId,
+            tipo: "entrada",
+            valor: l.valor,
+            data: new Date().toISOString().slice(0, 10),
+            descricao: `ESTORNO: ${l.descricao} - ${motivo.trim()}`,
+            estorno_token: token,
+            created_by: user!.id,
+          });
+          if (error) throw error;
+        }
+        const { error: e1 } = await supabase.from("contas_pagar").update({
+          status: "pendente",
+          pago_em: null,
+          valor_pago: 0,
+          conta_bancaria_id: null,
+          estornado: true,
+          estorno_token: token,
+          estornado_em: new Date().toISOString(),
+          estornado_por: user!.id,
+          motivo_estorno: motivo.trim(),
+        } as any).eq("id", cp.id);
+        if (e1) throw e1;
+      }
+
+      const { error: e2 } = await supabase.from("faturas_cartao")
+        .update({ status: "fechada", valor_pago: 0, pago_em: null }).eq("id", f.id);
+      if (e2) throw e2;
+      await supabase.from("compra_parcelas")
+        .update({ status: "pendente", pago_em: null }).eq("fatura_cartao_id", f.id);
+
+      toast.success("Pagamento da fatura estornado — valor devolvido à conta");
+      void carregar();
+    } catch (err: any) {
+      toast.error("Erro ao estornar fatura", { description: err?.message ?? String(err) });
+    }
+  };
+
+
+
 
 
   const estornarBaixa = async () => {
