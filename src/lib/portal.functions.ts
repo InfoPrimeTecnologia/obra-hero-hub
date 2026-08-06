@@ -94,10 +94,10 @@ export const getPortalData = createServerFn({ method: "GET" })
         obra: null,
         empresa: null,
         avancoFisico: 0,
-        etapas: [] as PortalEtapa[],
-        rdos: [] as PortalRdo[],
-        fotos: [] as PortalFoto[],
-        medicoes: [] as PortalMedicao[],
+        etapas: [],
+        rdos: [],
+        fotos: [],
+        medicoes: [],
       };
     }
 
