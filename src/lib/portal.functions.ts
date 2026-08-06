@@ -173,7 +173,7 @@ export const getPortalData = createServerFn({ method: "GET" })
       rdos: rdosRes.data ?? [],
       fotos: fotosComUrl,
       medicoes: medRes.data ?? [],
-    } as const;
+    };
   });
 
 // ============================================================
