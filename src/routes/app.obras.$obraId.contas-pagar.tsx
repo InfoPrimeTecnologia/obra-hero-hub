@@ -482,11 +482,16 @@ function ContasPagarObra() {
                     <Badge variant={f.status === "paga" ? "default" : f.status === "fechada" ? "secondary" : "outline"}>
                       {f.status === "paga" ? "Paga" : f.status === "fechada" ? "Fechada" : "Aberta"}
                     </Badge>
-                    {f.status !== "paga" && (
+                    {f.status !== "paga" ? (
                       <Button size="sm" onClick={() => { setPayingFat(f); setPagto({ data: new Date().toISOString().slice(0, 10), conta_bancaria_id: "" }); }}>
                         <CheckCircle2 className="mr-2 h-4 w-4" /> Pagar fatura
                       </Button>
+                    ) : (
+                      <Button size="sm" variant="ghost" title="Estornar pagamento da fatura" onClick={() => void estornarFatura(f)}>
+                        <Undo2 className="mr-2 h-4 w-4 text-destructive" /> Estornar
+                      </Button>
                     )}
+
                   </div>
                 </div>
               ))}
