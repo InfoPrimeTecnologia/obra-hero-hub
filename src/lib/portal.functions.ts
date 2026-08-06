@@ -20,7 +20,19 @@ export const getPortalData = createServerFn({ method: "GET" })
       .maybeSingle();
 
     if (obraErr) throw new Error(obraErr.message);
-    if (!obra) return { obra: null } as const;
+    // Mantém o mesmo formato de retorno nos dois caminhos: um retorno com
+    // chaves diferentes vira uma união que o serializador não consegue estreitar.
+    if (!obra) {
+      return {
+        obra: null,
+        empresa: null,
+        avancoFisico: 0,
+        etapas: [] as PortalEtapa[],
+        rdos: [] as PortalRdo[],
+        fotos: [] as PortalFoto[],
+        medicoes: [] as PortalMedicao[],
+      };
+    }
 
     const [empresaRes, etapasRes, rdosRes, medRes] = await Promise.all([
       obra.empresa_id
