@@ -198,9 +198,31 @@ function ContasPagarObra() {
         const { error } = await supabase.from("faturas_cartao").update({ status: "fechada" }).eq("id", f.id);
         if (error) throw error;
       }
-      const { data: cp } = await supabase
-        .from("contas_pagar").select("id").eq("fatura_cartao_id", f.id).maybeSingle();
-      if (!cp?.id) throw new Error("Conta a pagar da fatura não encontrada");
+      let cp: { id: string } | null = null;
+      for (let i = 0; i < 3 && !cp?.id; i++) {
+        const { data } = await supabase
+          .from("contas_pagar").select("id").eq("fatura_cartao_id", f.id).maybeSingle();
+        cp = (data as any) ?? null;
+        if (!cp?.id) await new Promise((r) => setTimeout(r, 400));
+      }
+      if (!cp?.id) {
+        // Fallback: cria a conta a pagar da fatura nesta obra
+        const { data: cust } = await supabase
+          .from("customers").select("id").eq("owner_user_id", user!.id).maybeSingle();
+        const { data: nova, error: eNova } = await supabase.from("contas_pagar").insert({
+          customer_id: cust!.id,
+          fatura_cartao_id: f.id,
+          obra_id: obraId,
+          descricao: `Fatura ${nomeCartao(f.cartao_id)} - ${f.competencia}`,
+          valor: f.valor_total,
+          vencimento: f.dt_vencimento,
+          status: "pendente",
+          origem: "fatura_cartao",
+        }).select("id").single();
+        if (eNova) throw eNova;
+        cp = nova as any;
+      }
+
 
       const { error: e1 } = await supabase.from("contas_pagar").update({
         status: "pago",
