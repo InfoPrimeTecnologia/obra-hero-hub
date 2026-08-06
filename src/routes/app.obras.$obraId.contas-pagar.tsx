@@ -230,7 +230,7 @@ function ContasPagarObra() {
         valor_pago: f.valor_total,
         conta_bancaria_id: pagto.conta_bancaria_id,
         obra_id: obraId,
-      }).eq("id", cp.id);
+      }).eq("id", cp!.id);
       if (e1) throw e1;
 
       await supabase.from("faturas_cartao").update({
