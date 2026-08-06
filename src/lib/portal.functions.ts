@@ -74,7 +74,7 @@ export interface PortalPayload {
 // ============================================================
 export const getPortalData = createServerFn({ method: "GET" })
   .inputValidator((data) => z.object({ token: z.string().uuid() }).parse(data))
-  .handler(async ({ data }) => {
+  .handler(async ({ data }): Promise<PortalPayload> => {
     const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
 
     const { data: obra, error: obraErr } = await supabaseAdmin
