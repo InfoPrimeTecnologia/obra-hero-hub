@@ -449,7 +449,7 @@ function RdoDetailPage() {
               </Link>
             </Button>
             {hasFeature("rdo_whatsapp") && (
-              <Button variant="outline" onClick={enviarWhats} disabled={enviandoWa}>
+              <Button variant="outline" onClick={() => void enviarWhats()} disabled={enviandoWa}>
                 <MessageCircle className="mr-2 h-4 w-4" /> {enviandoWa ? "Enviando..." : "WhatsApp"}
               </Button>
             )}
