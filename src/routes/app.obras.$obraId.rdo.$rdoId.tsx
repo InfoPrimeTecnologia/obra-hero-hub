@@ -333,6 +333,9 @@ function RdoDetailPage() {
 
   const sendWhats = useServerFn(sendRdoWhatsApp);
   const [enviandoWa, setEnviandoWa] = useState(false);
+  const [waDialog, setWaDialog] = useState(false);
+  const [waNumero, setWaNumero] = useState("");
+  const [waSalvar, setWaSalvar] = useState(true);
 
   const gerarPdfBase64 = (): string => {
     const doc = new jsPDF({ unit: "pt", format: "a4" });
