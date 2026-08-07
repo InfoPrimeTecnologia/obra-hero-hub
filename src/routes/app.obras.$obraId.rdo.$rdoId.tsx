@@ -395,7 +395,7 @@ function RdoDetailPage() {
           rdoId: rdo.id,
           obraId: obra.id,
           customerId: obra.customer_id,
-          phoneNumber: obra.contact_whatsapp,
+          phoneNumber: numero,
           message: montarRelatorio(),
           fileName,
           pdfBase64,
