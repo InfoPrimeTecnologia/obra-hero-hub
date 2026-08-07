@@ -28,6 +28,15 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
+import { Checkbox } from "@/components/ui/checkbox";
+import {
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogFooter,
+  DialogHeader,
+  DialogTitle,
+} from "@/components/ui/dialog";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/lib/auth-context";
 import { usePlanModules } from "@/lib/use-plan-modules";
@@ -784,6 +793,58 @@ function RdoDetailPage() {
           </CardContent>
         </Card>
       </div>
+
+      <Dialog open={waDialog} onOpenChange={setWaDialog}>
+        <DialogContent>
+          <DialogHeader>
+            <DialogTitle>Enviar RDO por WhatsApp</DialogTitle>
+            <DialogDescription>
+              Esta obra ainda não tem um número de WhatsApp cadastrado. Informe o número do cliente para enviar o relatório.
+            </DialogDescription>
+          </DialogHeader>
+          <div className="space-y-3">
+            <div className="space-y-2">
+              <Label>Número (com DDD)</Label>
+              <Input
+                value={waNumero}
+                onChange={(e) => setWaNumero(e.target.value)}
+                placeholder="Ex.: 5571999998888"
+              />
+            </div>
+            <label className="flex items-center gap-2 text-sm">
+              <Checkbox checked={waSalvar} onCheckedChange={(v) => setWaSalvar(v === true)} />
+              Usar este número como contato principal da obra
+            </label>
+          </div>
+          <DialogFooter>
+            <Button variant="outline" onClick={() => setWaDialog(false)}>
+              Cancelar
+            </Button>
+            <Button
+              disabled={enviandoWa}
+              onClick={async () => {
+                const num = waNumero.replace(/\D/g, "");
+                if (num.length < 10) {
+                  toast.error("Informe um número válido com DDD");
+                  return;
+                }
+                if (waSalvar && obra) {
+                  const { error } = await supabase
+                    .from("obras")
+                    .update({ contact_whatsapp: num })
+                    .eq("id", obra.id);
+                  if (error) toast.error("Não foi possível salvar o número na obra", { description: error.message });
+                  else setObra({ ...obra, contact_whatsapp: num });
+                }
+                setWaDialog(false);
+                await enviarWhats(num);
+              }}
+            >
+              {enviandoWa ? "Enviando..." : "Enviar"}
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
     </div>
   );
 }
