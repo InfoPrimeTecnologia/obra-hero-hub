@@ -28,6 +28,15 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
+import { Checkbox } from "@/components/ui/checkbox";
+import {
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogFooter,
+  DialogHeader,
+  DialogTitle,
+} from "@/components/ui/dialog";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/lib/auth-context";
 import { usePlanModules } from "@/lib/use-plan-modules";
@@ -333,6 +342,9 @@ function RdoDetailPage() {
 
   const sendWhats = useServerFn(sendRdoWhatsApp);
   const [enviandoWa, setEnviandoWa] = useState(false);
+  const [waDialog, setWaDialog] = useState(false);
+  const [waNumero, setWaNumero] = useState("");
+  const [waSalvar, setWaSalvar] = useState(true);
 
   const gerarPdfBase64 = (): string => {
     const doc = new jsPDF({ unit: "pt", format: "a4" });
@@ -377,9 +389,15 @@ function RdoDetailPage() {
     return dataUri.split(",")[1];
   };
 
-  const enviarWhats = async () => {
+  const enviarWhats = async (numeroInformado?: string) => {
     if (!obra || !rdo) return;
-    if (!obra.contact_whatsapp) return toast.error("Cadastre o WhatsApp do contato da obra");
+    const numero = (numeroInformado ?? obra.contact_whatsapp ?? "").trim();
+    if (!numero) {
+      setWaNumero("");
+      setWaSalvar(true);
+      setWaDialog(true);
+      return;
+    }
     setEnviandoWa(true);
     try {
       const pdfBase64 = gerarPdfBase64();
@@ -389,7 +407,7 @@ function RdoDetailPage() {
           rdoId: rdo.id,
           obraId: obra.id,
           customerId: obra.customer_id,
-          phoneNumber: obra.contact_whatsapp,
+          phoneNumber: numero,
           message: montarRelatorio(),
           fileName,
           pdfBase64,
@@ -408,7 +426,7 @@ function RdoDetailPage() {
       const msg = e instanceof Error ? e.message : String(e);
       toast.error("Falha no envio automático — abrindo WhatsApp Web", { description: msg });
       // Fallback: open wa.me with the report text so the user can send manually
-      const num = (obra.contact_whatsapp || "").replace(/\D/g, "");
+      const num = numero.replace(/\D/g, "");
       const url = `https://wa.me/${num}?text=${encodeURIComponent(montarRelatorio())}`;
       window.open(url, "_blank", "noopener,noreferrer");
     } finally {
@@ -440,7 +458,7 @@ function RdoDetailPage() {
               </Link>
             </Button>
             {hasFeature("rdo_whatsapp") && (
-              <Button variant="outline" onClick={enviarWhats} disabled={enviandoWa}>
+              <Button variant="outline" onClick={() => void enviarWhats()} disabled={enviandoWa}>
                 <MessageCircle className="mr-2 h-4 w-4" /> {enviandoWa ? "Enviando..." : "WhatsApp"}
               </Button>
             )}
@@ -775,6 +793,58 @@ function RdoDetailPage() {
           </CardContent>
         </Card>
       </div>
+
+      <Dialog open={waDialog} onOpenChange={setWaDialog}>
+        <DialogContent>
+          <DialogHeader>
+            <DialogTitle>Enviar RDO por WhatsApp</DialogTitle>
+            <DialogDescription>
+              Esta obra ainda não tem um número de WhatsApp cadastrado. Informe o número do cliente para enviar o relatório.
+            </DialogDescription>
+          </DialogHeader>
+          <div className="space-y-3">
+            <div className="space-y-2">
+              <Label>Número (com DDD)</Label>
+              <Input
+                value={waNumero}
+                onChange={(e) => setWaNumero(e.target.value)}
+                placeholder="Ex.: 5571999998888"
+              />
+            </div>
+            <label className="flex items-center gap-2 text-sm">
+              <Checkbox checked={waSalvar} onCheckedChange={(v) => setWaSalvar(v === true)} />
+              Usar este número como contato principal da obra
+            </label>
+          </div>
+          <DialogFooter>
+            <Button variant="outline" onClick={() => setWaDialog(false)}>
+              Cancelar
+            </Button>
+            <Button
+              disabled={enviandoWa}
+              onClick={async () => {
+                const num = waNumero.replace(/\D/g, "");
+                if (num.length < 10) {
+                  toast.error("Informe um número válido com DDD");
+                  return;
+                }
+                if (waSalvar && obra) {
+                  const { error } = await supabase
+                    .from("obras")
+                    .update({ contact_whatsapp: num })
+                    .eq("id", obra.id);
+                  if (error) toast.error("Não foi possível salvar o número na obra", { description: error.message });
+                  else setObra({ ...obra, contact_whatsapp: num });
+                }
+                setWaDialog(false);
+                await enviarWhats(num);
+              }}
+            >
+              {enviandoWa ? "Enviando..." : "Enviar"}
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
     </div>
   );
 }
