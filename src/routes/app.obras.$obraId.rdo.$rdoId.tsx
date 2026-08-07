@@ -377,9 +377,15 @@ function RdoDetailPage() {
     return dataUri.split(",")[1];
   };
 
-  const enviarWhats = async () => {
+  const enviarWhats = async (numeroInformado?: string) => {
     if (!obra || !rdo) return;
-    if (!obra.contact_whatsapp) return toast.error("Cadastre o WhatsApp do contato da obra");
+    const numero = (numeroInformado ?? obra.contact_whatsapp ?? "").trim();
+    if (!numero) {
+      setWaNumero("");
+      setWaSalvar(true);
+      setWaDialog(true);
+      return;
+    }
     setEnviandoWa(true);
     try {
       const pdfBase64 = gerarPdfBase64();
