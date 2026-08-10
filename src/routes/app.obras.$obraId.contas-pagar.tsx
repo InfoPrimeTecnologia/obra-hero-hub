@@ -206,6 +206,16 @@ function ContasPagarObra() {
     return c.ultimos_4 ? `${c.nome} •••• ${c.ultimos_4}` : c.nome;
   };
 
+  // Conta a pagar da fatura referente a ESTA obra
+  const cpDaFatura = (faturaId: string) =>
+    items.find((i) => i.fatura_cartao_id === faturaId) ?? null;
+
+  const statusFaturaObra = (f: Fatura) => {
+    const cp = cpDaFatura(f.id);
+    if (cp) return cp.status === "pago" ? "paga" : "pendente";
+    return f.status === "paga" ? "paga" : "pendente";
+  };
+
   const pagarFatura = async () => {
     if (!payingFat) return;
     if (!pagto.conta_bancaria_id) return toast.error("Selecione a conta bancária da obra");
@@ -219,12 +229,13 @@ function ContasPagarObra() {
       let cp: { id: string } | null = null;
       for (let i = 0; i < 3 && !cp?.id; i++) {
         const { data } = await supabase
-          .from("contas_pagar").select("id").eq("fatura_cartao_id", f.id).maybeSingle();
+          .from("contas_pagar").select("id")
+          .eq("fatura_cartao_id", f.id).eq("obra_id", obraId).maybeSingle();
         cp = (data as any) ?? null;
         if (!cp?.id) await new Promise((r) => setTimeout(r, 400));
       }
       if (!cp?.id) {
-        // Fallback: cria a conta a pagar da fatura nesta obra
+        // Fallback: cria a conta a pagar da fatura nesta obra (somente a parte da obra)
         const { data: cust } = await supabase
           .from("customers").select("id").eq("owner_user_id", user!.id).maybeSingle();
         const { data: nova, error: eNova } = await supabase.from("contas_pagar").insert({
@@ -232,7 +243,7 @@ function ContasPagarObra() {
           fatura_cartao_id: f.id,
           obra_id: obraId,
           descricao: `Fatura ${nomeCartao(f.cartao_id)} - ${f.competencia}`,
-          valor: f.valor_total,
+          valor: f.valor_obra,
           vencimento: f.dt_vencimento,
           status: "pendente",
           origem: "fatura_cartao",
@@ -241,27 +252,39 @@ function ContasPagarObra() {
         cp = nova as any;
       }
 
-
       const { error: e1 } = await supabase.from("contas_pagar").update({
         status: "pago",
         pago_em: pagto.data,
-        valor_pago: f.valor_total,
+        valor: f.valor_obra,
+        valor_pago: f.valor_obra,
         conta_bancaria_id: pagto.conta_bancaria_id,
         obra_id: obraId,
       }).eq("id", cp!.id);
       if (e1) throw e1;
 
-      await supabase.from("faturas_cartao").update({
-        status: "paga",
-        valor_pago: f.valor_total,
-        pago_em: new Date().toISOString(),
-      }).eq("id", f.id);
-      await supabase.from("compra_parcelas").update({
-        status: "pago",
-        pago_em: new Date().toISOString(),
-      }).eq("fatura_cartao_id", f.id);
+      // Somente as parcelas desta obra são quitadas
+      if (f.parcela_ids.length) {
+        await supabase.from("compra_parcelas").update({
+          status: "pago",
+          pago_em: new Date().toISOString(),
+        }).in("id", f.parcela_ids);
+      }
 
-      toast.success("Fatura paga e debitada da conta da obra");
+      // A fatura só fica paga quando todas as obras quitarem a sua parte
+      const { count: pendentes } = await supabase
+        .from("compra_parcelas")
+        .select("id", { count: "exact", head: true })
+        .eq("fatura_cartao_id", f.id)
+        .neq("status", "pago");
+      if (!pendentes) {
+        await supabase.from("faturas_cartao").update({
+          status: "paga",
+          valor_pago: f.valor_total,
+          pago_em: new Date().toISOString(),
+        }).eq("id", f.id);
+      }
+
+      toast.success("Parte desta obra na fatura paga e debitada da conta da obra");
       setPayingFat(null);
       void carregar();
     } catch (err: any) {
@@ -277,7 +300,8 @@ function ContasPagarObra() {
     const token = crypto.randomUUID();
     try {
       const { data: cp } = await supabase
-        .from("contas_pagar").select("id").eq("fatura_cartao_id", f.id).maybeSingle();
+        .from("contas_pagar").select("id")
+        .eq("fatura_cartao_id", f.id).eq("obra_id", obraId).maybeSingle();
 
       if (cp?.id) {
         const { data: lancs } = await supabase
@@ -314,8 +338,10 @@ function ContasPagarObra() {
       const { error: e2 } = await supabase.from("faturas_cartao")
         .update({ status: "fechada", valor_pago: 0, pago_em: null }).eq("id", f.id);
       if (e2) throw e2;
-      await supabase.from("compra_parcelas")
-        .update({ status: "pendente", pago_em: null }).eq("fatura_cartao_id", f.id);
+      if (f.parcela_ids.length) {
+        await supabase.from("compra_parcelas")
+          .update({ status: "pendente", pago_em: null }).in("id", f.parcela_ids);
+      }
 
       toast.success("Pagamento da fatura estornado — valor devolvido à conta");
       void carregar();
