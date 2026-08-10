@@ -155,7 +155,12 @@ function ObrasPage() {
       toast.success("Foto atualizada");
       void carregar();
     } catch (e: any) {
-      toast.error("Erro ao enviar foto", { description: e?.message });
+      const msg = String(e?.message ?? "");
+      toast.error("Erro ao enviar foto", {
+        description: /row-level security|policy/i.test(msg)
+          ? "Sem permissão para enviar imagens desta obra. Peça ao responsável pela conta para conceder acesso."
+          : msg,
+      });
     } finally {
       setUploadingFoto(null);
 
