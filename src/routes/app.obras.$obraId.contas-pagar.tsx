@@ -404,8 +404,14 @@ function ContasPagarObra() {
   const fmtBR = (ymd: string) => { const [y,m,d]=ymd.slice(0,10).split("-"); return `${d}/${m}/${y}`; };
 
 
-  const filtrados = items.filter((i) => filtro === "todos" || i.status === filtro);
-  const total = filtrados.reduce((s, i) => s + Number(i.valor || 0), 0);
+  // Faturas de cartão são exibidas no bloco próprio (com o valor rateado da obra)
+  const semFatura = items.filter((i) => !i.fatura_cartao_id);
+  const filtrados = semFatura.filter((i) => filtro === "todos" || i.status === filtro);
+  const totalFaturasObra = faturas
+    .filter((f) => filtro === "todos" || statusFaturaObra(f) === (filtro === "pago" ? "paga" : "pendente"))
+    .reduce((s, f) => s + Number(f.valor_obra || 0), 0);
+  const total =
+    filtrados.reduce((s, i) => s + Number(i.valor || 0), 0) + totalFaturasObra;
   const brl = (n: number) => n.toLocaleString("pt-BR", { style: "currency", currency: "BRL" });
   const fornName = (id: string | null) =>
     id ? fornec.find((f) => f.id === id)?.nome ?? "—" : "—";
