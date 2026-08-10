@@ -546,17 +546,29 @@ function ContasPagarObra() {
                     <p className="text-sm font-medium">
                       {nomeCartao(f.cartao_id)} · {f.competencia}
                     </p>
+              {faturas.map((f) => {
+                const st = statusFaturaObra(f);
+                return (
+                <div key={f.id} className="flex flex-wrap items-center justify-between gap-2 border-b py-2 last:border-0">
+                  <div>
+                    <p className="text-sm font-medium">
+                      {nomeCartao(f.cartao_id)} · {f.competencia}
+                    </p>
                     <p className="text-xs text-muted-foreground">
-                      Vence {fmtBR(f.dt_vencimento)} · {brl(Number(f.valor_total))}
+                      Vence {fmtBR(f.dt_vencimento)} · Parte desta obra:{" "}
+                      <span className="font-semibold text-foreground">{brl(Number(f.valor_obra))}</span>
+                    </p>
+                    <p className="text-[11px] text-muted-foreground">
+                      Fatura total do cartão (todas as obras): {brl(Number(f.valor_total))}
                     </p>
                   </div>
                   <div className="flex items-center gap-2">
-                    <Badge variant={f.status === "paga" ? "default" : f.status === "fechada" ? "secondary" : "outline"}>
-                      {f.status === "paga" ? "Paga" : f.status === "fechada" ? "Fechada" : "Aberta"}
+                    <Badge variant={st === "paga" ? "default" : f.status === "fechada" ? "secondary" : "outline"}>
+                      {st === "paga" ? "Paga" : f.status === "fechada" ? "Fechada" : "Aberta"}
                     </Badge>
-                    {f.status !== "paga" ? (
+                    {st !== "paga" ? (
                       <Button size="sm" onClick={() => { setPayingFat(f); setPagto({ data: new Date().toISOString().slice(0, 10), conta_bancaria_id: "" }); }}>
-                        <CheckCircle2 className="mr-2 h-4 w-4" /> Pagar fatura
+                        <CheckCircle2 className="mr-2 h-4 w-4" /> Pagar parte da obra
                       </Button>
                     ) : (
                       <Button size="sm" variant="ghost" title="Estornar pagamento da fatura" onClick={() => void estornarFatura(f)}>
@@ -566,7 +578,8 @@ function ContasPagarObra() {
 
                   </div>
                 </div>
-              ))}
+                );
+              })}
             </CardContent>
           </Card>
         )}
