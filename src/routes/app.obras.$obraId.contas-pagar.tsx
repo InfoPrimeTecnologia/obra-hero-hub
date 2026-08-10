@@ -536,13 +536,13 @@ function ContasPagarObra() {
           </p>
         </div>
 
-        {faturas.length > 0 && (
+        {faturasVisiveis.length > 0 && (
           <Card>
             <CardContent className="space-y-2 p-4">
               <p className="text-xs font-semibold uppercase tracking-wide text-muted-foreground">
                 Faturas de cartão desta obra
               </p>
-              {faturas.map((f) => {
+              {faturasVisiveis.map((f) => {
                 const st = statusFaturaObra(f);
                 return (
                 <div key={f.id} className="flex flex-wrap items-center justify-between gap-2 border-b py-2 last:border-0">
