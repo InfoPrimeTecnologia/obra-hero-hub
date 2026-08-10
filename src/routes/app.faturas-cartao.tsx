@@ -60,6 +60,7 @@ function FaturasCartaoPage() {
   const [cartoes, setCartoes] = useState<Cartao[]>([]);
   const [contas, setContas] = useState<ContaBancaria[]>([]);
   const [cpByFatura, setCpByFatura] = useState<Record<string, string>>({});
+  const [rateio, setRateio] = useState<Record<string, { obra: string; valor: number }[]>>({});
   const [filtroCartao, setFiltroCartao] = useState<string>("todos");
   const [filtroStatus, setFiltroStatus] = useState<string>("todos");
 
@@ -78,13 +79,39 @@ function FaturasCartaoPage() {
     setContas((cbs ?? []) as ContaBancaria[]);
     const ids = (fs ?? []).map((f: any) => f.id);
     if (ids.length) {
-      const { data: cps } = await supabase
-        .from("contas_pagar")
-        .select("id,fatura_cartao_id")
-        .in("fatura_cartao_id", ids);
+      const [{ data: cps }, { data: parc }] = await Promise.all([
+        supabase.from("contas_pagar").select("id,fatura_cartao_id").in("fatura_cartao_id", ids),
+        supabase.from("compra_parcelas").select("valor,fatura_cartao_id,compra_id").in("fatura_cartao_id", ids),
+      ]);
       const map: Record<string, string> = {};
-      (cps ?? []).forEach((c: any) => { if (c.fatura_cartao_id) map[c.fatura_cartao_id] = c.id; });
+      (cps ?? []).forEach((c: any) => { if (c.fatura_cartao_id && !map[c.fatura_cartao_id]) map[c.fatura_cartao_id] = c.id; });
       setCpByFatura(map);
+
+      // Rateio por obra: a fatura da empresa é a soma das faturas de cada obra
+      const compraIds = Array.from(new Set((parc ?? []).map((p: any) => p.compra_id)));
+      const obraPorCompra: Record<string, string | null> = {};
+      const nomeObra: Record<string, string> = {};
+      if (compraIds.length) {
+        const { data: compras } = await supabase.from("compras").select("id,obra_id").in("id", compraIds);
+        (compras ?? []).forEach((c: any) => { obraPorCompra[c.id] = c.obra_id; });
+        const obraIds = Array.from(new Set(Object.values(obraPorCompra).filter(Boolean))) as string[];
+        if (obraIds.length) {
+          const { data: obras } = await supabase.from("obras").select("id,name").in("id", obraIds);
+          (obras ?? []).forEach((o: any) => { nomeObra[o.id] = o.name; });
+        }
+      }
+      const rat: Record<string, { obra: string; valor: number }[]> = {};
+      for (const p of (parc ?? []) as any[]) {
+        if (!p.fatura_cartao_id) continue;
+        const oId = obraPorCompra[p.compra_id];
+        const label = oId ? nomeObra[oId] ?? "Obra" : "Sem obra";
+        const arr = rat[p.fatura_cartao_id] ?? [];
+        const found = arr.find((x) => x.obra === label);
+        if (found) found.valor += Number(p.valor || 0);
+        else arr.push({ obra: label, valor: Number(p.valor || 0) });
+        rat[p.fatura_cartao_id] = arr;
+      }
+      setRateio(rat);
     }
   };
   useEffect(() => { void carregar(); }, []);
@@ -115,23 +142,27 @@ function FaturasCartaoPage() {
         const { error } = await supabase.from("faturas_cartao").update({ status: "fechada" }).eq("id", f.id);
         if (error) throw error;
       }
-      // Busca (ou aguarda) a conta a pagar vinculada
-      let cpId = cpByFatura[f.id];
-      if (!cpId) {
-        const { data: cp } = await supabase
-          .from("contas_pagar").select("id").eq("fatura_cartao_id", f.id).maybeSingle();
-        cpId = cp?.id ?? "";
+      // Busca todas as contas a pagar da fatura (uma por obra) ainda em aberto
+      let cps: { id: string; valor: number; status: string }[] = [];
+      for (let i = 0; i < 3 && cps.length === 0; i++) {
+        const { data } = await supabase
+          .from("contas_pagar").select("id,valor,status").eq("fatura_cartao_id", f.id);
+        cps = ((data ?? []) as any[]).map((c) => ({ id: c.id, valor: Number(c.valor || 0), status: c.status }));
+        if (cps.length === 0) await new Promise((r) => setTimeout(r, 400));
       }
-      if (!cpId) throw new Error("Conta a pagar da fatura não encontrada");
+      const pendentes = cps.filter((c) => c.status !== "pago");
+      if (pendentes.length === 0) throw new Error("Conta a pagar da fatura não encontrada");
 
-      // Baixa a conta a pagar → trigger cp_baixa_to_lancamento debita a conta bancária
-      const { error: e1 } = await supabase.from("contas_pagar").update({
-        status: "pago",
-        pago_em: payForm.data,
-        valor_pago: f.valor_total,
-        conta_bancaria_id: payForm.conta_bancaria_id,
-      }).eq("id", cpId);
-      if (e1) throw e1;
+      // Baixa todas as partes (obras) → trigger cp_baixa_to_lancamento debita a conta bancária
+      for (const cp of pendentes) {
+        const { error: e1 } = await supabase.from("contas_pagar").update({
+          status: "pago",
+          pago_em: payForm.data,
+          valor_pago: cp.valor,
+          conta_bancaria_id: payForm.conta_bancaria_id,
+        }).eq("id", cp.id);
+        if (e1) throw e1;
+      }
 
       // Marca a fatura e as parcelas da compra como pagas
       await supabase.from("faturas_cartao").update({
@@ -214,6 +245,13 @@ function FaturasCartaoPage() {
                       Vence {fmtBR(f.dt_vencimento)} ·
                       Total R$ {Number(f.valor_total).toLocaleString("pt-BR", { minimumFractionDigits: 2 })}
                     </p>
+                    {(rateio[f.id]?.length ?? 0) > 0 && (
+                      <p className="mt-1 text-[11px] text-muted-foreground">
+                        {rateio[f.id]!.map((r) => (
+                          `${r.obra}: R$ ${r.valor.toLocaleString("pt-BR", { minimumFractionDigits: 2 })}`
+                        )).join(" · ")}
+                      </p>
+                    )}
                   </div>
                 </div>
                 <div className="flex items-center gap-2">

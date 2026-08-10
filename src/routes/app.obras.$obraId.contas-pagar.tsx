@@ -39,6 +39,8 @@ type CP = {
   status: string;
   fornecedor_id: string | null;
   estornado?: boolean | null;
+  origem?: string | null;
+  fatura_cartao_id?: string | null;
 };
 
 type Fatura = {
@@ -48,6 +50,8 @@ type Fatura = {
   dt_vencimento: string;
   valor_total: number;
   status: string;
+  valor_obra: number;
+  parcela_ids: string[];
 };
 
 function ContasPagarObra() {
@@ -83,7 +87,7 @@ function ContasPagarObra() {
     const [{ data }, { data: f }, { data: c }, { data: cb }, { data: cts }] = await Promise.all([
       supabase
         .from("contas_pagar")
-        .select("id,descricao,valor,vencimento,status,fornecedor_id,estornado")
+        .select("id,descricao,valor,vencimento,status,fornecedor_id,estornado,origem,fatura_cartao_id")
         .eq("obra_id", obraId)
         .order("vencimento"),
       supabase.from("fornecedores").select("id,nome").eq("ativo", true).order("nome"),
@@ -106,20 +110,34 @@ function ContasPagarObra() {
     setContas((cb as any) ?? []);
     setCartoes((cts as any) ?? []);
 
-    // Faturas de cartão com parcelas de compras desta obra
+    // Faturas de cartão com parcelas de compras desta obra (valor rateado por obra)
     const { data: compras } = await supabase.from("compras").select("id").eq("obra_id", obraId);
     const compraIds = (compras ?? []).map((x: any) => x.id);
     if (compraIds.length) {
       const { data: parc } = await supabase
-        .from("compra_parcelas").select("fatura_cartao_id").in("compra_id", compraIds);
-      const fatIds = Array.from(new Set((parc ?? []).map((p: any) => p.fatura_cartao_id).filter(Boolean)));
+        .from("compra_parcelas").select("id,valor,fatura_cartao_id").in("compra_id", compraIds);
+      const porFatura = new Map<string, { valor: number; ids: string[] }>();
+      for (const p of (parc ?? []) as any[]) {
+        if (!p.fatura_cartao_id) continue;
+        const acc = porFatura.get(p.fatura_cartao_id) ?? { valor: 0, ids: [] };
+        acc.valor += Number(p.valor || 0);
+        acc.ids.push(p.id);
+        porFatura.set(p.fatura_cartao_id, acc);
+      }
+      const fatIds = Array.from(porFatura.keys());
       if (fatIds.length) {
         const { data: fats } = await supabase
           .from("faturas_cartao")
           .select("id,cartao_id,competencia,dt_vencimento,valor_total,status")
           .in("id", fatIds)
           .order("dt_vencimento");
-        setFaturas((fats as any) ?? []);
+        setFaturas(
+          ((fats ?? []) as any[]).map((x) => ({
+            ...x,
+            valor_obra: porFatura.get(x.id)?.valor ?? 0,
+            parcela_ids: porFatura.get(x.id)?.ids ?? [],
+          })) as Fatura[],
+        );
         return;
       }
     }
@@ -188,6 +206,16 @@ function ContasPagarObra() {
     return c.ultimos_4 ? `${c.nome} •••• ${c.ultimos_4}` : c.nome;
   };
 
+  // Conta a pagar da fatura referente a ESTA obra
+  const cpDaFatura = (faturaId: string) =>
+    items.find((i) => i.fatura_cartao_id === faturaId) ?? null;
+
+  const statusFaturaObra = (f: Fatura) => {
+    const cp = cpDaFatura(f.id);
+    if (cp) return cp.status === "pago" ? "paga" : "pendente";
+    return f.status === "paga" ? "paga" : "pendente";
+  };
+
   const pagarFatura = async () => {
     if (!payingFat) return;
     if (!pagto.conta_bancaria_id) return toast.error("Selecione a conta bancária da obra");
@@ -201,12 +229,13 @@ function ContasPagarObra() {
       let cp: { id: string } | null = null;
       for (let i = 0; i < 3 && !cp?.id; i++) {
         const { data } = await supabase
-          .from("contas_pagar").select("id").eq("fatura_cartao_id", f.id).maybeSingle();
+          .from("contas_pagar").select("id")
+          .eq("fatura_cartao_id", f.id).eq("obra_id", obraId).maybeSingle();
         cp = (data as any) ?? null;
         if (!cp?.id) await new Promise((r) => setTimeout(r, 400));
       }
       if (!cp?.id) {
-        // Fallback: cria a conta a pagar da fatura nesta obra
+        // Fallback: cria a conta a pagar da fatura nesta obra (somente a parte da obra)
         const { data: cust } = await supabase
           .from("customers").select("id").eq("owner_user_id", user!.id).maybeSingle();
         const { data: nova, error: eNova } = await supabase.from("contas_pagar").insert({
@@ -214,7 +243,7 @@ function ContasPagarObra() {
           fatura_cartao_id: f.id,
           obra_id: obraId,
           descricao: `Fatura ${nomeCartao(f.cartao_id)} - ${f.competencia}`,
-          valor: f.valor_total,
+          valor: f.valor_obra,
           vencimento: f.dt_vencimento,
           status: "pendente",
           origem: "fatura_cartao",
@@ -223,27 +252,39 @@ function ContasPagarObra() {
         cp = nova as any;
       }
 
-
       const { error: e1 } = await supabase.from("contas_pagar").update({
         status: "pago",
         pago_em: pagto.data,
-        valor_pago: f.valor_total,
+        valor: f.valor_obra,
+        valor_pago: f.valor_obra,
         conta_bancaria_id: pagto.conta_bancaria_id,
         obra_id: obraId,
       }).eq("id", cp!.id);
       if (e1) throw e1;
 
-      await supabase.from("faturas_cartao").update({
-        status: "paga",
-        valor_pago: f.valor_total,
-        pago_em: new Date().toISOString(),
-      }).eq("id", f.id);
-      await supabase.from("compra_parcelas").update({
-        status: "pago",
-        pago_em: new Date().toISOString(),
-      }).eq("fatura_cartao_id", f.id);
+      // Somente as parcelas desta obra são quitadas
+      if (f.parcela_ids.length) {
+        await supabase.from("compra_parcelas").update({
+          status: "pago",
+          pago_em: new Date().toISOString(),
+        }).in("id", f.parcela_ids);
+      }
 
-      toast.success("Fatura paga e debitada da conta da obra");
+      // A fatura só fica paga quando todas as obras quitarem a sua parte
+      const { count: pendentes } = await supabase
+        .from("compra_parcelas")
+        .select("id", { count: "exact", head: true })
+        .eq("fatura_cartao_id", f.id)
+        .neq("status", "pago");
+      if (!pendentes) {
+        await supabase.from("faturas_cartao").update({
+          status: "paga",
+          valor_pago: f.valor_total,
+          pago_em: new Date().toISOString(),
+        }).eq("id", f.id);
+      }
+
+      toast.success("Parte desta obra na fatura paga e debitada da conta da obra");
       setPayingFat(null);
       void carregar();
     } catch (err: any) {
@@ -259,7 +300,8 @@ function ContasPagarObra() {
     const token = crypto.randomUUID();
     try {
       const { data: cp } = await supabase
-        .from("contas_pagar").select("id").eq("fatura_cartao_id", f.id).maybeSingle();
+        .from("contas_pagar").select("id")
+        .eq("fatura_cartao_id", f.id).eq("obra_id", obraId).maybeSingle();
 
       if (cp?.id) {
         const { data: lancs } = await supabase
@@ -296,8 +338,10 @@ function ContasPagarObra() {
       const { error: e2 } = await supabase.from("faturas_cartao")
         .update({ status: "fechada", valor_pago: 0, pago_em: null }).eq("id", f.id);
       if (e2) throw e2;
-      await supabase.from("compra_parcelas")
-        .update({ status: "pendente", pago_em: null }).eq("fatura_cartao_id", f.id);
+      if (f.parcela_ids.length) {
+        await supabase.from("compra_parcelas")
+          .update({ status: "pendente", pago_em: null }).in("id", f.parcela_ids);
+      }
 
       toast.success("Pagamento da fatura estornado — valor devolvido à conta");
       void carregar();
@@ -360,8 +404,14 @@ function ContasPagarObra() {
   const fmtBR = (ymd: string) => { const [y,m,d]=ymd.slice(0,10).split("-"); return `${d}/${m}/${y}`; };
 
 
-  const filtrados = items.filter((i) => filtro === "todos" || i.status === filtro);
-  const total = filtrados.reduce((s, i) => s + Number(i.valor || 0), 0);
+  // Faturas de cartão são exibidas no bloco próprio (com o valor rateado da obra)
+  const semFatura = items.filter((i) => !i.fatura_cartao_id);
+  const filtrados = semFatura.filter((i) => filtro === "todos" || i.status === filtro);
+  const totalFaturasObra = faturas
+    .filter((f) => filtro === "todos" || statusFaturaObra(f) === (filtro === "pago" ? "paga" : "pendente"))
+    .reduce((s, f) => s + Number(f.valor_obra || 0), 0);
+  const total =
+    filtrados.reduce((s, i) => s + Number(i.valor || 0), 0) + totalFaturasObra;
   const brl = (n: number) => n.toLocaleString("pt-BR", { style: "currency", currency: "BRL" });
   const fornName = (id: string | null) =>
     id ? fornec.find((f) => f.id === id)?.nome ?? "—" : "—";
@@ -490,23 +540,29 @@ function ContasPagarObra() {
               <p className="text-xs font-semibold uppercase tracking-wide text-muted-foreground">
                 Faturas de cartão desta obra
               </p>
-              {faturas.map((f) => (
+              {faturas.map((f) => {
+                const st = statusFaturaObra(f);
+                return (
                 <div key={f.id} className="flex flex-wrap items-center justify-between gap-2 border-b py-2 last:border-0">
                   <div>
                     <p className="text-sm font-medium">
                       {nomeCartao(f.cartao_id)} · {f.competencia}
                     </p>
                     <p className="text-xs text-muted-foreground">
-                      Vence {fmtBR(f.dt_vencimento)} · {brl(Number(f.valor_total))}
+                      Vence {fmtBR(f.dt_vencimento)} · Parte desta obra:{" "}
+                      <span className="font-semibold text-foreground">{brl(Number(f.valor_obra))}</span>
+                    </p>
+                    <p className="text-[11px] text-muted-foreground">
+                      Fatura total do cartão (todas as obras): {brl(Number(f.valor_total))}
                     </p>
                   </div>
                   <div className="flex items-center gap-2">
-                    <Badge variant={f.status === "paga" ? "default" : f.status === "fechada" ? "secondary" : "outline"}>
-                      {f.status === "paga" ? "Paga" : f.status === "fechada" ? "Fechada" : "Aberta"}
+                    <Badge variant={st === "paga" ? "default" : f.status === "fechada" ? "secondary" : "outline"}>
+                      {st === "paga" ? "Paga" : f.status === "fechada" ? "Fechada" : "Aberta"}
                     </Badge>
-                    {f.status !== "paga" ? (
+                    {st !== "paga" ? (
                       <Button size="sm" onClick={() => { setPayingFat(f); setPagto({ data: new Date().toISOString().slice(0, 10), conta_bancaria_id: "" }); }}>
-                        <CheckCircle2 className="mr-2 h-4 w-4" /> Pagar fatura
+                        <CheckCircle2 className="mr-2 h-4 w-4" /> Pagar parte da obra
                       </Button>
                     ) : (
                       <Button size="sm" variant="ghost" title="Estornar pagamento da fatura" onClick={() => void estornarFatura(f)}>
@@ -516,7 +572,8 @@ function ContasPagarObra() {
 
                   </div>
                 </div>
-              ))}
+                );
+              })}
             </CardContent>
           </Card>
         )}
@@ -625,7 +682,10 @@ function ContasPagarObra() {
             <div className="space-y-3">
               <div className="rounded-md border bg-muted/30 p-3 text-sm">
                 <p className="font-medium">{nomeCartao(payingFat.cartao_id)} · {payingFat.competencia}</p>
-                <p className="text-xs text-muted-foreground">Total {brl(Number(payingFat.valor_total))}</p>
+                <p className="text-xs text-muted-foreground">
+                  Parte desta obra: <span className="font-semibold text-foreground">{brl(Number(payingFat.valor_obra))}</span>
+                  {" "}· Fatura total {brl(Number(payingFat.valor_total))}
+                </p>
               </div>
               <div className="space-y-2">
                 <Label>Conta bancária da obra *</Label>
