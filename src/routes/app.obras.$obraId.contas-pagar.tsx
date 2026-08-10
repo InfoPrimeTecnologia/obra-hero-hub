@@ -682,7 +682,10 @@ function ContasPagarObra() {
             <div className="space-y-3">
               <div className="rounded-md border bg-muted/30 p-3 text-sm">
                 <p className="font-medium">{nomeCartao(payingFat.cartao_id)} · {payingFat.competencia}</p>
-                <p className="text-xs text-muted-foreground">Total {brl(Number(payingFat.valor_total))}</p>
+                <p className="text-xs text-muted-foreground">
+                  Parte desta obra: <span className="font-semibold text-foreground">{brl(Number(payingFat.valor_obra))}</span>
+                  {" "}· Fatura total {brl(Number(payingFat.valor_total))}
+                </p>
               </div>
               <div className="space-y-2">
                 <Label>Conta bancária da obra *</Label>
