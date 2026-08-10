@@ -87,7 +87,7 @@ function ContasPagarObra() {
     const [{ data }, { data: f }, { data: c }, { data: cb }, { data: cts }] = await Promise.all([
       supabase
         .from("contas_pagar")
-        .select("id,descricao,valor,vencimento,status,fornecedor_id,estornado")
+        .select("id,descricao,valor,vencimento,status,fornecedor_id,estornado,origem,fatura_cartao_id")
         .eq("obra_id", obraId)
         .order("vencimento"),
       supabase.from("fornecedores").select("id,nome").eq("ativo", true).order("nome"),
@@ -110,20 +110,34 @@ function ContasPagarObra() {
     setContas((cb as any) ?? []);
     setCartoes((cts as any) ?? []);
 
-    // Faturas de cartão com parcelas de compras desta obra
+    // Faturas de cartão com parcelas de compras desta obra (valor rateado por obra)
     const { data: compras } = await supabase.from("compras").select("id").eq("obra_id", obraId);
     const compraIds = (compras ?? []).map((x: any) => x.id);
     if (compraIds.length) {
       const { data: parc } = await supabase
-        .from("compra_parcelas").select("fatura_cartao_id").in("compra_id", compraIds);
-      const fatIds = Array.from(new Set((parc ?? []).map((p: any) => p.fatura_cartao_id).filter(Boolean)));
+        .from("compra_parcelas").select("id,valor,fatura_cartao_id").in("compra_id", compraIds);
+      const porFatura = new Map<string, { valor: number; ids: string[] }>();
+      for (const p of (parc ?? []) as any[]) {
+        if (!p.fatura_cartao_id) continue;
+        const acc = porFatura.get(p.fatura_cartao_id) ?? { valor: 0, ids: [] };
+        acc.valor += Number(p.valor || 0);
+        acc.ids.push(p.id);
+        porFatura.set(p.fatura_cartao_id, acc);
+      }
+      const fatIds = Array.from(porFatura.keys());
       if (fatIds.length) {
         const { data: fats } = await supabase
           .from("faturas_cartao")
           .select("id,cartao_id,competencia,dt_vencimento,valor_total,status")
           .in("id", fatIds)
           .order("dt_vencimento");
-        setFaturas((fats as any) ?? []);
+        setFaturas(
+          ((fats ?? []) as any[]).map((x) => ({
+            ...x,
+            valor_obra: porFatura.get(x.id)?.valor ?? 0,
+            parcela_ids: porFatura.get(x.id)?.ids ?? [],
+          })) as Fatura[],
+        );
         return;
       }
     }
