@@ -540,12 +540,6 @@ function ContasPagarObra() {
               <p className="text-xs font-semibold uppercase tracking-wide text-muted-foreground">
                 Faturas de cartão desta obra
               </p>
-              {faturas.map((f) => (
-                <div key={f.id} className="flex flex-wrap items-center justify-between gap-2 border-b py-2 last:border-0">
-                  <div>
-                    <p className="text-sm font-medium">
-                      {nomeCartao(f.cartao_id)} · {f.competencia}
-                    </p>
               {faturas.map((f) => {
                 const st = statusFaturaObra(f);
                 return (
