@@ -39,6 +39,8 @@ type CP = {
   status: string;
   fornecedor_id: string | null;
   estornado?: boolean | null;
+  origem?: string | null;
+  fatura_cartao_id?: string | null;
 };
 
 type Fatura = {
@@ -48,6 +50,8 @@ type Fatura = {
   dt_vencimento: string;
   valor_total: number;
   status: string;
+  valor_obra: number;
+  parcela_ids: string[];
 };
 
 function ContasPagarObra() {
