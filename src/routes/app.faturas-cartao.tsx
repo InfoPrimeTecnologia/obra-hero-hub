@@ -83,7 +83,7 @@ function FaturasCartaoPage() {
         .select("id,fatura_cartao_id")
         .in("fatura_cartao_id", ids);
       const map: Record<string, string> = {};
-      (cps ?? []).forEach((c: any) => { if (c.fatura_cartao_id) map[c.fatura_cartao_id] = c.id; });
+      (cps ?? []).forEach((c: any) => { if (c.fatura_cartao_id && !map[c.fatura_cartao_id]) map[c.fatura_cartao_id] = c.id; });
       setCpByFatura(map);
     }
   };
