@@ -245,6 +245,13 @@ function FaturasCartaoPage() {
                       Vence {fmtBR(f.dt_vencimento)} ·
                       Total R$ {Number(f.valor_total).toLocaleString("pt-BR", { minimumFractionDigits: 2 })}
                     </p>
+                    {(rateio[f.id]?.length ?? 0) > 0 && (
+                      <p className="mt-1 text-[11px] text-muted-foreground">
+                        {rateio[f.id]!.map((r) => (
+                          `${r.obra}: R$ ${r.valor.toLocaleString("pt-BR", { minimumFractionDigits: 2 })}`
+                        )).join(" · ")}
+                      </p>
+                    )}
                   </div>
                 </div>
                 <div className="flex items-center gap-2">
