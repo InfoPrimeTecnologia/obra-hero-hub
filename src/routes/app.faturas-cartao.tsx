@@ -115,23 +115,27 @@ function FaturasCartaoPage() {
         const { error } = await supabase.from("faturas_cartao").update({ status: "fechada" }).eq("id", f.id);
         if (error) throw error;
       }
-      // Busca (ou aguarda) a conta a pagar vinculada
-      let cpId = cpByFatura[f.id];
-      if (!cpId) {
-        const { data: cp } = await supabase
-          .from("contas_pagar").select("id").eq("fatura_cartao_id", f.id).maybeSingle();
-        cpId = cp?.id ?? "";
+      // Busca todas as contas a pagar da fatura (uma por obra) ainda em aberto
+      let cps: { id: string; valor: number; status: string }[] = [];
+      for (let i = 0; i < 3 && cps.length === 0; i++) {
+        const { data } = await supabase
+          .from("contas_pagar").select("id,valor,status").eq("fatura_cartao_id", f.id);
+        cps = ((data ?? []) as any[]).map((c) => ({ id: c.id, valor: Number(c.valor || 0), status: c.status }));
+        if (cps.length === 0) await new Promise((r) => setTimeout(r, 400));
       }
-      if (!cpId) throw new Error("Conta a pagar da fatura não encontrada");
+      const pendentes = cps.filter((c) => c.status !== "pago");
+      if (pendentes.length === 0) throw new Error("Conta a pagar da fatura não encontrada");
 
-      // Baixa a conta a pagar → trigger cp_baixa_to_lancamento debita a conta bancária
-      const { error: e1 } = await supabase.from("contas_pagar").update({
-        status: "pago",
-        pago_em: payForm.data,
-        valor_pago: f.valor_total,
-        conta_bancaria_id: payForm.conta_bancaria_id,
-      }).eq("id", cpId);
-      if (e1) throw e1;
+      // Baixa todas as partes (obras) → trigger cp_baixa_to_lancamento debita a conta bancária
+      for (const cp of pendentes) {
+        const { error: e1 } = await supabase.from("contas_pagar").update({
+          status: "pago",
+          pago_em: payForm.data,
+          valor_pago: cp.valor,
+          conta_bancaria_id: payForm.conta_bancaria_id,
+        }).eq("id", cp.id);
+        if (e1) throw e1;
+      }
 
       // Marca a fatura e as parcelas da compra como pagas
       await supabase.from("faturas_cartao").update({
