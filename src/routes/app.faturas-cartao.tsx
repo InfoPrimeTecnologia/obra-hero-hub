@@ -78,13 +78,39 @@ function FaturasCartaoPage() {
     setContas((cbs ?? []) as ContaBancaria[]);
     const ids = (fs ?? []).map((f: any) => f.id);
     if (ids.length) {
-      const { data: cps } = await supabase
-        .from("contas_pagar")
-        .select("id,fatura_cartao_id")
-        .in("fatura_cartao_id", ids);
+      const [{ data: cps }, { data: parc }] = await Promise.all([
+        supabase.from("contas_pagar").select("id,fatura_cartao_id").in("fatura_cartao_id", ids),
+        supabase.from("compra_parcelas").select("valor,fatura_cartao_id,compra_id").in("fatura_cartao_id", ids),
+      ]);
       const map: Record<string, string> = {};
       (cps ?? []).forEach((c: any) => { if (c.fatura_cartao_id && !map[c.fatura_cartao_id]) map[c.fatura_cartao_id] = c.id; });
       setCpByFatura(map);
+
+      // Rateio por obra: a fatura da empresa é a soma das faturas de cada obra
+      const compraIds = Array.from(new Set((parc ?? []).map((p: any) => p.compra_id)));
+      const obraPorCompra: Record<string, string | null> = {};
+      const nomeObra: Record<string, string> = {};
+      if (compraIds.length) {
+        const { data: compras } = await supabase.from("compras").select("id,obra_id").in("id", compraIds);
+        (compras ?? []).forEach((c: any) => { obraPorCompra[c.id] = c.obra_id; });
+        const obraIds = Array.from(new Set(Object.values(obraPorCompra).filter(Boolean))) as string[];
+        if (obraIds.length) {
+          const { data: obras } = await supabase.from("obras").select("id,name").in("id", obraIds);
+          (obras ?? []).forEach((o: any) => { nomeObra[o.id] = o.name; });
+        }
+      }
+      const rat: Record<string, { obra: string; valor: number }[]> = {};
+      for (const p of (parc ?? []) as any[]) {
+        if (!p.fatura_cartao_id) continue;
+        const oId = obraPorCompra[p.compra_id];
+        const label = oId ? nomeObra[oId] ?? "Obra" : "Sem obra";
+        const arr = rat[p.fatura_cartao_id] ?? [];
+        const found = arr.find((x) => x.obra === label);
+        if (found) found.valor += Number(p.valor || 0);
+        else arr.push({ obra: label, valor: Number(p.valor || 0) });
+        rat[p.fatura_cartao_id] = arr;
+      }
+      setRateio(rat);
     }
   };
   useEffect(() => { void carregar(); }, []);
