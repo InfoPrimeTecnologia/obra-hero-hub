@@ -407,9 +407,11 @@ function ContasPagarObra() {
   // Faturas de cartão são exibidas no bloco próprio (com o valor rateado da obra)
   const semFatura = items.filter((i) => !i.fatura_cartao_id);
   const filtrados = semFatura.filter((i) => filtro === "todos" || i.status === filtro);
-  const totalFaturasObra = faturas
-    .filter((f) => filtro === "todos" || statusFaturaObra(f) === (filtro === "pago" ? "paga" : "pendente"))
-    .reduce((s, f) => s + Number(f.valor_obra || 0), 0);
+  // "Todos" mostra apenas faturas ainda em aberto; as pagas ficam no filtro "pago"
+  const faturasVisiveis = faturas.filter((f) =>
+    filtro === "pago" ? statusFaturaObra(f) === "paga" : statusFaturaObra(f) === "pendente",
+  );
+  const totalFaturasObra = faturasVisiveis.reduce((s, f) => s + Number(f.valor_obra || 0), 0);
   const total =
     filtrados.reduce((s, i) => s + Number(i.valor || 0), 0) + totalFaturasObra;
   const brl = (n: number) => n.toLocaleString("pt-BR", { style: "currency", currency: "BRL" });
@@ -534,13 +536,13 @@ function ContasPagarObra() {
           </p>
         </div>
 
-        {faturas.length > 0 && (
+        {faturasVisiveis.length > 0 && (
           <Card>
             <CardContent className="space-y-2 p-4">
               <p className="text-xs font-semibold uppercase tracking-wide text-muted-foreground">
                 Faturas de cartão desta obra
               </p>
-              {faturas.map((f) => {
+              {faturasVisiveis.map((f) => {
                 const st = statusFaturaObra(f);
                 return (
                 <div key={f.id} className="flex flex-wrap items-center justify-between gap-2 border-b py-2 last:border-0">
