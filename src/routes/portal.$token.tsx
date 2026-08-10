@@ -32,7 +32,7 @@ export const Route = createFileRoute("/portal/$token")({
 const brl = (v: number) =>
   v.toLocaleString("pt-BR", { style: "currency", currency: "BRL" });
 function PortalPage() {
-  const data = Route.useLoaderData();
+  const data = Route.useLoaderData() as any;
 
   if (!data?.obra) return <PortalNotFound />;
 
