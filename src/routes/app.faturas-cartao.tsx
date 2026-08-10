@@ -60,6 +60,7 @@ function FaturasCartaoPage() {
   const [cartoes, setCartoes] = useState<Cartao[]>([]);
   const [contas, setContas] = useState<ContaBancaria[]>([]);
   const [cpByFatura, setCpByFatura] = useState<Record<string, string>>({});
+  const [rateio, setRateio] = useState<Record<string, { obra: string; valor: number }[]>>({});
   const [filtroCartao, setFiltroCartao] = useState<string>("todos");
   const [filtroStatus, setFiltroStatus] = useState<string>("todos");
 
