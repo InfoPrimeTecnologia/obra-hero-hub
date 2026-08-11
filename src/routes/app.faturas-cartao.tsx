@@ -1,6 +1,6 @@
 import { createFileRoute, Link } from "@tanstack/react-router";
 import { useEffect, useState } from "react";
-import { CreditCard, CheckCircle2, Receipt, Wallet } from "lucide-react";
+import { CreditCard, CheckCircle2, Receipt, Wallet, Trash2 } from "lucide-react";
 import { PageHeader } from "@/components/admin/PageHeader";
 import { Card, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
