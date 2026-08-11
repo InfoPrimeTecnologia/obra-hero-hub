@@ -27,6 +27,7 @@ import { toast } from "sonner";
 import { CompraNotasFiscais } from "@/components/app/CompraNotasFiscais";
 import { usePlanModules } from "@/lib/use-plan-modules";
 import { checkOrcamentoAlert, brl as brlAlert, type OrcamentoAlertResult } from "@/lib/orcamento-alert";
+import { excluirCompraCascata } from "@/lib/compra-delete";
 
 export const Route = createFileRoute("/app/obras/$obraId/compras/$compraId")({
   component: CompraDetalhePage,
