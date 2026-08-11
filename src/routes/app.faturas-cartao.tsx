@@ -191,10 +191,23 @@ function FaturasCartaoPage() {
     return c.ultimos_4 ? `${c.nome} •••• ${c.ultimos_4}` : c.nome;
   };
 
+  /** Fatura sem nenhuma parcela vinculada (sobrou de compras excluídas). */
+  const faturaVazia = (f: Fatura) =>
+    (rateio[f.id]?.length ?? 0) === 0 && Number(f.valor_total || 0) === 0 && f.status !== "paga";
+
+  const excluirFatura = async (f: Fatura) => {
+    await supabase.from("contas_pagar").delete().eq("fatura_cartao_id", f.id).neq("status", "pago");
+    const { error } = await supabase.from("faturas_cartao").delete().eq("id", f.id);
+    if (error) return toast.error("Erro", { description: error.message });
+    toast.success("Fatura vazia removida");
+    void carregar();
+  };
+
   const filtradas = faturas.filter((f) =>
     (filtroCartao === "todos" || f.cartao_id === filtroCartao) &&
     (filtroStatus === "todos" || f.status === filtroStatus)
   );
+
 
   return (
     <div>
