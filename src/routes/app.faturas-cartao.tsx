@@ -269,11 +269,18 @@ function FaturasCartaoPage() {
                 </div>
                 <div className="flex items-center gap-2">
                   <Badge variant={statusVariant(f.status) as any}>{statusLabel(f.status)}</Badge>
+                  {faturaVazia(f) && <Badge variant="outline">sem compras</Badge>}
                   {cpId && (
                     <Button asChild variant="outline" size="sm">
                       <Link to="/app/contas-pagar"><Receipt className="mr-2 h-4 w-4" /> Ver conta</Link>
                     </Button>
                   )}
+                  {faturaVazia(f) && (
+                    <Button variant="ghost" size="sm" onClick={() => excluirFatura(f)} title="Excluir fatura vazia">
+                      <Trash2 className="h-4 w-4 text-destructive" />
+                    </Button>
+                  )}
+
                   {f.status === "aberta" && (
                     <AlertDialog>
                       <AlertDialogTrigger asChild>
