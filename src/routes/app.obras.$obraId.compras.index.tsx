@@ -14,6 +14,7 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Badge } from "@/components/ui/badge";
 import { Textarea } from "@/components/ui/textarea";
+import { excluirCompraCascata } from "@/lib/compra-delete";
 import {
   Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter,
 } from "@/components/ui/dialog";
@@ -349,27 +350,12 @@ function ComprasPage() {
   };
 
   const excluirCompra = async (c: Compra) => {
-    const { error: e1 } = await supabase.from("compra_parcelas").delete().eq("compra_id", c.id);
-    if (e1) return toast.error("Erro ao remover parcelas", { description: e1.message });
-    const { data: meds } = await supabase.from("medicoes").select("id").eq("compra_id", c.id);
-    if (meds?.length) {
-      const mids = meds.map((m: any) => m.id);
-      await supabase.from("medicao_itens").delete().in("medicao_id", mids);
-      await supabase.from("medicoes").delete().in("id", mids);
-    }
-    const { data: recs } = await supabase.from("recebimentos").select("id").eq("compra_id", c.id);
-    if (recs?.length) {
-      const rids = recs.map((r: any) => r.id);
-      await supabase.from("recebimento_itens").delete().in("recebimento_id", rids);
-      await supabase.from("recebimentos").delete().in("id", rids);
-    }
-    await supabase.from("compra_itens").delete().eq("compra_id", c.id);
-    await supabase.from("compra_notas_fiscais").delete().eq("compra_id", c.id);
-    const { error } = await supabase.from("compras").delete().eq("id", c.id);
-    if (error) return toast.error("Erro", { description: error.message });
-    toast.success("Compra excluída");
+    const err = await excluirCompraCascata(c.id);
+    if (err) return toast.error("Erro ao excluir compra", { description: err });
+    toast.success("Compra excluída (contas a pagar e parcelas removidas)");
     void carregar();
   };
+
 
   const cadastrarFornecedor = async (e: FormEvent) => {
     e.preventDefault();

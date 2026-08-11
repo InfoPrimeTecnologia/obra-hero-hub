@@ -27,6 +27,7 @@ import { toast } from "sonner";
 import { CompraNotasFiscais } from "@/components/app/CompraNotasFiscais";
 import { usePlanModules } from "@/lib/use-plan-modules";
 import { checkOrcamentoAlert, brl as brlAlert, type OrcamentoAlertResult } from "@/lib/orcamento-alert";
+import { excluirCompraCascata } from "@/lib/compra-delete";
 
 export const Route = createFileRoute("/app/obras/$obraId/compras/$compraId")({
   component: CompraDetalhePage,
@@ -257,15 +258,13 @@ function CompraDetalhePage() {
     if (jaFaturada) return toast.error("Exclua as contas a pagar antes");
     if (!confirm("Excluir esta compra e todos os seus itens? Esta ação não pode ser desfeita.")) return;
     setExcluindoCompra(true);
-    // Cascata manual (sem FK ON DELETE definida no schema)
-    await supabase.from("compra_notas_fiscais").delete().eq("compra_id", compraId);
-    await supabase.from("compra_itens").delete().eq("compra_id", compraId);
-    const { error } = await supabase.from("compras").delete().eq("id", compraId);
+    const err = await excluirCompraCascata(compraId);
     setExcluindoCompra(false);
-    if (error) return toast.error("Erro", { description: error.message });
+    if (err) return toast.error("Erro", { description: err });
     toast.success("Compra excluída");
     navigate({ to: "/app/obras/$obraId/compras", params: { obraId } });
   };
+
 
 
   // ==== ITENS ====

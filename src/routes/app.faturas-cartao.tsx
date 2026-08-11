@@ -1,6 +1,6 @@
 import { createFileRoute, Link } from "@tanstack/react-router";
 import { useEffect, useState } from "react";
-import { CreditCard, CheckCircle2, Receipt, Wallet } from "lucide-react";
+import { CreditCard, CheckCircle2, Receipt, Wallet, Trash2 } from "lucide-react";
 import { PageHeader } from "@/components/admin/PageHeader";
 import { Card, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
@@ -191,10 +191,23 @@ function FaturasCartaoPage() {
     return c.ultimos_4 ? `${c.nome} •••• ${c.ultimos_4}` : c.nome;
   };
 
+  /** Fatura sem nenhuma parcela vinculada (sobrou de compras excluídas). */
+  const faturaVazia = (f: Fatura) =>
+    (rateio[f.id]?.length ?? 0) === 0 && Number(f.valor_total || 0) === 0 && f.status !== "paga";
+
+  const excluirFatura = async (f: Fatura) => {
+    await supabase.from("contas_pagar").delete().eq("fatura_cartao_id", f.id).neq("status", "pago");
+    const { error } = await supabase.from("faturas_cartao").delete().eq("id", f.id);
+    if (error) return toast.error("Erro", { description: error.message });
+    toast.success("Fatura vazia removida");
+    void carregar();
+  };
+
   const filtradas = faturas.filter((f) =>
     (filtroCartao === "todos" || f.cartao_id === filtroCartao) &&
     (filtroStatus === "todos" || f.status === filtroStatus)
   );
+
 
   return (
     <div>
@@ -256,11 +269,18 @@ function FaturasCartaoPage() {
                 </div>
                 <div className="flex items-center gap-2">
                   <Badge variant={statusVariant(f.status) as any}>{statusLabel(f.status)}</Badge>
+                  {faturaVazia(f) && <Badge variant="outline">sem compras</Badge>}
                   {cpId && (
                     <Button asChild variant="outline" size="sm">
                       <Link to="/app/contas-pagar"><Receipt className="mr-2 h-4 w-4" /> Ver conta</Link>
                     </Button>
                   )}
+                  {faturaVazia(f) && (
+                    <Button variant="ghost" size="sm" onClick={() => excluirFatura(f)} title="Excluir fatura vazia">
+                      <Trash2 className="h-4 w-4 text-destructive" />
+                    </Button>
+                  )}
+
                   {f.status === "aberta" && (
                     <AlertDialog>
                       <AlertDialogTrigger asChild>

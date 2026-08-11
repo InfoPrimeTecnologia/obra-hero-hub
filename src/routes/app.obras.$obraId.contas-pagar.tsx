@@ -404,9 +404,13 @@ function ContasPagarObra() {
   const fmtBR = (ymd: string) => { const [y,m,d]=ymd.slice(0,10).split("-"); return `${d}/${m}/${y}`; };
 
 
-  // Faturas de cartão são exibidas no bloco próprio (com o valor rateado da obra)
-  const semFatura = items.filter((i) => !i.fatura_cartao_id);
+  // Faturas de cartão que ainda têm parcelas desta obra aparecem no bloco próprio.
+  // Contas ligadas a faturas que não existem mais (órfãs) voltam para a lista normal,
+  // senão ficam invisíveis aqui mas contando no dashboard.
+  const fatIdsBloco = new Set(faturas.map((f) => f.id));
+  const semFatura = items.filter((i) => !i.fatura_cartao_id || !fatIdsBloco.has(i.fatura_cartao_id));
   const filtrados = semFatura.filter((i) => filtro === "todos" || i.status === filtro);
+
   // "Todos" mostra apenas faturas ainda em aberto; as pagas ficam no filtro "pago"
   const faturasVisiveis = faturas.filter((f) =>
     filtro === "pago" ? statusFaturaObra(f) === "paga" : statusFaturaObra(f) === "pendente",
