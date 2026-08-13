@@ -283,12 +283,22 @@ function ContasPagarPage() {
         </div>
 
         <div className="flex flex-wrap items-center justify-between gap-2">
-          <div className="flex gap-2">
+          <div className="flex flex-wrap items-center gap-2">
             {(["pendente", "vencido", "pago", "todos"] as const).map((f) => (
               <Button key={f} size="sm" variant={filtro === f ? "default" : "outline"} onClick={() => setFiltro(f)}>
                 {f}
               </Button>
             ))}
+            {!obra && (
+              <Select value={filtroObra} onValueChange={setFiltroObra}>
+                <SelectTrigger className="h-8 w-56"><SelectValue /></SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="todos">Empresa + obras</SelectItem>
+                  <SelectItem value="empresa">Somente empresa</SelectItem>
+                  {obras.map((o) => <SelectItem key={o.id} value={o.id}>{o.name}</SelectItem>)}
+                </SelectContent>
+              </Select>
+            )}
           </div>
           <Button size="sm" variant="outline" onClick={exportarCsv}>
             <Download className="mr-1 h-4 w-4" /> CSV
@@ -302,6 +312,7 @@ function ContasPagarPage() {
         ) : filtrados.map((c) => {
           const venc = c.vencimento;
           const vencido = c.status === "pendente" && venc < hoje;
+          const daObra = !!c.obra_id;
           return (
             <Card key={c.id}>
               <CardContent className="flex flex-wrap items-center justify-between gap-3 p-4">
@@ -312,6 +323,7 @@ function ContasPagarPage() {
                     <p className="text-xs text-muted-foreground">
                       Venc: {(() => { const [y,m,d]=venc.slice(0,10).split("-"); return `${d}/${m}/${y}`; })()}
                       {c.origem !== "manual" && ` · ${c.origem}`}
+                      {daObra && ` · ${nomeObra(c.obra_id)}`}
                     </p>
                   </div>
                 </div>
@@ -319,25 +331,41 @@ function ContasPagarPage() {
                   <span className="font-semibold">R$ {Number(c.valor).toFixed(2)}</span>
                   <Badge variant={statusColor(c.status) as any}>{c.status}</Badge>
                   {c.estornado && <Badge variant="outline" title={c.motivo_estorno ?? undefined}>estornada</Badge>}
-                  {c.status === "pendente" && (
+                  {daObra ? (
                     <>
-                      <Button size="sm" onClick={() => { setPaying(c); setPagto({ ...pagto, valor_pago: String(c.valor) }); }}>
-                        <CheckCircle2 className="mr-1 h-4 w-4" /> Pagar
-                      </Button>
-                      <Button size="sm" variant="ghost" onClick={() => cancelar(c.id)} title="Cancelar">
-                        <XCircle className="h-4 w-4" />
-                      </Button>
-                      <Button size="sm" variant="ghost" onClick={() => excluir(c)} title="Excluir">
-                        <Trash2 className="h-4 w-4 text-destructive" />
+                      <Badge variant="secondary" title="Contas de obra são pagas no financeiro da própria obra">
+                        pagamento na obra
+                      </Badge>
+                      <Button asChild size="sm" variant="outline">
+                        <Link to="/app/obras/$obraId/contas-pagar" params={{ obraId: c.obra_id! }}>
+                          Abrir na obra
+                        </Link>
                       </Button>
                     </>
-                  )}
-                  {c.status === "pago" && !c.estornado && (
-                    <Button size="sm" variant="outline" onClick={() => setEstornando(c)}>
-                      <Undo2 className="mr-1 h-4 w-4" /> Estornar
-                    </Button>
+                  ) : (
+                    <>
+                      {c.status === "pendente" && (
+                        <>
+                          <Button size="sm" onClick={() => { setPaying(c); setPagto({ ...pagto, valor_pago: String(c.valor) }); }}>
+                            <CheckCircle2 className="mr-1 h-4 w-4" /> Pagar
+                          </Button>
+                          <Button size="sm" variant="ghost" onClick={() => cancelar(c.id)} title="Cancelar">
+                            <XCircle className="h-4 w-4" />
+                          </Button>
+                          <Button size="sm" variant="ghost" onClick={() => excluir(c)} title="Excluir">
+                            <Trash2 className="h-4 w-4 text-destructive" />
+                          </Button>
+                        </>
+                      )}
+                      {c.status === "pago" && !c.estornado && (
+                        <Button size="sm" variant="outline" onClick={() => setEstornando(c)}>
+                          <Undo2 className="mr-1 h-4 w-4" /> Estornar
+                        </Button>
+                      )}
+                    </>
                   )}
                 </div>
+
 
               </CardContent>
             </Card>
