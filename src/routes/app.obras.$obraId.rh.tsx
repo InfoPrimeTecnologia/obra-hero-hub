@@ -1,6 +1,6 @@
 import { createFileRoute } from "@tanstack/react-router";
 import { useEffect, useState } from "react";
-import { Users, Plus, Trash2, UserPlus } from "lucide-react";
+import { Users, Plus, Trash2, UserPlus, Pencil } from "lucide-react";
 import { PageHeader } from "@/components/admin/PageHeader";
 import { Card, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
@@ -36,7 +36,18 @@ type Vinculo = {
   data_inicio: string | null;
   data_fim: string | null;
 };
-type Colab = { id: string; nome: string; cargo: string | null };
+type Colab = {
+  id: string;
+  nome: string;
+  cargo: string | null;
+  cpf: string | null;
+  vinculo: string | null;
+  telefone: string | null;
+  email: string | null;
+  remuneracao: number | null;
+  data_entrada: string | null;
+  observacoes: string | null;
+};
 
 const VINCULOS = ["CLT", "PJ", "MEI", "Autonomo", "Estagiario", "Temporario", "Terceirizado"] as const;
 
@@ -71,7 +82,7 @@ function RhObraPage() {
         .from("colaborador_obras")
         .select("id,colaborador_id,data_inicio,data_fim")
         .eq("obra_id", obraId),
-      supabase.from("colaboradores").select("id,nome,cargo").eq("ativo", true).order("nome"),
+      supabase.from("colaboradores").select("id,nome,cargo,cpf,vinculo,telefone,email,remuneracao,data_entrada,observacoes").eq("ativo", true).order("nome"),
     ]);
     setVinculos(((v as unknown) as Vinculo[]) ?? []);
     setColabs((c as Colab[]) ?? []);
@@ -146,6 +157,33 @@ function RhObraPage() {
     } finally {
       setSavingNovo(false);
     }
+  };
+
+  const [editando, setEditando] = useState<Colab | null>(null);
+  const [savingEdit, setSavingEdit] = useState(false);
+
+  const salvarEdicao = async () => {
+    if (!editando) return;
+    setSavingEdit(true);
+    const { error } = await supabase
+      .from("colaboradores")
+      .update({
+        nome: editando.nome,
+        cpf: editando.cpf,
+        cargo: editando.cargo,
+        vinculo: editando.vinculo ?? undefined,
+        telefone: editando.telefone,
+        email: editando.email,
+        remuneracao: editando.remuneracao ?? undefined,
+        data_entrada: editando.data_entrada,
+        observacoes: editando.observacoes,
+      })
+      .eq("id", editando.id);
+    setSavingEdit(false);
+    if (error) return toast.error("Erro ao salvar", { description: error.message });
+    toast.success("Colaborador atualizado");
+    setEditando(null);
+    void carregar();
   };
 
   const desvincular = async (id: string) => {
@@ -333,6 +371,14 @@ function RhObraPage() {
                   </div>
                   <div className="flex items-center gap-2">
                     {v.data_fim ? <Badge variant="outline">Desligado</Badge> : <Badge>Ativo</Badge>}
+                    <Button
+                      variant="outline"
+                      size="sm"
+                      onClick={() => c && setEditando({ ...c })}
+                      title="Ver / editar colaborador"
+                    >
+                      <Pencil className="mr-2 h-4 w-4" /> Ver / editar
+                    </Button>
                     <Button variant="ghost" size="sm" onClick={() => desvincular(v.id)}>
                       <Trash2 className="h-4 w-4" />
                     </Button>
@@ -343,6 +389,78 @@ function RhObraPage() {
           })
         )}
       </div>
+
+      <Dialog open={!!editando} onOpenChange={(v) => !v && setEditando(null)}>
+        <DialogContent className="max-w-lg">
+          <DialogHeader>
+            <DialogTitle>Colaborador</DialogTitle>
+          </DialogHeader>
+          {editando && (
+            <div className="grid grid-cols-2 gap-3">
+              <div className="col-span-2 space-y-2">
+                <Label>Nome *</Label>
+                <Input value={editando.nome ?? ""} onChange={(e) => setEditando({ ...editando, nome: e.target.value })} />
+              </div>
+              <div className="space-y-2">
+                <Label>CPF</Label>
+                <Input value={editando.cpf ?? ""} onChange={(e) => setEditando({ ...editando, cpf: e.target.value })} />
+              </div>
+              <div className="space-y-2">
+                <Label>Cargo</Label>
+                <Input value={editando.cargo ?? ""} onChange={(e) => setEditando({ ...editando, cargo: e.target.value })} />
+              </div>
+              <div className="space-y-2">
+                <Label>Vínculo</Label>
+                <Select
+                  value={editando.vinculo ?? "CLT"}
+                  onValueChange={(v) => setEditando({ ...editando, vinculo: v })}
+                >
+                  <SelectTrigger><SelectValue /></SelectTrigger>
+                  <SelectContent>
+                    {VINCULOS.map((v) => <SelectItem key={v} value={v}>{v}</SelectItem>)}
+                  </SelectContent>
+                </Select>
+              </div>
+              <div className="space-y-2">
+                <Label>Remuneração</Label>
+                <Input
+                  type="number"
+                  step="0.01"
+                  value={editando.remuneracao ?? 0}
+                  onChange={(e) => setEditando({ ...editando, remuneracao: Number(e.target.value) })}
+                />
+              </div>
+              <div className="space-y-2">
+                <Label>Telefone</Label>
+                <Input value={editando.telefone ?? ""} onChange={(e) => setEditando({ ...editando, telefone: e.target.value })} />
+              </div>
+              <div className="space-y-2">
+                <Label>E-mail</Label>
+                <Input value={editando.email ?? ""} onChange={(e) => setEditando({ ...editando, email: e.target.value })} />
+              </div>
+              <div className="col-span-2 space-y-2">
+                <Label>Data de entrada</Label>
+                <Input
+                  type="date"
+                  value={editando.data_entrada?.slice(0, 10) ?? ""}
+                  onChange={(e) => setEditando({ ...editando, data_entrada: e.target.value })}
+                />
+              </div>
+              <div className="col-span-2 space-y-2">
+                <Label>Observações</Label>
+                <Input value={editando.observacoes ?? ""} onChange={(e) => setEditando({ ...editando, observacoes: e.target.value })} />
+              </div>
+            </div>
+          )}
+          <DialogFooter>
+            <Button variant="ghost" onClick={() => setEditando(null)}>Fechar</Button>
+            <Button onClick={salvarEdicao} disabled={savingEdit}>
+              {savingEdit ? "Salvando..." : "Salvar"}
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
     </div>
   );
 }
+

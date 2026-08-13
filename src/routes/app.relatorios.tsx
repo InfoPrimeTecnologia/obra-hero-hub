@@ -56,7 +56,8 @@ type ReportConfig<T = any> = {
   description: string;
   icon: typeof FileText;
   columns: ColDef<T>[];
-  load: (params: { customerId: string; from: string; to: string }) => Promise<T[]>;
+  load: (params: { customerId: string; from: string; to: string; obraId?: string }) => Promise<T[]>;
+  hasObraFilter?: boolean;
   summary?: (rows: T[]) => Array<{ label: string; value: string }>;
 };
 
@@ -426,12 +427,15 @@ const REPORTS: ReportConfig[] = [
   {
     id: "orcado-vs-realizado",
     module: "obras",
-    title: "Orçado vs Realizado por Etapa",
-    description: "Compara o valor orçado de cada etapa com o gasto efetivo (compras) e calcula o saldo e o avanço.",
+    title: "Orçado vs Realizado (etapas e subetapas)",
+    description: "Compara o valor orçado com o gasto efetivo (compras) por etapa e por subetapa. Use o filtro de obra para analisar uma obra específica.",
     icon: BarChart3,
+    hasObraFilter: true,
     columns: [
       { key: "obra", label: "Obra" },
+      { key: "nivel", label: "Nível" },
       { key: "etapa", label: "Etapa" },
+      { key: "subetapa", label: "Subetapa" },
       { key: "orcado", label: "Orçado", format: (r: any) => fmtBRL(r.orcado) },
       { key: "realizado", label: "Realizado", format: (r: any) => fmtBRL(r.realizado) },
       { key: "saldo", label: "Saldo", format: (r: any) => fmtBRL(r.saldo) },
@@ -441,36 +445,73 @@ const REPORTS: ReportConfig[] = [
         format: (r: any) => r.orcado === 0 ? "Sem orçamento" : r.avanco >= 100 ? "Estourado" : r.avanco >= 80 ? "Alerta" : "OK",
       },
     ],
-    async load({ customerId }) {
-      // 1. Etapas com subetapas e valor_orcado
-      const { data: etapas } = await supabase
+    async load({ customerId, obraId }) {
+      let q = supabase
         .from("orcamento_etapas")
-        .select("id,nome,obra_id,obras(name),orcamento_subetapas(id,valor_orcado)")
+        .select("id,nome,obra_id,obras(name),orcamento_subetapas(id,nome,valor_orcado)")
         .eq("customer_id", customerId)
         .order("ordem");
-      // 2. Soma de compra_itens por etapa
-      const { data: itens } = await supabase
+      if (obraId) q = q.eq("obra_id", obraId);
+      const { data: etapas } = await q;
+
+      let qi = supabase
         .from("compra_itens")
-        .select("etapa_id,valor_total")
+        .select("etapa_id,subetapa_id,valor_total")
         .eq("customer_id", customerId);
+      const { data: itens } = await qi;
+
+      const etapaIds = new Set((etapas ?? []).map((e: any) => e.id));
       const realizadoPorEtapa = new Map<string, number>();
+      const realizadoPorSub = new Map<string, number>();
       for (const it of itens ?? []) {
-        if (!it.etapa_id) continue;
-        realizadoPorEtapa.set(it.etapa_id, (realizadoPorEtapa.get(it.etapa_id) ?? 0) + Number(it.valor_total ?? 0));
+        const v = Number(it.valor_total ?? 0);
+        if (it.etapa_id && etapaIds.has(it.etapa_id)) {
+          realizadoPorEtapa.set(it.etapa_id, (realizadoPorEtapa.get(it.etapa_id) ?? 0) + v);
+        }
+        if (it.subetapa_id) {
+          realizadoPorSub.set(it.subetapa_id, (realizadoPorSub.get(it.subetapa_id) ?? 0) + v);
+        }
       }
-      return (etapas ?? []).map((e: any) => {
-        const orcado = (e.orcamento_subetapas ?? []).reduce((s: number, sub: any) => s + Number(sub.valor_orcado ?? 0), 0);
+
+      const rows: any[] = [];
+      for (const e of (etapas ?? []) as any[]) {
+        const subs = e.orcamento_subetapas ?? [];
+        const orcado = subs.reduce((s: number, sub: any) => s + Number(sub.valor_orcado ?? 0), 0);
         const realizado = realizadoPorEtapa.get(e.id) ?? 0;
-        const saldo = orcado - realizado;
-        const avanco = orcado > 0 ? (realizado / orcado) * 100 : 0;
-        return { obra: e.obras?.name ?? "—", etapa: e.nome, orcado, realizado, saldo, avanco };
-      });
+        rows.push({
+          obra: e.obras?.name ?? "—",
+          nivel: "Etapa",
+          etapa: e.nome,
+          subetapa: "—",
+          orcado,
+          realizado,
+          saldo: orcado - realizado,
+          avanco: orcado > 0 ? (realizado / orcado) * 100 : 0,
+        });
+        for (const sub of subs) {
+          const so = Number(sub.valor_orcado ?? 0);
+          const sr = realizadoPorSub.get(sub.id) ?? 0;
+          rows.push({
+            obra: e.obras?.name ?? "—",
+            nivel: "Subetapa",
+            etapa: e.nome,
+            subetapa: sub.nome,
+            orcado: so,
+            realizado: sr,
+            saldo: so - sr,
+            avanco: so > 0 ? (sr / so) * 100 : 0,
+          });
+        }
+      }
+      return rows;
     },
     summary: (rows) => {
-      const orc = rows.reduce((s: number, r: any) => s + Number(r.orcado ?? 0), 0);
-      const real = rows.reduce((s: number, r: any) => s + Number(r.realizado ?? 0), 0);
+      const etapasRows = rows.filter((r: any) => r.nivel === "Etapa");
+      const orc = etapasRows.reduce((s: number, r: any) => s + Number(r.orcado ?? 0), 0);
+      const real = etapasRows.reduce((s: number, r: any) => s + Number(r.realizado ?? 0), 0);
       return [
-        { label: "Etapas", value: String(rows.length) },
+        { label: "Etapas", value: String(etapasRows.length) },
+        { label: "Subetapas", value: String(rows.length - etapasRows.length) },
         { label: "Total orçado", value: fmtBRL(orc) },
         { label: "Total realizado", value: fmtBRL(real) },
         { label: "Saldo geral", value: fmtBRL(orc - real) },
@@ -488,6 +529,8 @@ function RelatoriosPage() {
   const [from, setFrom] = useState(format(startOfMonth(today), "yyyy-MM-dd"));
   const [to, setTo] = useState(format(endOfMonth(today), "yyyy-MM-dd"));
   const [active, setActive] = useState<string>(REPORTS[0].id);
+  const [obraFiltro, setObraFiltro] = useState<string>("todas");
+  const [obrasLista, setObrasLista] = useState<{ id: string; name: string }[]>([]);
   const [rows, setRows] = useState<any[]>([]);
   const [loading, setLoading] = useState(false);
 
@@ -505,6 +548,16 @@ function RelatoriosPage() {
   }, [user]);
 
   useEffect(() => {
+    if (!customerId) return;
+    void supabase
+      .from("obras")
+      .select("id,name")
+      .eq("customer_id", customerId)
+      .order("name")
+      .then(({ data }) => setObrasLista((data ?? []) as any));
+  }, [customerId]);
+
+  useEffect(() => {
     if (visibleReports.length && !visibleReports.some((r) => r.id === active)) {
       setActive(visibleReports[0].id);
     }
@@ -514,10 +567,10 @@ function RelatoriosPage() {
     if (!customerId || !current) return;
     setLoading(true);
     current
-      .load({ customerId, from, to })
+      .load({ customerId, from, to, obraId: obraFiltro === "todas" ? undefined : obraFiltro })
       .then((r) => setRows(r))
       .finally(() => setLoading(false));
-  }, [customerId, current, from, to]);
+  }, [customerId, current, from, to, obraFiltro]);
 
   const exportXLSX = () => {
     if (!current) return;
@@ -606,6 +659,21 @@ function RelatoriosPage() {
             <Label htmlFor="to">Até</Label>
             <Input id="to" type="date" value={to} onChange={(e) => setTo(e.target.value)} />
           </div>
+          {current?.hasObraFilter && (
+            <div className="grid gap-1">
+              <Label>Obra</Label>
+              <select
+                className="h-9 rounded-md border border-input bg-background px-3 text-sm"
+                value={obraFiltro}
+                onChange={(e) => setObraFiltro(e.target.value)}
+              >
+                <option value="todas">Todas as obras</option>
+                {obrasLista.map((o) => (
+                  <option key={o.id} value={o.id}>{o.name}</option>
+                ))}
+              </select>
+            </div>
+          )}
           <div className="ml-auto flex gap-2">
             <Button variant="outline" onClick={exportCSV} disabled={!rows.length}>
               <Download className="mr-2 h-4 w-4" /> CSV

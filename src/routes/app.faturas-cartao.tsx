@@ -61,6 +61,7 @@ function FaturasCartaoPage() {
   const [contas, setContas] = useState<ContaBancaria[]>([]);
   const [cpByFatura, setCpByFatura] = useState<Record<string, string>>({});
   const [rateio, setRateio] = useState<Record<string, { obra: string; valor: number }[]>>({});
+  const [faturaComObra, setFaturaComObra] = useState<Record<string, boolean>>({});
   const [filtroCartao, setFiltroCartao] = useState<string>("todos");
   const [filtroStatus, setFiltroStatus] = useState<string>("todos");
 
@@ -101,9 +102,11 @@ function FaturasCartaoPage() {
         }
       }
       const rat: Record<string, { obra: string; valor: number }[]> = {};
+      const comObra: Record<string, boolean> = {};
       for (const p of (parc ?? []) as any[]) {
         if (!p.fatura_cartao_id) continue;
         const oId = obraPorCompra[p.compra_id];
+        if (oId) comObra[p.fatura_cartao_id] = true;
         const label = oId ? nomeObra[oId] ?? "Obra" : "Sem obra";
         const arr = rat[p.fatura_cartao_id] ?? [];
         const found = arr.find((x) => x.obra === label);
@@ -112,7 +115,9 @@ function FaturasCartaoPage() {
         rat[p.fatura_cartao_id] = arr;
       }
       setRateio(rat);
+      setFaturaComObra(comObra);
     }
+
   };
   useEffect(() => { void carregar(); }, []);
 
@@ -302,10 +307,17 @@ function FaturasCartaoPage() {
                     </AlertDialog>
                   )}
                   {f.status !== "paga" && (
-                    <Button size="sm" onClick={() => abrirPagamento(f)}>
-                      <Wallet className="mr-2 h-4 w-4" /> Pagar fatura
-                    </Button>
+                    faturaComObra[f.id] ? (
+                      <Badge variant="secondary" title="Faturas com compras de obra são pagas no financeiro de cada obra">
+                        pagamento na obra
+                      </Badge>
+                    ) : (
+                      <Button size="sm" onClick={() => abrirPagamento(f)}>
+                        <Wallet className="mr-2 h-4 w-4" /> Pagar fatura
+                      </Button>
+                    )
                   )}
+
                 </div>
               </CardContent>
             </Card>
