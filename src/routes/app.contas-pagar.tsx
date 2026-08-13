@@ -186,7 +186,14 @@ function ContasPagarPage() {
   };
 
   const hoje = new Date().toISOString().slice(0, 10);
-  const escopo = obra ? items.filter((c) => c.obra_id === obra.id) : items;
+  const escopoObra = obra
+    ? items.filter((c) => c.obra_id === obra.id)
+    : filtroObra === "todos"
+      ? items
+      : filtroObra === "empresa"
+        ? items.filter((c) => !c.obra_id)
+        : items.filter((c) => c.obra_id === filtroObra);
+  const escopo = escopoObra;
   const filtrados = escopo.filter((c) => {
     if (filtro === "todos") return true;
     if (filtro === "pendente") return c.status === "pendente";
@@ -195,8 +202,11 @@ function ContasPagarPage() {
     return true;
   });
 
+  const nomeObra = (id: string | null) => (id ? obras.find((o) => o.id === id)?.name ?? "Obra" : null);
+
   const totalPendente = escopo.filter(c => c.status === "pendente").reduce((s, c) => s + Number(c.valor), 0);
   const totalVencido = escopo.filter(c => c.status === "pendente" && c.vencimento < hoje).reduce((s, c) => s + Number(c.valor), 0);
+
 
   return (
     <div>
