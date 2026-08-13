@@ -98,11 +98,8 @@ function TransferenciasPage() {
           estorno_token: l.estorno_token,
           created_by: user!.id,
         });
-        const delta = l.tipo === "entrada" ? -Number(l.valor) : Number(l.valor);
-        const { data: c } = await supabase.from("contas_bancarias").select("saldo_atual").eq("id", l.conta_bancaria_id).maybeSingle();
-        if (c) {
-          await supabase.from("contas_bancarias").update({ saldo_atual: Number(c.saldo_atual) + delta }).eq("id", l.conta_bancaria_id);
-        }
+        // saldo ajustado pelo trigger do banco no insert acima (não ajustar manualmente)
+
       }
     }
     toast.success("Transferência estornada");
