@@ -1,4 +1,4 @@
-import { createFileRoute } from "@tanstack/react-router";
+import { createFileRoute, Link } from "@tanstack/react-router";
 import { useEffect, useState, type FormEvent } from "react";
 import { Plus, Receipt, CheckCircle2, XCircle, Undo2, Download, Trash2 } from "lucide-react";
 import { downloadCsv, fmtNum, fmtDate } from "@/lib/csv-export";
