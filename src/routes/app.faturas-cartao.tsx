@@ -307,10 +307,17 @@ function FaturasCartaoPage() {
                     </AlertDialog>
                   )}
                   {f.status !== "paga" && (
-                    <Button size="sm" onClick={() => abrirPagamento(f)}>
-                      <Wallet className="mr-2 h-4 w-4" /> Pagar fatura
-                    </Button>
+                    faturaComObra[f.id] ? (
+                      <Badge variant="secondary" title="Faturas com compras de obra são pagas no financeiro de cada obra">
+                        pagamento na obra
+                      </Badge>
+                    ) : (
+                      <Button size="sm" onClick={() => abrirPagamento(f)}>
+                        <Wallet className="mr-2 h-4 w-4" /> Pagar fatura
+                      </Button>
+                    )
                   )}
+
                 </div>
               </CardContent>
             </Card>
