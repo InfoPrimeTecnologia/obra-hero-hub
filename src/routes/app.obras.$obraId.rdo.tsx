@@ -233,6 +233,16 @@ function RdoListPage() {
                   >
                     <MessageCircle className="mr-2 h-4 w-4" /> WhatsApp
                   </Button>
+                  <Button
+                    size="sm"
+                    variant="ghost"
+                    type="button"
+                    title="Excluir RDO"
+                    onClick={() => void excluir(r)}
+                  >
+                    <Trash2 className="h-4 w-4 text-destructive" />
+                  </Button>
+
                 </div>
               </CardHeader>
             </Card>
