@@ -389,6 +389,78 @@ function RhObraPage() {
           })
         )}
       </div>
+
+      <Dialog open={!!editando} onOpenChange={(v) => !v && setEditando(null)}>
+        <DialogContent className="max-w-lg">
+          <DialogHeader>
+            <DialogTitle>Colaborador</DialogTitle>
+          </DialogHeader>
+          {editando && (
+            <div className="grid grid-cols-2 gap-3">
+              <div className="col-span-2 space-y-2">
+                <Label>Nome *</Label>
+                <Input value={editando.nome ?? ""} onChange={(e) => setEditando({ ...editando, nome: e.target.value })} />
+              </div>
+              <div className="space-y-2">
+                <Label>CPF</Label>
+                <Input value={editando.cpf ?? ""} onChange={(e) => setEditando({ ...editando, cpf: e.target.value })} />
+              </div>
+              <div className="space-y-2">
+                <Label>Cargo</Label>
+                <Input value={editando.cargo ?? ""} onChange={(e) => setEditando({ ...editando, cargo: e.target.value })} />
+              </div>
+              <div className="space-y-2">
+                <Label>Vínculo</Label>
+                <Select
+                  value={editando.vinculo ?? "CLT"}
+                  onValueChange={(v) => setEditando({ ...editando, vinculo: v })}
+                >
+                  <SelectTrigger><SelectValue /></SelectTrigger>
+                  <SelectContent>
+                    {VINCULOS.map((v) => <SelectItem key={v} value={v}>{v}</SelectItem>)}
+                  </SelectContent>
+                </Select>
+              </div>
+              <div className="space-y-2">
+                <Label>Remuneração</Label>
+                <Input
+                  type="number"
+                  step="0.01"
+                  value={editando.remuneracao ?? 0}
+                  onChange={(e) => setEditando({ ...editando, remuneracao: Number(e.target.value) })}
+                />
+              </div>
+              <div className="space-y-2">
+                <Label>Telefone</Label>
+                <Input value={editando.telefone ?? ""} onChange={(e) => setEditando({ ...editando, telefone: e.target.value })} />
+              </div>
+              <div className="space-y-2">
+                <Label>E-mail</Label>
+                <Input value={editando.email ?? ""} onChange={(e) => setEditando({ ...editando, email: e.target.value })} />
+              </div>
+              <div className="col-span-2 space-y-2">
+                <Label>Data de entrada</Label>
+                <Input
+                  type="date"
+                  value={editando.data_entrada?.slice(0, 10) ?? ""}
+                  onChange={(e) => setEditando({ ...editando, data_entrada: e.target.value })}
+                />
+              </div>
+              <div className="col-span-2 space-y-2">
+                <Label>Observações</Label>
+                <Input value={editando.observacoes ?? ""} onChange={(e) => setEditando({ ...editando, observacoes: e.target.value })} />
+              </div>
+            </div>
+          )}
+          <DialogFooter>
+            <Button variant="ghost" onClick={() => setEditando(null)}>Fechar</Button>
+            <Button onClick={salvarEdicao} disabled={savingEdit}>
+              {savingEdit ? "Salvando..." : "Salvar"}
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
     </div>
   );
 }
+
