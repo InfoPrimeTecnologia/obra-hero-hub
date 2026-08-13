@@ -195,25 +195,87 @@ export async function exportRdoPdf(rdoId: string) {
     doc.text(lines, 14, yAfter + 14);
   }
 
-  // Fotos (referência)
+  // Fotos (imagens embutidas)
   if ((anexos ?? []).length > 0) {
-    doc.addPage();
-    drawHeader(doc, {
-      companyName: ctx.companyName,
-      obraName: ctx.obraName,
-      obraAddress: ctx.obraAddress,
-      reportTitle: "RDO — Anexos",
-      reportSubtitle: fmtDate(rdo.data),
-    });
-    autoTable(doc, {
-      startY: 56,
-      theme: "grid",
-      styles: { fontSize: 9 },
-      headStyles: { fillColor: [30, 41, 59] },
-      head: [["Tipo", "Legenda", "Arquivo"]],
-      body: (anexos ?? []).map((a: any) => [a.tipo ?? "foto", a.legenda ?? "-", a.storage_path]),
-    });
+    const fotos = (anexos ?? []).filter((a: any) => !String(a.storage_path).toLowerCase().endsWith(".pdf"));
+    const outros = (anexos ?? []).filter((a: any) => String(a.storage_path).toLowerCase().endsWith(".pdf"));
+
+    if (fotos.length > 0) {
+      doc.addPage();
+      drawHeader(doc, {
+        companyName: ctx.companyName,
+        obraName: ctx.obraName,
+        obraAddress: ctx.obraAddress,
+        reportTitle: "RDO — Fotos",
+        reportSubtitle: fmtDate(rdo.data),
+      });
+      const pageW = doc.internal.pageSize.getWidth();
+      const pageH = doc.internal.pageSize.getHeight();
+      const cols = 2;
+      const gap = 8;
+      const imgW = (pageW - 28 - gap) / cols;
+      const imgH = imgW * 0.72;
+      let x = 14;
+      let y = 56;
+      let col = 0;
+
+      for (const a of fotos) {
+        const img = await carregarImagem(a.storage_path);
+        if (!img) continue;
+        if (y + imgH + 14 > pageH - 16) {
+          doc.addPage();
+          drawHeader(doc, {
+            companyName: ctx.companyName,
+            obraName: ctx.obraName,
+            obraAddress: ctx.obraAddress,
+            reportTitle: "RDO — Fotos",
+            reportSubtitle: fmtDate(rdo.data),
+          });
+          y = 56;
+          x = 14;
+          col = 0;
+        }
+        try {
+          doc.addImage(img.dataUrl, img.format, x, y, imgW, imgH, undefined, "FAST");
+        } catch {
+          // imagem inválida — ignora
+        }
+        doc.setFontSize(8);
+        doc.setTextColor(100, 116, 139);
+        const legenda = doc.splitTextToSize(a.legenda ?? "", imgW);
+        doc.text(legenda.slice(0, 1), x, y + imgH + 4);
+        doc.setTextColor(15, 23, 42);
+        col += 1;
+        if (col >= cols) {
+          col = 0;
+          x = 14;
+          y += imgH + 14;
+        } else {
+          x += imgW + gap;
+        }
+      }
+    }
+
+    if (outros.length > 0) {
+      doc.addPage();
+      drawHeader(doc, {
+        companyName: ctx.companyName,
+        obraName: ctx.obraName,
+        obraAddress: ctx.obraAddress,
+        reportTitle: "RDO — Outros anexos",
+        reportSubtitle: fmtDate(rdo.data),
+      });
+      autoTable(doc, {
+        startY: 56,
+        theme: "grid",
+        styles: { fontSize: 9 },
+        headStyles: { fillColor: [30, 41, 59] },
+        head: [["Tipo", "Legenda", "Arquivo"]],
+        body: outros.map((a: any) => [a.tipo ?? "anexo", a.legenda ?? "-", a.storage_path]),
+      });
+    }
   }
+
 
   drawFooter(doc);
   doc.save(`RDO_${fmtDate(rdo.data).replace(/\//g, "-")}_${ctx.obraName.replace(/\s+/g, "_")}.pdf`);
