@@ -171,10 +171,10 @@ function RhObraPage() {
         nome: editando.nome,
         cpf: editando.cpf,
         cargo: editando.cargo,
-        vinculo: editando.vinculo,
+        vinculo: editando.vinculo ?? undefined,
         telefone: editando.telefone,
         email: editando.email,
-        remuneracao: editando.remuneracao,
+        remuneracao: editando.remuneracao ?? undefined,
         data_entrada: editando.data_entrada,
         observacoes: editando.observacoes,
       })
