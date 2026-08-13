@@ -147,10 +147,9 @@ function ContasPagarPage() {
           estorno_token: token,
           created_by: user!.id,
         });
-        const { data: c } = await supabase.from("contas_bancarias").select("saldo_atual").eq("id", l.conta_bancaria_id).maybeSingle();
-        if (c) {
-          await supabase.from("contas_bancarias").update({ saldo_atual: Number(c.saldo_atual) + Number(l.valor) }).eq("id", l.conta_bancaria_id);
-        }
+        // O saldo da conta bancária é ajustado pelo trigger do banco ao inserir
+        // o contra-lançamento acima — não ajustar manualmente (gerava saldo dobrado).
+
       }
     }
     // 2. marcar conta a pagar como estornada e voltar a pendente
