@@ -97,6 +97,31 @@ async function fetchContext(obraId: string) {
   };
 }
 
+/** Baixa uma imagem do storage e devolve dataURL para embutir no PDF. */
+async function carregarImagem(
+  storagePath: string,
+): Promise<{ dataUrl: string; format: "JPEG" | "PNG" } | null> {
+  try {
+    const { data: signed } = await supabase.storage
+      .from("obra-fotos")
+      .createSignedUrl(storagePath, 3600);
+    if (!signed?.signedUrl) return null;
+    const res = await fetch(signed.signedUrl);
+    if (!res.ok) return null;
+    const blob = await res.blob();
+    const dataUrl: string = await new Promise((resolve, reject) => {
+      const fr = new FileReader();
+      fr.onload = () => resolve(String(fr.result));
+      fr.onerror = reject;
+      fr.readAsDataURL(blob);
+    });
+    const format = blob.type.includes("png") ? "PNG" : "JPEG";
+    return { dataUrl, format };
+  } catch {
+    return null;
+  }
+}
+
 // ---------------- RDO ----------------
 
 export async function exportRdoPdf(rdoId: string) {
