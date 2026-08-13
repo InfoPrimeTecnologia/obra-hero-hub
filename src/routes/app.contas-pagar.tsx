@@ -47,6 +47,8 @@ function ContasPagarPage() {
   const [open, setOpen] = useState(false);
   const [paying, setPaying] = useState<CP | null>(null);
   const [filtro, setFiltro] = useState<"todos" | "pendente" | "pago" | "vencido">("pendente");
+  const [filtroObra, setFiltroObra] = useState<string>("todos");
+
   const [form, setForm] = useState({
     descricao: "", valor: "", vencimento: new Date().toISOString().slice(0, 10),
     categoria_id: "", fornecedor_id: "", obra_id: "", observacoes: "",
