@@ -101,9 +101,11 @@ function FaturasCartaoPage() {
         }
       }
       const rat: Record<string, { obra: string; valor: number }[]> = {};
+      const comObra: Record<string, boolean> = {};
       for (const p of (parc ?? []) as any[]) {
         if (!p.fatura_cartao_id) continue;
         const oId = obraPorCompra[p.compra_id];
+        if (oId) comObra[p.fatura_cartao_id] = true;
         const label = oId ? nomeObra[oId] ?? "Obra" : "Sem obra";
         const arr = rat[p.fatura_cartao_id] ?? [];
         const found = arr.find((x) => x.obra === label);
@@ -112,7 +114,9 @@ function FaturasCartaoPage() {
         rat[p.fatura_cartao_id] = arr;
       }
       setRateio(rat);
+      setFaturaComObra(comObra);
     }
+
   };
   useEffect(() => { void carregar(); }, []);
 
