@@ -142,6 +142,26 @@ function RdoListPage() {
     navigate({ to: "/app/obras/$obraId/rdo/$rdoId", params: { obraId, rdoId: criado.id } });
   };
 
+  const excluir = async (r: Rdo) => {
+    const dataBR = new Date(r.data + "T00:00:00").toLocaleDateString("pt-BR");
+    if (!confirm(`Excluir o RDO de ${dataBR}? Fotos e registros serão removidos.`)) return;
+    const { data: ax } = await supabase
+      .from("rdo_anexos")
+      .select("id,storage_path")
+      .eq("rdo_id", r.id);
+    if (ax?.length) {
+      await supabase.storage.from("obra-fotos").remove(ax.map((a: any) => a.storage_path));
+      await supabase.from("rdo_anexos").delete().eq("rdo_id", r.id);
+    }
+    await supabase.from("rdo_atividades").delete().eq("rdo_id", r.id);
+    await supabase.from("rdo_equipes").delete().eq("rdo_id", r.id);
+    await supabase.from("rdo_ocorrencias").delete().eq("rdo_id", r.id);
+    const { error } = await supabase.from("rdos").delete().eq("id", r.id);
+    if (error) return toast.error("Erro ao excluir RDO", { description: error.message });
+    toast.success("RDO excluído");
+    void carregar();
+  };
+
   const listPath = `/app/obras/${obraId}/rdo`;
   if (location.pathname.replace(/\/$/, "") !== listPath) {
     return <Outlet />;
