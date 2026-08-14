@@ -746,7 +746,16 @@ function RelatoriosPage() {
                     </TableHeader>
                     <TableBody>
                       {rows.slice(0, 200).map((row, i) => (
-                        <TableRow key={i}>
+                        <TableRow
+                          key={i}
+                          className={
+                            (row as any).nivel === "Etapa"
+                              ? "bg-primary/10 font-semibold hover:bg-primary/15"
+                              : (row as any).nivel === "Subetapa"
+                                ? "bg-muted/30"
+                                : undefined
+                          }
+                        >
                           {r.columns.map((c) => {
                             const val = c.format ? c.format(row) : (row as any)[c.key as string];
                             const isStatus = c.key === "status";
