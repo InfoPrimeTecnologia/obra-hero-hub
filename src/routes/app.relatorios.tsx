@@ -352,7 +352,6 @@ const REPORTS: ReportConfig[] = [
         .from("lancamentos")
         .select("data,descricao,tipo,valor,contas_bancarias(nome)")
         .eq("customer_id", customerId)
-        .eq("estornado", false)
         .gte("data", from)
         .lte("data", to)
         .order("data");
