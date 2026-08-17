@@ -25,6 +25,7 @@ import {
 } from "@/components/ui/select";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/lib/auth-context";
+import { estornarLancamentoAtomico } from "@/lib/estorno-financeiro";
 import { toast } from "sonner";
 
 export const Route = createFileRoute("/app/obras/$obraId/contas-pagar")({
@@ -297,7 +298,6 @@ function ContasPagarObra() {
   const estornarFatura = async (f: Fatura) => {
     const motivo = window.prompt("Motivo do estorno da fatura:");
     if (!motivo || !motivo.trim()) return;
-    const token = crypto.randomUUID();
     try {
       const { data: cp } = await supabase
         .from("contas_pagar").select("id")
@@ -306,21 +306,13 @@ function ContasPagarObra() {
       if (cp?.id) {
         const { data: lancs } = await supabase
           .from("lancamentos").select("*").eq("conta_pagar_id", cp.id).eq("estornado", false);
+        let token: string | null = null;
         for (const l of lancs ?? []) {
-          await supabase.from("lancamentos").update({ estornado: true, estorno_token: token }).eq("id", l.id);
-          const { error } = await supabase.from("lancamentos").insert({
-            customer_id: l.customer_id,
-            conta_bancaria_id: l.conta_bancaria_id,
-            obra_id: l.obra_id ?? obraId,
-            tipo: "entrada",
-            valor: l.valor,
-            data: new Date().toISOString().slice(0, 10),
-            descricao: `ESTORNO: ${l.descricao} - ${motivo.trim()}`,
-            estorno_token: token,
-            created_by: user!.id,
-          });
-          if (error) throw error;
+          const result = await estornarLancamentoAtomico(l.id, motivo);
+          token = result?.[0]?.estorno_token ?? null;
+          if (!token) throw new Error("O banco não retornou o identificador do estorno");
         }
+        if (!token) throw new Error("Nenhum pagamento disponível para estorno");
         const { error: e1 } = await supabase.from("contas_pagar").update({
           status: "pendente",
           pago_em: null,
@@ -357,25 +349,15 @@ function ContasPagarObra() {
   const estornarBaixa = async () => {
     if (!estornando) return;
     if (!motivoEstorno.trim()) return toast.error("Informe o motivo");
-    const token = crypto.randomUUID();
     const { data: lancs } = await supabase
-      .from("lancamentos").select("*")
+      .from("lancamentos").select("id")
       .eq("conta_pagar_id", estornando.id).eq("estornado", false);
-    for (const l of lancs ?? []) {
-      await supabase.from("lancamentos").update({ estornado: true, estorno_token: token }).eq("id", l.id);
-      await supabase.from("lancamentos").insert({
-        customer_id: l.customer_id,
-        conta_bancaria_id: l.conta_bancaria_id,
-        obra_id: l.obra_id ?? obraId,
-        tipo: "entrada",
-        valor: l.valor,
-        data: new Date().toISOString().slice(0, 10),
-        descricao: `ESTORNO: ${l.descricao} - ${motivoEstorno}`,
-        estorno_token: token,
-        created_by: user!.id,
-      });
-      // O saldo da conta é ajustado pelo trigger a partir do contra-lançamento
-
+    if (!lancs?.length) return toast.error("Nenhum pagamento disponível para estorno");
+    let token: string | null = null;
+    for (const l of lancs) {
+      const result = await estornarLancamentoAtomico(l.id, motivoEstorno);
+      token = result?.[0]?.estorno_token ?? null;
+      if (!token) return toast.error("O banco não retornou o identificador do estorno");
     }
     const { error } = await supabase.from("contas_pagar").update({
       status: "pendente",
