@@ -49,6 +49,79 @@ BEGIN
 END;
 $$;
 
+-- Sobrescreve as rotinas oficiais para garantir que elas apenas criem
+-- lançamentos; somente trg_lancamento_saldo pode escrever em saldo_atual.
+CREATE OR REPLACE FUNCTION public.cp_baixa_to_lancamento()
+RETURNS trigger
+LANGUAGE plpgsql
+SECURITY DEFINER
+SET search_path TO 'public'
+AS $$
+BEGIN
+  IF NEW.status = 'pago'
+     AND OLD.status IS DISTINCT FROM 'pago'
+     AND NEW.conta_bancaria_id IS NOT NULL THEN
+    INSERT INTO public.lancamentos (
+      customer_id, conta_bancaria_id, categoria_id, obra_id,
+      tipo, valor, data, descricao, conta_pagar_id, created_by
+    ) VALUES (
+      NEW.customer_id, NEW.conta_bancaria_id, NEW.categoria_id, NEW.obra_id,
+      'saida', COALESCE(NEW.valor_pago, NEW.valor),
+      COALESCE(NEW.pago_em, CURRENT_DATE), NEW.descricao, NEW.id, NEW.created_by
+    );
+  END IF;
+  RETURN NEW;
+END;
+$$;
+
+CREATE OR REPLACE FUNCTION public.cr_baixa_to_lancamento()
+RETURNS trigger
+LANGUAGE plpgsql
+SECURITY DEFINER
+SET search_path TO 'public'
+AS $$
+BEGIN
+  IF NEW.status = 'recebido'
+     AND OLD.status IS DISTINCT FROM 'recebido'
+     AND NEW.conta_bancaria_id IS NOT NULL THEN
+    INSERT INTO public.lancamentos (
+      customer_id, conta_bancaria_id, categoria_id, obra_id,
+      tipo, valor, data, descricao, conta_receber_id, created_by
+    ) VALUES (
+      NEW.customer_id, NEW.conta_bancaria_id, NEW.categoria_id, NEW.obra_id,
+      'entrada', COALESCE(NEW.valor_recebido, NEW.valor),
+      COALESCE(NEW.recebido_em, CURRENT_DATE), NEW.descricao, NEW.id, NEW.created_by
+    );
+  END IF;
+  RETURN NEW;
+END;
+$$;
+
+CREATE OR REPLACE FUNCTION public.transferencia_to_lancamentos()
+RETURNS trigger
+LANGUAGE plpgsql
+SECURITY DEFINER
+SET search_path TO 'public'
+AS $$
+BEGIN
+  INSERT INTO public.lancamentos (
+    customer_id, conta_bancaria_id, tipo, valor, data, descricao,
+    transferencia_id, estorno_token, created_by
+  ) VALUES (
+    NEW.customer_id, NEW.conta_origem_id, 'saida', NEW.valor, NEW.data,
+    COALESCE(NEW.descricao, 'Transferência'), NEW.id, NEW.estorno_token, NEW.created_by
+  );
+  INSERT INTO public.lancamentos (
+    customer_id, conta_bancaria_id, tipo, valor, data, descricao,
+    transferencia_id, estorno_token, created_by
+  ) VALUES (
+    NEW.customer_id, NEW.conta_destino_id, 'entrada', NEW.valor, NEW.data,
+    COALESCE(NEW.descricao, 'Transferência'), NEW.id, NEW.estorno_token, NEW.created_by
+  );
+  RETURN NEW;
+END;
+$$;
+
 -- Remove TODOS os gatilhos de lançamentos e qualquer gatilho legado de outra
 -- tabela cuja função escreva em saldo_atual. Isso cobre versões antigas em que
 -- contas_pagar/contas_receber também alteravam o saldo diretamente.

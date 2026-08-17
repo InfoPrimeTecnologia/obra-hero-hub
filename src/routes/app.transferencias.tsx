@@ -16,6 +16,7 @@ import {
 } from "@/components/ui/dialog";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/lib/auth-context";
+import { estornarLancamentoAtomico } from "@/lib/estorno-financeiro";
 import { toast } from "sonner";
 
 export const Route = createFileRoute("/app/transferencias")({
@@ -81,25 +82,12 @@ function TransferenciasPage() {
     }).eq("id", estorno.id);
     if (e1) return toast.error("Erro", { description: e1.message });
 
-    // Marca lançamentos originais como estornados e cria reversões
-    const { data: lancs } = await supabase.from("lancamentos").select("*")
+    // Cada reversão é criada atomicamente; o banco bloqueia estorno duplicado.
+    const { data: lancs } = await supabase.from("lancamentos").select("id")
       .eq("transferencia_id", estorno.id).eq("estornado", false);
     if (lancs) {
       for (const l of lancs) {
-        await supabase.from("lancamentos").update({ estornado: true }).eq("id", l.id);
-        // reversão
-        await supabase.from("lancamentos").insert({
-          customer_id: l.customer_id,
-          conta_bancaria_id: l.conta_bancaria_id,
-          tipo: l.tipo === "entrada" ? "saida" : "entrada",
-          valor: l.valor,
-          data: new Date().toISOString().slice(0, 10),
-          descricao: `ESTORNO: ${l.descricao} - ${motivo}`,
-          estorno_token: l.estorno_token,
-          created_by: user!.id,
-        });
-        // saldo ajustado pelo trigger do banco no insert acima (não ajustar manualmente)
-
+        await estornarLancamentoAtomico(l.id, motivo);
       }
     }
     toast.success("Transferência estornada");
