@@ -142,6 +142,8 @@ function ContasPagarPage() {
       token = result?.[0]?.estorno_token ?? null;
       if (!token) return toast.error("O banco não retornou o identificador do estorno");
     }
+    const tokenConfirmado = token;
+    if (!tokenConfirmado) return toast.error("O banco não retornou o identificador do estorno");
     // 2. marcar conta a pagar como estornada e voltar a pendente
     const { error } = await supabase.from("contas_pagar").update({
       status: "pendente",
@@ -149,13 +151,13 @@ function ContasPagarPage() {
       valor_pago: 0,
       conta_bancaria_id: null,
       estornado: true,
-      estorno_token: token,
+      estorno_token: tokenConfirmado,
       estornado_em: new Date().toISOString(),
       estornado_por: user!.id,
       motivo_estorno: motivoEstorno,
     } as any).eq("id", estornando.id);
     if (error) return toast.error("Erro", { description: error.message });
-    toast.success(`Pagamento estornado (token: ${token.slice(0, 8)}…)`);
+    toast.success(`Pagamento estornado (token: ${tokenConfirmado.slice(0, 8)}…)`);
     setEstornando(null); setMotivoEstorno(""); void carregar();
   };
 
