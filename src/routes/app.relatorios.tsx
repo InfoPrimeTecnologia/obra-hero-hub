@@ -350,13 +350,15 @@ const REPORTS: ReportConfig[] = [
     async load({ customerId, from, to }) {
       const { data } = await supabase
         .from("lancamentos")
-        .select("data,descricao,tipo,valor,contas_bancarias(nome)")
+        .select("data,descricao,tipo,valor,estornado,estorno_de_id,contas_bancarias(nome)")
         .eq("customer_id", customerId)
         .gte("data", from)
         .lte("data", to)
         .order("data");
       let acc = 0;
-      return (data ?? []).map((r: any) => {
+      return (data ?? [])
+        .filter((r: any) => !r.estornado && !r.estorno_de_id && !r.descricao?.startsWith("ESTORNO:"))
+        .map((r: any) => {
         const v = Number(r.valor ?? 0) * (r.tipo === "entrada" ? 1 : -1);
         acc += v;
         return {
@@ -367,7 +369,7 @@ const REPORTS: ReportConfig[] = [
           valor: v,
           saldo: acc,
         };
-      });
+        });
     },
     summary: (rows) => {
       const entradas = rows

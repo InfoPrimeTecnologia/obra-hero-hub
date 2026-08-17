@@ -15,7 +15,7 @@ export const Route = createFileRoute("/app/fluxo-caixa")({
   component: FluxoCaixaPage,
 });
 
-type Lanc = { id: string; tipo: string; valor: number; data: string; descricao: string; conta_bancaria_id: string; conciliado: boolean; estornado: boolean };
+type Lanc = { id: string; tipo: string; valor: number; data: string; descricao: string; conta_bancaria_id: string; conciliado: boolean; estornado: boolean; estorno_de_id: string | null };
 type CP = { valor: number; vencimento: string; status: string; descricao: string };
 type CR = { valor: number; vencimento: string; status: string; descricao: string };
 
@@ -53,9 +53,11 @@ function FluxoCaixaPage() {
   useEffect(() => { void carregar().catch((e) => toast.error(e.message)); }, [de, ate, obra?.id]);
 
   const realizado = useMemo(() => {
-    // O estorno é contabilizado pelo contra-lançamento; o original permanece no histórico.
-    const entradas = lancs.filter(l => l.tipo === "entrada").reduce((s, l) => s + Number(l.valor), 0);
-    const saidas = lancs.filter(l => l.tipo === "saida").reduce((s, l) => s + Number(l.valor), 0);
+    const efetivos = lancs.filter(
+      (l) => !l.estornado && !l.estorno_de_id && !l.descricao.startsWith("ESTORNO:"),
+    );
+    const entradas = efetivos.filter(l => l.tipo === "entrada").reduce((s, l) => s + Number(l.valor), 0);
+    const saidas = efetivos.filter(l => l.tipo === "saida").reduce((s, l) => s + Number(l.valor), 0);
     return { entradas, saidas, saldo: entradas - saidas };
   }, [lancs]);
 
