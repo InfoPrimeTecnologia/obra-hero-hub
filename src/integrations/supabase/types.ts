@@ -3426,6 +3426,13 @@ export type Database = {
         Args: { payload: Json; queue_name: string }
         Returns: number
       }
+      estornar_lancamento: {
+        Args: { _lancamento_id: string; _motivo: string }
+        Returns: {
+          contra_lancamento_id: string
+          estorno_token: string
+        }[]
+      }
       has_role: {
         Args: {
           _role: Database["public"]["Enums"]["app_role"]

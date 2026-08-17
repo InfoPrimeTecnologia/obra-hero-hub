@@ -25,6 +25,7 @@ import {
 } from "@/components/ui/select";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/lib/auth-context";
+import { estornarLancamentoAtomico } from "@/lib/estorno-financeiro";
 import { toast } from "sonner";
 
 export const Route = createFileRoute("/app/obras/$obraId/caixa")({
@@ -85,28 +86,11 @@ function CaixaObraPage() {
   const estornarLancamento = async (l: Lanc) => {
     const motivo = window.prompt("Motivo do estorno:");
     if (!motivo || !motivo.trim()) return;
-    const token = crypto.randomUUID();
 
     try {
-      const { error: e1 } = await supabase
-        .from("lancamentos")
-        .update({ estornado: true, estorno_token: token })
-        .eq("id", l.id);
-      if (e1) throw e1;
-
-      // O contra-lançamento ajusta o saldo da conta pelo trigger do banco (sem update manual)
-      const { error: e2 } = await supabase.from("lancamentos").insert({
-        customer_id: l.customer_id,
-        conta_bancaria_id: l.conta_bancaria_id,
-        obra_id: obraId,
-        tipo: l.tipo === "saida" ? "entrada" : "saida",
-        valor: l.valor,
-        data: new Date().toISOString().slice(0, 10),
-        descricao: `ESTORNO: ${l.descricao} - ${motivo.trim()}`,
-        estorno_token: token,
-        created_by: user!.id,
-      });
-      if (e2) throw e2;
+      const result = await estornarLancamentoAtomico(l.id, motivo);
+      const token = result?.[0]?.estorno_token;
+      if (!token) throw new Error("O banco não retornou o identificador do estorno");
 
       if (l.conta_pagar_id) {
         const { data: cp } = await supabase

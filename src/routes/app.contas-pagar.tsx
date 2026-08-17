@@ -18,6 +18,7 @@ import {
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/lib/auth-context";
 import { useObraSelecionada } from "@/lib/obra-context";
+import { estornarLancamentoAtomico } from "@/lib/estorno-financeiro";
 import { ObraScopeBadge } from "@/components/app/ObraScopeBadge";
 import { toast } from "sonner";
 
@@ -132,28 +133,17 @@ function ContasPagarPage() {
   const estornarBaixa = async () => {
     if (!estornando) return;
     if (!motivoEstorno.trim()) return toast.error("Informe o motivo");
-    const token = crypto.randomUUID();
-    // 1. reverter lançamento + saldo
-    const { data: lancs } = await supabase.from("lancamentos").select("*")
+    const { data: lancs } = await supabase.from("lancamentos").select("id")
       .eq("conta_pagar_id", estornando.id).eq("estornado", false);
-    if (lancs) {
-      for (const l of lancs) {
-        await supabase.from("lancamentos").update({ estornado: true, estorno_token: token }).eq("id", l.id);
-        await supabase.from("lancamentos").insert({
-          customer_id: l.customer_id,
-          conta_bancaria_id: l.conta_bancaria_id,
-          tipo: "entrada", // reverso de saída
-          valor: l.valor,
-          data: new Date().toISOString().slice(0, 10),
-          descricao: `ESTORNO: ${l.descricao} - ${motivoEstorno}`,
-          estorno_token: token,
-          created_by: user!.id,
-        });
-        // O saldo da conta bancária é ajustado pelo trigger do banco ao inserir
-        // o contra-lançamento acima — não ajustar manualmente (gerava saldo dobrado).
-
-      }
+    if (!lancs?.length) return toast.error("Nenhum pagamento disponível para estorno");
+    let token: string | null = null;
+    for (const l of lancs) {
+      const result = await estornarLancamentoAtomico(l.id, motivoEstorno);
+      token = result?.[0]?.estorno_token ?? null;
+      if (!token) return toast.error("O banco não retornou o identificador do estorno");
     }
+    const tokenConfirmado = token;
+    if (!tokenConfirmado) return toast.error("O banco não retornou o identificador do estorno");
     // 2. marcar conta a pagar como estornada e voltar a pendente
     const { error } = await supabase.from("contas_pagar").update({
       status: "pendente",
@@ -161,13 +151,13 @@ function ContasPagarPage() {
       valor_pago: 0,
       conta_bancaria_id: null,
       estornado: true,
-      estorno_token: token,
+      estorno_token: tokenConfirmado,
       estornado_em: new Date().toISOString(),
       estornado_por: user!.id,
       motivo_estorno: motivoEstorno,
     } as any).eq("id", estornando.id);
     if (error) return toast.error("Erro", { description: error.message });
-    toast.success(`Pagamento estornado (token: ${token.slice(0, 8)}…)`);
+    toast.success(`Pagamento estornado (token: ${tokenConfirmado.slice(0, 8)}…)`);
     setEstornando(null); setMotivoEstorno(""); void carregar();
   };
 
