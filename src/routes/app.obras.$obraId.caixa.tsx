@@ -40,6 +40,7 @@ type Lanc = {
   descricao: string;
   conta_bancaria_id: string;
   estornado: boolean | null;
+  estorno_de_id: string | null;
   conta_pagar_id: string | null;
   customer_id: string;
 };
@@ -73,7 +74,7 @@ function CaixaObraPage() {
         .or(`obra_id.eq.${obraId},obra_id.is.null`),
       supabase
         .from("lancamentos")
-        .select("id,tipo,valor,data,descricao,conta_bancaria_id,estornado,conta_pagar_id,customer_id")
+        .select("id,tipo,valor,data,descricao,conta_bancaria_id,estornado,estorno_de_id,conta_pagar_id,customer_id")
         .eq("obra_id", obraId)
         .gte("data", de)
         .lte("data", ate)
@@ -311,7 +312,9 @@ function CaixaObraPage() {
                     }`}
                   >
                     <div className="flex items-center gap-2">
-                      <Badge variant={l.tipo === "entrada" ? "default" : "secondary"}>{l.tipo}</Badge>
+                      <Badge variant={l.tipo === "entrada" ? "default" : "secondary"}>
+                        {l.estorno_de_id ? "estorno" : l.tipo}
+                      </Badge>
                       <span>{new Date(l.data).toLocaleDateString("pt-BR")}</span>
                       <span className="text-muted-foreground">{l.descricao}</span>
                       <span className="text-xs text-muted-foreground">
@@ -324,7 +327,7 @@ function CaixaObraPage() {
                       >
                         {l.tipo === "entrada" ? "+" : "-"} {brl(Number(l.valor))}
                       </span>
-                      {!l.estornado && (
+                      {!l.estornado && !l.estorno_de_id && !l.descricao.startsWith("ESTORNO:") && (
                         <Button
                           size="sm"
                           variant="ghost"
