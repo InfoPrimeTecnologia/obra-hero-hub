@@ -161,10 +161,17 @@ function CaixaObraPage() {
     void carregar();
   };
 
-  // Um estorno preserva a saída original e cria uma entrada inversa.
-  // Os totais devem considerar o par completo para o resultado líquido ficar correto.
-  const entradas = lancs.filter((l) => l.tipo === "entrada").reduce((s, l) => s + Number(l.valor), 0);
-  const saidas = lancs.filter((l) => l.tipo === "saida").reduce((s, l) => s + Number(l.valor), 0);
+  // O extrato preserva o par contábil, mas os indicadores operacionais ignoram
+  // tanto o lançamento cancelado quanto o contralançamento do estorno.
+  const lancamentosEfetivos = lancs.filter(
+    (l) => !l.estornado && !l.estorno_de_id && !l.descricao.startsWith("ESTORNO:"),
+  );
+  const entradas = lancamentosEfetivos
+    .filter((l) => l.tipo === "entrada")
+    .reduce((s, l) => s + Number(l.valor), 0);
+  const saidas = lancamentosEfetivos
+    .filter((l) => l.tipo === "saida")
+    .reduce((s, l) => s + Number(l.valor), 0);
   const brl = (n: number) => n.toLocaleString("pt-BR", { style: "currency", currency: "BRL" });
   const contaNome = (id: string) => contas.find((c) => c.id === id)?.nome ?? "—";
 
