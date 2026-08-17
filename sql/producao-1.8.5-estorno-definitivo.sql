@@ -96,6 +96,81 @@ AFTER INSERT OR DELETE ON public.lancamentos
 FOR EACH ROW
 EXECUTE FUNCTION public.lancamento_aplicar_saldo();
 
+-- Em bancos de produção antigos, estas funções também atualizavam saldo_atual
+-- diretamente. Agora elas apenas criam o lançamento; o trigger único acima
+-- é o único responsável por alterar o saldo.
+CREATE OR REPLACE FUNCTION public.cp_baixa_to_lancamento()
+RETURNS trigger
+LANGUAGE plpgsql
+SECURITY DEFINER
+SET search_path TO 'public'
+AS $$
+BEGIN
+  IF NEW.status = 'pago'
+     AND OLD.status IS DISTINCT FROM 'pago'
+     AND NEW.conta_bancaria_id IS NOT NULL THEN
+    INSERT INTO public.lancamentos (
+      customer_id, conta_bancaria_id, categoria_id, obra_id,
+      tipo, valor, data, descricao, conta_pagar_id, created_by
+    ) VALUES (
+      NEW.customer_id, NEW.conta_bancaria_id, NEW.categoria_id, NEW.obra_id,
+      'saida', COALESCE(NEW.valor_pago, NEW.valor),
+      COALESCE(NEW.pago_em, CURRENT_DATE), NEW.descricao, NEW.id, NEW.created_by
+    );
+  END IF;
+  RETURN NEW;
+END;
+$$;
+
+CREATE OR REPLACE FUNCTION public.cr_baixa_to_lancamento()
+RETURNS trigger
+LANGUAGE plpgsql
+SECURITY DEFINER
+SET search_path TO 'public'
+AS $$
+BEGIN
+  IF NEW.status = 'recebido'
+     AND OLD.status IS DISTINCT FROM 'recebido'
+     AND NEW.conta_bancaria_id IS NOT NULL THEN
+    INSERT INTO public.lancamentos (
+      customer_id, conta_bancaria_id, categoria_id, obra_id,
+      tipo, valor, data, descricao, conta_receber_id, created_by
+    ) VALUES (
+      NEW.customer_id, NEW.conta_bancaria_id, NEW.categoria_id, NEW.obra_id,
+      'entrada', COALESCE(NEW.valor_recebido, NEW.valor),
+      COALESCE(NEW.recebido_em, CURRENT_DATE), NEW.descricao, NEW.id, NEW.created_by
+    );
+  END IF;
+  RETURN NEW;
+END;
+$$;
+
+CREATE OR REPLACE FUNCTION public.transferencia_to_lancamentos()
+RETURNS trigger
+LANGUAGE plpgsql
+SECURITY DEFINER
+SET search_path TO 'public'
+AS $$
+BEGIN
+  INSERT INTO public.lancamentos (
+    customer_id, conta_bancaria_id, tipo, valor, data, descricao,
+    transferencia_id, estorno_token, created_by
+  ) VALUES (
+    NEW.customer_id, NEW.conta_origem_id, 'saida', NEW.valor, NEW.data,
+    COALESCE(NEW.descricao, 'Transferência'), NEW.id, NEW.estorno_token, NEW.created_by
+  );
+
+  INSERT INTO public.lancamentos (
+    customer_id, conta_bancaria_id, tipo, valor, data, descricao,
+    transferencia_id, estorno_token, created_by
+  ) VALUES (
+    NEW.customer_id, NEW.conta_destino_id, 'entrada', NEW.valor, NEW.data,
+    COALESCE(NEW.descricao, 'Transferência'), NEW.id, NEW.estorno_token, NEW.created_by
+  );
+  RETURN NEW;
+END;
+$$;
+
 -- Corrige imediatamente todos os saldos que já tenham ficado divergentes.
 UPDATE public.contas_bancarias cb
    SET saldo_atual = COALESCE(cb.saldo_inicial, 0) + COALESCE((
