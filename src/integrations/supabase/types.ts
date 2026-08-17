@@ -1867,6 +1867,7 @@ export type Database = {
           data: string
           descricao: string
           estornado: boolean
+          estorno_de_id: string | null
           estorno_token: string | null
           id: string
           obra_id: string | null
@@ -1886,6 +1887,7 @@ export type Database = {
           data?: string
           descricao: string
           estornado?: boolean
+          estorno_de_id?: string | null
           estorno_token?: string | null
           id?: string
           obra_id?: string | null
@@ -1905,6 +1907,7 @@ export type Database = {
           data?: string
           descricao?: string
           estornado?: boolean
+          estorno_de_id?: string | null
           estorno_token?: string | null
           id?: string
           obra_id?: string | null
@@ -1932,6 +1935,13 @@ export type Database = {
             columns: ["conta_receber_id"]
             isOneToOne: false
             referencedRelation: "contas_receber"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "lancamentos_estorno_de_id_fkey"
+            columns: ["estorno_de_id"]
+            isOneToOne: false
+            referencedRelation: "lancamentos"
             referencedColumns: ["id"]
           },
         ]
