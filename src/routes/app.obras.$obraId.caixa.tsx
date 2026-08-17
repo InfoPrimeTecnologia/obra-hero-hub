@@ -176,9 +176,10 @@ function CaixaObraPage() {
     void carregar();
   };
 
-  const ativos = lancs.filter((l) => !l.estornado);
-  const entradas = ativos.filter((l) => l.tipo === "entrada").reduce((s, l) => s + Number(l.valor), 0);
-  const saidas = ativos.filter((l) => l.tipo === "saida").reduce((s, l) => s + Number(l.valor), 0);
+  // Um estorno preserva a saída original e cria uma entrada inversa.
+  // Os totais devem considerar o par completo para o resultado líquido ficar correto.
+  const entradas = lancs.filter((l) => l.tipo === "entrada").reduce((s, l) => s + Number(l.valor), 0);
+  const saidas = lancs.filter((l) => l.tipo === "saida").reduce((s, l) => s + Number(l.valor), 0);
   const brl = (n: number) => n.toLocaleString("pt-BR", { style: "currency", currency: "BRL" });
   const contaNome = (id: string) => contas.find((c) => c.id === id)?.nome ?? "—";
 

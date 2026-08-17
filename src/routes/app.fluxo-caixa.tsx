@@ -53,9 +53,9 @@ function FluxoCaixaPage() {
   useEffect(() => { void carregar().catch((e) => toast.error(e.message)); }, [de, ate, obra?.id]);
 
   const realizado = useMemo(() => {
-    const ativos = lancs.filter(l => !l.estornado);
-    const entradas = ativos.filter(l => l.tipo === "entrada").reduce((s, l) => s + Number(l.valor), 0);
-    const saidas = ativos.filter(l => l.tipo === "saida").reduce((s, l) => s + Number(l.valor), 0);
+    // O estorno é contabilizado pelo contra-lançamento; o original permanece no histórico.
+    const entradas = lancs.filter(l => l.tipo === "entrada").reduce((s, l) => s + Number(l.valor), 0);
+    const saidas = lancs.filter(l => l.tipo === "saida").reduce((s, l) => s + Number(l.valor), 0);
     return { entradas, saidas, saldo: entradas - saidas };
   }, [lancs]);
 
