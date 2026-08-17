@@ -49,22 +49,32 @@ BEGIN
 END;
 $$;
 
--- Remove TODOS os gatilhos não internos da tabela, inclusive gatilhos antigos
--- com nomes/funções desconhecidos que reajustavam saldo no UPDATE estornado=true.
+-- Remove TODOS os gatilhos de lançamentos e qualquer gatilho legado de outra
+-- tabela cuja função escreva em saldo_atual. Isso cobre versões antigas em que
+-- contas_pagar/contas_receber também alteravam o saldo diretamente.
 DO $$
 DECLARE
   r record;
 BEGIN
   FOR r IN
-    SELECT t.tgname
+    SELECT n.nspname AS schema_name, c.relname AS table_name, t.tgname
       FROM pg_trigger t
       JOIN pg_class c ON c.oid = t.tgrelid
       JOIN pg_namespace n ON n.oid = c.relnamespace
+      JOIN pg_proc p ON p.oid = t.tgfoid
      WHERE NOT t.tgisinternal
        AND n.nspname = 'public'
-       AND c.relname = 'lancamentos'
+       AND (
+         c.relname = 'lancamentos'
+         OR pg_get_functiondef(p.oid) ILIKE '%saldo_atual%'
+       )
   LOOP
-    EXECUTE format('DROP TRIGGER IF EXISTS %I ON public.lancamentos', r.tgname);
+    EXECUTE format(
+      'DROP TRIGGER IF EXISTS %I ON %I.%I',
+      r.tgname,
+      r.schema_name,
+      r.table_name
+    );
   END LOOP;
 END $$;
 
