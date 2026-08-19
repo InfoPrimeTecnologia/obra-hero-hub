@@ -642,33 +642,43 @@ function RdoDetailPage() {
           </CardHeader>
           <CardContent className="space-y-3">
             <div className="grid grid-cols-1 gap-2 md:grid-cols-2">
-              <Select value={atEtapa} onValueChange={(v) => { setAtEtapa(v); setAtSub(""); }}>
-                <SelectTrigger>
-                  <SelectValue placeholder="Etapa (opcional)" />
-                </SelectTrigger>
-                <SelectContent>
-                  {etapas.map((e) => (
-                    <SelectItem key={e.id} value={e.id}>{e.nome}</SelectItem>
-                  ))}
-                </SelectContent>
-              </Select>
-              <Select value={atSub} onValueChange={setAtSub} disabled={!atEtapa || subFiltradas.length === 0}>
-                <SelectTrigger>
-                  <SelectValue placeholder="Subetapa (opcional)" />
-                </SelectTrigger>
-                <SelectContent>
-                  {subFiltradas.map((s) => (
-                    <SelectItem key={s.id} value={s.id}>{s.nome}</SelectItem>
-                  ))}
-                </SelectContent>
-              </Select>
+              <div className="space-y-1">
+                <Label className="text-xs">Etapa do orçamento (opcional)</Label>
+                <Select value={atEtapa} onValueChange={(v) => { setAtEtapa(v); setAtSub(""); }}>
+                  <SelectTrigger>
+                    <SelectValue placeholder="Selecione a etapa" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    {etapas.map((e) => (
+                      <SelectItem key={e.id} value={e.id}>{e.nome}</SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+              </div>
+              <div className="space-y-1">
+                <Label className="text-xs">Subetapa (opcional)</Label>
+                <Select value={atSub} onValueChange={setAtSub} disabled={!atEtapa || subFiltradas.length === 0}>
+                  <SelectTrigger>
+                    <SelectValue placeholder="Selecione a subetapa" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    {subFiltradas.map((s) => (
+                      <SelectItem key={s.id} value={s.id}>{s.nome}</SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+              </div>
             </div>
-            <Textarea
-              rows={2}
-              placeholder="Descrição da atividade"
-              value={atDesc}
-              onChange={(e) => setAtDesc(e.target.value)}
-            />
+            <div className="space-y-1">
+              <Label className="text-xs">Descrição da atividade executada</Label>
+              <Textarea
+                rows={2}
+                placeholder="Ex.: Concretagem da laje do 2º pavimento"
+                value={atDesc}
+                onChange={(e) => setAtDesc(e.target.value)}
+              />
+            </div>
+
             <div className="flex items-end gap-2">
               <div className="flex-1 space-y-1">
                 <Label className="text-xs">% concluído no dia</Label>
