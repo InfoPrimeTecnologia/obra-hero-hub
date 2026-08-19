@@ -438,3 +438,117 @@ export async function exportMedicaoPdf(medicaoObraId: string) {
   drawFooter(doc);
   doc.save(`Medicao_${med.numero ?? "s-n"}_${ctx.obraName.replace(/\s+/g, "_")}.pdf`);
 }
+
+// ---------------- Caixa e Bancos ----------------
+
+export async function exportCaixaBancosPdf(obraId: string, de: string, ate: string) {
+  const ctx = await fetchContext(obraId);
+  const [{ data: contas }, { data: lancs }] = await Promise.all([
+    supabase
+      .from("contas_bancarias")
+      .select("id,nome,tipo,saldo_atual,ativo")
+      .eq("ativo", true)
+      .or(`obra_id.eq.${obraId},obra_id.is.null`)
+      .order("nome"),
+    supabase
+      .from("lancamentos")
+      .select("id,tipo,valor,data,descricao,conta_bancaria_id,estornado,estorno_de_id")
+      .eq("obra_id", obraId)
+      .gte("data", de)
+      .lte("data", ate)
+      .order("data"),
+  ]);
+
+  const contaNome = (id: string) =>
+    (contas ?? []).find((c: any) => c.id === id)?.nome ?? "—";
+  const isEstorno = (l: any) =>
+    Boolean(l.estorno_de_id) || String(l.descricao ?? "").startsWith("ESTORNO:");
+  const efetivos = (lancs ?? []).filter((l: any) => !l.estornado && !isEstorno(l));
+  const entradas = efetivos
+    .filter((l: any) => l.tipo === "entrada")
+    .reduce((s: number, l: any) => s + Number(l.valor ?? 0), 0);
+  const saidas = efetivos
+    .filter((l: any) => l.tipo === "saida")
+    .reduce((s: number, l: any) => s + Number(l.valor ?? 0), 0);
+  const saldoAtual = (contas ?? []).reduce(
+    (s: number, c: any) => s + Number(c.saldo_atual ?? 0),
+    0,
+  );
+
+  const doc = new jsPDF();
+  drawHeader(doc, {
+    companyName: ctx.companyName,
+    obraName: ctx.obraName,
+    obraAddress: ctx.obraAddress,
+    reportTitle: "Caixa e Bancos",
+    reportSubtitle: `${fmtDate(de)} a ${fmtDate(ate)}`,
+  });
+
+  autoTable(doc, {
+    startY: 56,
+    theme: "grid",
+    styles: { fontSize: 9 },
+    headStyles: { fillColor: [30, 41, 59] },
+    head: [["Resumo do período", "Valor"]],
+    body: [
+      ["Entradas", { content: fmtBRL(entradas), styles: { halign: "right" } }],
+      ["Saídas", { content: fmtBRL(saidas), styles: { halign: "right" } }],
+      [
+        { content: "Saldo do período", styles: { fontStyle: "bold" } },
+        { content: fmtBRL(entradas - saidas), styles: { halign: "right", fontStyle: "bold" } },
+      ],
+      [
+        { content: "Saldo atual das contas", styles: { fontStyle: "bold" } },
+        { content: fmtBRL(saldoAtual), styles: { halign: "right", fontStyle: "bold" } },
+      ],
+    ] as any,
+  });
+
+  autoTable(doc, {
+    startY: ((doc as any).lastAutoTable?.finalY ?? 56) + 8,
+    theme: "grid",
+    styles: { fontSize: 9 },
+    headStyles: { fillColor: [30, 41, 59] },
+    head: [["Conta", "Tipo", "Saldo atual"]],
+    body: (contas ?? []).map((c: any) => [
+      c.nome,
+      c.tipo ?? "—",
+      { content: fmtBRL(Number(c.saldo_atual ?? 0)), styles: { halign: "right" } },
+    ]) as any,
+    foot: [[
+      { content: "TOTAL", styles: { fontStyle: "bold" } },
+      "",
+      { content: fmtBRL(saldoAtual), styles: { fontStyle: "bold", halign: "right" } },
+    ]] as any,
+    footStyles: { fillColor: [30, 41, 59], textColor: 255 },
+  });
+
+  let acumulado = 0;
+  const extrato = (lancs ?? []).map((l: any) => {
+    const sinal = l.tipo === "entrada" ? 1 : -1;
+    if (!l.estornado) acumulado += sinal * Number(l.valor ?? 0);
+    return [
+      fmtDate(l.data),
+      l.estornado ? "estornado" : isEstorno(l) ? "estorno" : l.tipo,
+      String(l.descricao ?? ""),
+      contaNome(l.conta_bancaria_id),
+      {
+        content: `${l.tipo === "entrada" ? "+" : "-"} ${fmtBRL(Number(l.valor ?? 0))}`,
+        styles: { halign: "right", textColor: l.tipo === "entrada" ? [22, 163, 74] : [220, 38, 38] },
+      },
+      { content: fmtBRL(acumulado), styles: { halign: "right" } },
+    ];
+  });
+
+  autoTable(doc, {
+    startY: ((doc as any).lastAutoTable?.finalY ?? 56) + 8,
+    theme: "grid",
+    styles: { fontSize: 8 },
+    headStyles: { fillColor: [30, 41, 59] },
+    head: [["Data", "Tipo", "Descrição", "Conta", "Valor", "Acumulado"]],
+    body: extrato as any,
+  });
+
+  drawFooter(doc);
+  doc.save(`Caixa_e_Bancos_${ctx.obraName.replace(/\s+/g, "_")}.pdf`);
+}
