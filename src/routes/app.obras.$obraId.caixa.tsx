@@ -303,7 +303,18 @@ function CaixaObraPage() {
           </div>
         </div>
 
-        <div className="grid gap-3 md:grid-cols-3">
+        <div className="grid gap-3 md:grid-cols-4">
+          <Card>
+            <CardContent className="p-4">
+              <div className="flex items-center gap-2 text-primary">
+                <Wallet className="h-4 w-4" />
+                <span className="text-xs">Saldo atual (contas)</span>
+              </div>
+              <p className="mt-1 text-2xl font-bold tabular-nums">{brl(saldoAtual)}</p>
+              <p className="text-[11px] text-muted-foreground">Disponível hoje em todas as contas da obra</p>
+            </CardContent>
+          </Card>
+
           <Card>
             <CardContent className="p-4">
               <div className="flex items-center gap-2 text-emerald-600">
