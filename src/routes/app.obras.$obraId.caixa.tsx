@@ -1,5 +1,7 @@
 import { createFileRoute, Link } from "@tanstack/react-router";
 import { useEffect, useState, type FormEvent } from "react";
+import { downloadCsv, fmtNum } from "@/lib/csv-export";
+import { exportCaixaBancosPdf } from "@/lib/pdf-reports";
 import { TrendingUp, ArrowLeftRight, Banknote, Plus, Undo2, FileDown, Wallet, FileSpreadsheet } from "lucide-react";
 import { PageHeader } from "@/components/admin/PageHeader";
 import { Card, CardContent } from "@/components/ui/card";
