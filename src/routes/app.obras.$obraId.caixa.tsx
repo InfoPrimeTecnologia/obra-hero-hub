@@ -27,6 +27,7 @@ import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/lib/auth-context";
 import { estornarLancamentoAtomico } from "@/lib/estorno-financeiro";
 import { toast } from "sonner";
+import { fmtDataBR, hojeISO } from "@/lib/date-br";
 
 export const Route = createFileRoute("/app/obras/$obraId/caixa")({
   component: CaixaObraPage,
@@ -49,7 +50,7 @@ type Conta = { id: string; nome: string; saldo_atual: number };
 function CaixaObraPage() {
   const { obraId } = Route.useParams();
   const { user } = useAuth();
-  const hoje = new Date().toISOString().slice(0, 10);
+  const hoje = hojeISO();
   const ini = new Date(new Date().getFullYear(), new Date().getMonth(), 1)
     .toISOString()
     .slice(0, 10);
@@ -322,7 +323,7 @@ function CaixaObraPage() {
                       <Badge variant={l.tipo === "entrada" ? "default" : "secondary"}>
                         {l.estorno_de_id ? "estorno" : l.tipo}
                       </Badge>
-                      <span>{new Date(l.data).toLocaleDateString("pt-BR")}</span>
+                      <span>{fmtDataBR(l.data)}</span>
                       <span className="text-muted-foreground">{l.descricao}</span>
                       <span className="text-xs text-muted-foreground">
                         • {contaNome(l.conta_bancaria_id)}

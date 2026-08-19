@@ -10,6 +10,7 @@ import { supabase } from "@/integrations/supabase/client";
 import { useObraSelecionada } from "@/lib/obra-context";
 import { ObraScopeBadge } from "@/components/app/ObraScopeBadge";
 import { toast } from "sonner";
+import { fmtDataBR } from "@/lib/date-br";
 
 export const Route = createFileRoute("/app/fluxo-caixa")({
   component: FluxoCaixaPage,
@@ -142,7 +143,7 @@ function FluxoCaixaPage() {
                   <div key={l.id} className={`flex items-center justify-between border-b py-1 text-sm ${l.estornado ? "opacity-50 line-through" : ""}`}>
                     <div className="flex items-center gap-2">
                       <Badge variant={l.tipo === "entrada" ? "default" : "secondary"}>{l.tipo}</Badge>
-                      <span>{new Date(l.data).toLocaleDateString("pt-BR")}</span>
+                      <span>{fmtDataBR(l.data)}</span>
                       <span className="text-muted-foreground">{l.descricao}</span>
                     </div>
                     <span className={l.tipo === "entrada" ? "text-emerald-600" : "text-destructive"}>

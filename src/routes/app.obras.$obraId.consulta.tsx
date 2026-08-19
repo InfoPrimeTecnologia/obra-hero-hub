@@ -200,7 +200,7 @@ function ConsultaPage() {
                       <p className="mt-1 truncate text-sm text-muted-foreground">{c.descricao}</p>
                     )}
                     <p className="mt-1 text-xs text-muted-foreground">
-                      {new Date(c.data_compra).toLocaleDateString("pt-BR")}
+                      {fmtDataBR(c.data_compra)}
                       {c.qtd_parcelas && c.qtd_parcelas > 0 ? ` · ${c.qtd_parcelas}x` : ""}
                     </p>
                   </div>

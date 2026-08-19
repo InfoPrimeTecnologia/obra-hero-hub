@@ -33,7 +33,7 @@ type CompraMeta = { forma_pagamento: string | null; natureza: string | null; nf:
 
 function RelPagamentos() {
   const { obraId } = Route.useParams();
-  const hoje = new Date().toISOString().slice(0, 10);
+  const hoje = hojeISO();
   const ini = new Date(new Date().getFullYear(), new Date().getMonth() - 2, 1).toISOString().slice(0, 10);
   const [de, setDe] = useState(ini);
   const [ate, setAte] = useState(hoje);
@@ -244,7 +244,7 @@ function RelPagamentos() {
                     <div key={c.id} className="flex items-center justify-between border-b py-1 text-sm">
                       <div className="flex items-center gap-2">
                         <Badge variant={c.status === "pago" ? "default" : c.status === "cancelado" ? "destructive" : "outline"}>{c.status}</Badge>
-                        <span>{new Date(c.vencimento).toLocaleDateString("pt-BR")}</span>
+                        <span>{fmtDataBR(c.vencimento)}</span>
                         <span className="text-muted-foreground">
                           {c.descricao} • {c.fornecedor_id ? fornec[c.fornecedor_id] ?? "—" : "—"}
                           {m.nf ? ` • NF ${m.nf}` : ""}

@@ -27,6 +27,7 @@ import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/lib/auth-context";
 import { estornarLancamentoAtomico } from "@/lib/estorno-financeiro";
 import { toast } from "sonner";
+import { hojeISO } from "@/lib/date-br";
 
 export const Route = createFileRoute("/app/obras/$obraId/contas-pagar")({
   component: ContasPagarObra,
@@ -74,13 +75,13 @@ function ContasPagarObra() {
   const [form, setForm] = useState({
     descricao: "",
     valor: "",
-    vencimento: new Date().toISOString().slice(0, 10),
+    vencimento: hojeISO(),
     categoria_id: "",
     fornecedor_id: "",
     observacoes: "",
   });
   const [pagto, setPagto] = useState({
-    data: new Date().toISOString().slice(0, 10),
+    data: hojeISO(),
     conta_bancaria_id: "",
   });
 
@@ -175,7 +176,7 @@ function ContasPagarObra() {
     setForm({
       descricao: "",
       valor: "",
-      vencimento: new Date().toISOString().slice(0, 10),
+      vencimento: hojeISO(),
       categoria_id: "",
       fornecedor_id: "",
       observacoes: "",
@@ -549,7 +550,7 @@ function ContasPagarObra() {
                       {st === "paga" ? "Paga" : f.status === "fechada" ? "Fechada" : "Aberta"}
                     </Badge>
                     {st !== "paga" ? (
-                      <Button size="sm" onClick={() => { setPayingFat(f); setPagto({ data: new Date().toISOString().slice(0, 10), conta_bancaria_id: "" }); }}>
+                      <Button size="sm" onClick={() => { setPayingFat(f); setPagto({ data: hojeISO(), conta_bancaria_id: "" }); }}>
                         <CheckCircle2 className="mr-2 h-4 w-4" /> Pagar parte da obra
                       </Button>
                     ) : (
