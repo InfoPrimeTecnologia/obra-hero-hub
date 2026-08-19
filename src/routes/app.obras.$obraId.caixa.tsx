@@ -1,6 +1,6 @@
 import { createFileRoute, Link } from "@tanstack/react-router";
 import { useEffect, useState, type FormEvent } from "react";
-import { TrendingUp, ArrowLeftRight, Banknote, Plus, Undo2 } from "lucide-react";
+import { TrendingUp, ArrowLeftRight, Banknote, Plus, Undo2, FileDown, Wallet, FileSpreadsheet } from "lucide-react";
 import { PageHeader } from "@/components/admin/PageHeader";
 import { Card, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
