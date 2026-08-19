@@ -742,8 +742,6 @@ function RdoDetailPage() {
               </div>
               <Button onClick={addOcorrencia}>Adicionar</Button>
             </div>
-
-            </div>
             {ocorrencias.map((o) => (
               <div
                 key={o.id}
