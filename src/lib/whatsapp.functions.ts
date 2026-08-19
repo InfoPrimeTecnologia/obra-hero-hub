@@ -48,10 +48,11 @@ async function postProviderMedia(
   token: string,
   fields: Record<string, string>,
   file: { blob: Blob; fileName: string },
+  fieldName = "medias",
 ) {
   const form = new FormData();
   Object.entries(fields).forEach(([key, value]) => form.append(key, value));
-  form.append("media", file.blob, file.fileName);
+  form.append(fieldName, file.blob, file.fileName);
 
   const resp = await fetch(endpoint, {
     method: "POST",
@@ -67,6 +68,23 @@ async function postProviderMedia(
   }
   return { ok: resp.ok, status: resp.status, body, raw: txt };
 }
+
+/** Tenta enviar mídia usando os nomes de campo aceitos pelo PrimeSync. */
+async function sendMediaWithFallback(
+  endpoint: string,
+  token: string,
+  fields: Record<string, string>,
+  file: { blob: Blob; fileName: string },
+) {
+  let last = await postProviderMedia(endpoint, token, fields, file, "medias");
+  if (last.ok) return last;
+  for (const field of ["media", "file"]) {
+    last = await postProviderMedia(endpoint, token, fields, file, field);
+    if (last.ok) return last;
+  }
+  return last;
+}
+
 
 function blobFromBase64(base64: string, mimeType: string) {
   const cleanBase64 = base64.includes(",") ? base64.split(",")[1] : base64;
