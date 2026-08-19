@@ -201,7 +201,7 @@ export const sendRdoWhatsApp = createServerFn({ method: "POST" })
               continue;
             }
 
-            const attachmentResult = await postProviderMedia(endpoint, token, {
+            const attachmentResult = await sendMediaWithFallback(endpoint, token, {
               number,
               body: attachment.legenda || `Anexo do RDO: ${fileName}`,
               externalKey: `${externalKey}-${attachment.id}`,
