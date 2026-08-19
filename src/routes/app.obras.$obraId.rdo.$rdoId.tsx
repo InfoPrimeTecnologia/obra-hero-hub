@@ -554,43 +554,59 @@ function RdoDetailPage() {
             </Button>
           </CardHeader>
           <CardContent className="space-y-3">
-            <div className="grid grid-cols-1 gap-2 md:grid-cols-6">
-              <Select value={eqTipo} onValueChange={(v) => setEqTipo(v as "interna" | "externa")}>
-                <SelectTrigger>
-                  <SelectValue />
-                </SelectTrigger>
-                <SelectContent>
-                  <SelectItem value="interna">Interna</SelectItem>
-                  <SelectItem value="externa">Externa</SelectItem>
-                </SelectContent>
-              </Select>
-              <Input
-                placeholder={eqTipo === "externa" ? "Empreiteiro *" : "Empreiteiro"}
-                value={eqEmpreiteiro}
-                onChange={(e) => setEqEmpreiteiro(e.target.value)}
-                disabled={eqTipo === "interna"}
-              />
-              <Input
-                placeholder="Função"
-                value={eqFuncao}
-                onChange={(e) => setEqFuncao(e.target.value)}
-              />
-              <Input
-                type="number"
-                min={1}
-                placeholder="Qtd"
-                value={eqQtd}
-                onChange={(e) => setEqQtd(Number(e.target.value))}
-              />
-              <Input
-                type="number"
-                step="0.5"
-                placeholder="Horas"
-                value={eqHoras}
-                onChange={(e) => setEqHoras(Number(e.target.value))}
-              />
+            <div className="grid grid-cols-1 items-end gap-2 md:grid-cols-6">
+              <div className="space-y-1">
+                <Label className="text-xs">Tipo de equipe</Label>
+                <Select value={eqTipo} onValueChange={(v) => setEqTipo(v as "interna" | "externa")}>
+                  <SelectTrigger>
+                    <SelectValue />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="interna">Interna</SelectItem>
+                    <SelectItem value="externa">Externa</SelectItem>
+                  </SelectContent>
+                </Select>
+              </div>
+              <div className="space-y-1">
+                <Label className="text-xs">
+                  Empreiteiro {eqTipo === "externa" ? "*" : "(equipe própria)"}
+                </Label>
+                <Input
+                  placeholder={eqTipo === "externa" ? "Nome da empreiteira" : "—"}
+                  value={eqEmpreiteiro}
+                  onChange={(e) => setEqEmpreiteiro(e.target.value)}
+                  disabled={eqTipo === "interna"}
+                />
+              </div>
+              <div className="space-y-1">
+                <Label className="text-xs">Função</Label>
+                <Input
+                  placeholder="Ex.: Pedreiro"
+                  value={eqFuncao}
+                  onChange={(e) => setEqFuncao(e.target.value)}
+                />
+              </div>
+              <div className="space-y-1">
+                <Label className="text-xs">Quantidade de pessoas</Label>
+                <Input
+                  type="number"
+                  min={1}
+                  value={eqQtd}
+                  onChange={(e) => setEqQtd(Number(e.target.value))}
+                />
+              </div>
+              <div className="space-y-1">
+                <Label className="text-xs">Horas trabalhadas</Label>
+                <Input
+                  type="number"
+                  step="0.5"
+                  value={eqHoras}
+                  onChange={(e) => setEqHoras(Number(e.target.value))}
+                />
+              </div>
               <Button onClick={addEquipe}>Adicionar</Button>
             </div>
+
             {equipes.map((e) => (
               <div
                 key={e.id}
