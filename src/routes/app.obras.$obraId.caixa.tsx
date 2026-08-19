@@ -175,6 +175,37 @@ function CaixaObraPage() {
     .reduce((s, l) => s + Number(l.valor), 0);
   const brl = (n: number) => n.toLocaleString("pt-BR", { style: "currency", currency: "BRL" });
   const contaNome = (id: string) => contas.find((c) => c.id === id)?.nome ?? "—";
+  const saldoAtual = contas.reduce((s, c) => s + Number(c.saldo_atual ?? 0), 0);
+
+  const exportarExcel = () => {
+    let acumulado = 0;
+    const rows = lancs.map((l) => {
+      const sinal = l.tipo === "entrada" ? 1 : -1;
+      if (!l.estornado) acumulado += sinal * Number(l.valor);
+      return [
+        fmtDataBR(l.data),
+        l.estornado ? "estornado" : l.estorno_de_id || l.descricao.startsWith("ESTORNO:") ? "estorno" : l.tipo,
+        l.descricao,
+        contaNome(l.conta_bancaria_id),
+        fmtNum(sinal * Number(l.valor)),
+        fmtNum(acumulado),
+      ];
+    });
+    rows.push([]);
+    rows.push(["Entradas", "", "", "", fmtNum(entradas), ""]);
+    rows.push(["Saídas", "", "", "", fmtNum(saidas), ""]);
+    rows.push(["Saldo do período", "", "", "", fmtNum(entradas - saidas), ""]);
+    rows.push(["Saldo atual das contas", "", "", "", fmtNum(saldoAtual), ""]);
+    downloadCsv(`caixa-bancos-${de}-a-${ate}`, rows, [
+      "Data",
+      "Tipo",
+      "Descrição",
+      "Conta",
+      "Valor",
+      "Acumulado",
+    ]);
+  };
+
 
   return (
     <div>
