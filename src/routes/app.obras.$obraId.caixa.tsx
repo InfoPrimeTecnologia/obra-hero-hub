@@ -283,11 +283,25 @@ function CaixaObraPage() {
                 </form>
               </DialogContent>
             </Dialog>
+            <Button variant="outline" onClick={exportarExcel}>
+              <FileSpreadsheet className="mr-2 h-4 w-4" /> Excel
+            </Button>
+            <Button
+              variant="outline"
+              onClick={() => {
+                void exportCaixaBancosPdf(obraId, de, ate).catch((e) =>
+                  toast.error(e?.message ?? "Erro ao gerar PDF"),
+                );
+              }}
+            >
+              <FileDown className="mr-2 h-4 w-4" /> PDF
+            </Button>
             <Button asChild variant="outline">
               <Link to="/app/transferencias">
                 <ArrowLeftRight className="mr-2 h-4 w-4" /> Transferir
               </Link>
             </Button>
+
           </div>
         }
       />
