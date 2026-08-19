@@ -716,26 +716,33 @@ function RdoDetailPage() {
             </CardTitle>
           </CardHeader>
           <CardContent className="space-y-3">
-            <div className="grid grid-cols-1 gap-2 md:grid-cols-4">
-              <Select value={ocTipo} onValueChange={setOcTipo}>
-                <SelectTrigger>
-                  <SelectValue />
-                </SelectTrigger>
-                <SelectContent>
-                  <SelectItem value="atraso">Atraso</SelectItem>
-                  <SelectItem value="acidente">Acidente</SelectItem>
-                  <SelectItem value="visita">Visita</SelectItem>
-                  <SelectItem value="entrega">Entrega</SelectItem>
-                  <SelectItem value="outro">Outro</SelectItem>
-                </SelectContent>
-              </Select>
-              <Input
-                className="md:col-span-2"
-                placeholder="Descrição"
-                value={ocDesc}
-                onChange={(e) => setOcDesc(e.target.value)}
-              />
+            <div className="grid grid-cols-1 items-end gap-2 md:grid-cols-4">
+              <div className="space-y-1">
+                <Label className="text-xs">Tipo de ocorrência</Label>
+                <Select value={ocTipo} onValueChange={setOcTipo}>
+                  <SelectTrigger>
+                    <SelectValue />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="atraso">Atraso</SelectItem>
+                    <SelectItem value="acidente">Acidente</SelectItem>
+                    <SelectItem value="visita">Visita</SelectItem>
+                    <SelectItem value="entrega">Entrega</SelectItem>
+                    <SelectItem value="outro">Outro</SelectItem>
+                  </SelectContent>
+                </Select>
+              </div>
+              <div className="space-y-1 md:col-span-2">
+                <Label className="text-xs">Descrição da ocorrência</Label>
+                <Input
+                  placeholder="O que aconteceu"
+                  value={ocDesc}
+                  onChange={(e) => setOcDesc(e.target.value)}
+                />
+              </div>
               <Button onClick={addOcorrencia}>Adicionar</Button>
+            </div>
+
             </div>
             {ocorrencias.map((o) => (
               <div
