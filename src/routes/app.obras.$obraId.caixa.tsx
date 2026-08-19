@@ -1,6 +1,8 @@
 import { createFileRoute, Link } from "@tanstack/react-router";
 import { useEffect, useState, type FormEvent } from "react";
-import { TrendingUp, ArrowLeftRight, Banknote, Plus, Undo2 } from "lucide-react";
+import { downloadCsv, fmtNum } from "@/lib/csv-export";
+import { exportCaixaBancosPdf } from "@/lib/pdf-reports";
+import { TrendingUp, ArrowLeftRight, Banknote, Plus, Undo2, FileDown, Wallet, FileSpreadsheet } from "lucide-react";
 import { PageHeader } from "@/components/admin/PageHeader";
 import { Card, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
@@ -27,6 +29,7 @@ import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/lib/auth-context";
 import { estornarLancamentoAtomico } from "@/lib/estorno-financeiro";
 import { toast } from "sonner";
+import { fmtDataBR, hojeISO } from "@/lib/date-br";
 
 export const Route = createFileRoute("/app/obras/$obraId/caixa")({
   component: CaixaObraPage,
@@ -49,7 +52,7 @@ type Conta = { id: string; nome: string; saldo_atual: number };
 function CaixaObraPage() {
   const { obraId } = Route.useParams();
   const { user } = useAuth();
-  const hoje = new Date().toISOString().slice(0, 10);
+  const hoje = hojeISO();
   const ini = new Date(new Date().getFullYear(), new Date().getMonth(), 1)
     .toISOString()
     .slice(0, 10);
@@ -174,6 +177,37 @@ function CaixaObraPage() {
     .reduce((s, l) => s + Number(l.valor), 0);
   const brl = (n: number) => n.toLocaleString("pt-BR", { style: "currency", currency: "BRL" });
   const contaNome = (id: string) => contas.find((c) => c.id === id)?.nome ?? "—";
+  const saldoAtual = contas.reduce((s, c) => s + Number(c.saldo_atual ?? 0), 0);
+
+  const exportarExcel = () => {
+    let acumulado = 0;
+    const rows = lancs.map((l) => {
+      const sinal = l.tipo === "entrada" ? 1 : -1;
+      if (!l.estornado) acumulado += sinal * Number(l.valor);
+      return [
+        fmtDataBR(l.data),
+        l.estornado ? "estornado" : l.estorno_de_id || l.descricao.startsWith("ESTORNO:") ? "estorno" : l.tipo,
+        l.descricao,
+        contaNome(l.conta_bancaria_id),
+        fmtNum(sinal * Number(l.valor)),
+        fmtNum(acumulado),
+      ];
+    });
+    rows.push([]);
+    rows.push(["Entradas", "", "", "", fmtNum(entradas), ""]);
+    rows.push(["Saídas", "", "", "", fmtNum(saidas), ""]);
+    rows.push(["Saldo do período", "", "", "", fmtNum(entradas - saidas), ""]);
+    rows.push(["Saldo atual das contas", "", "", "", fmtNum(saldoAtual), ""]);
+    downloadCsv(`caixa-bancos-${de}-a-${ate}`, rows, [
+      "Data",
+      "Tipo",
+      "Descrição",
+      "Conta",
+      "Valor",
+      "Acumulado",
+    ]);
+  };
+
 
   return (
     <div>
@@ -249,11 +283,25 @@ function CaixaObraPage() {
                 </form>
               </DialogContent>
             </Dialog>
+            <Button variant="outline" onClick={exportarExcel}>
+              <FileSpreadsheet className="mr-2 h-4 w-4" /> Excel
+            </Button>
+            <Button
+              variant="outline"
+              onClick={() => {
+                void exportCaixaBancosPdf(obraId, de, ate).catch((e) =>
+                  toast.error(e?.message ?? "Erro ao gerar PDF"),
+                );
+              }}
+            >
+              <FileDown className="mr-2 h-4 w-4" /> PDF
+            </Button>
             <Button asChild variant="outline">
               <Link to="/app/transferencias">
                 <ArrowLeftRight className="mr-2 h-4 w-4" /> Transferir
               </Link>
             </Button>
+
           </div>
         }
       />
@@ -269,7 +317,18 @@ function CaixaObraPage() {
           </div>
         </div>
 
-        <div className="grid gap-3 md:grid-cols-3">
+        <div className="grid gap-3 md:grid-cols-4">
+          <Card>
+            <CardContent className="p-4">
+              <div className="flex items-center gap-2 text-primary">
+                <Wallet className="h-4 w-4" />
+                <span className="text-xs">Saldo atual (contas)</span>
+              </div>
+              <p className="mt-1 text-2xl font-bold tabular-nums">{brl(saldoAtual)}</p>
+              <p className="text-[11px] text-muted-foreground">Disponível hoje em todas as contas da obra</p>
+            </CardContent>
+          </Card>
+
           <Card>
             <CardContent className="p-4">
               <div className="flex items-center gap-2 text-emerald-600">
@@ -322,7 +381,7 @@ function CaixaObraPage() {
                       <Badge variant={l.tipo === "entrada" ? "default" : "secondary"}>
                         {l.estorno_de_id ? "estorno" : l.tipo}
                       </Badge>
-                      <span>{new Date(l.data).toLocaleDateString("pt-BR")}</span>
+                      <span>{fmtDataBR(l.data)}</span>
                       <span className="text-muted-foreground">{l.descricao}</span>
                       <span className="text-xs text-muted-foreground">
                         • {contaNome(l.conta_bancaria_id)}

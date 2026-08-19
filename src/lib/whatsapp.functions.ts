@@ -48,10 +48,11 @@ async function postProviderMedia(
   token: string,
   fields: Record<string, string>,
   file: { blob: Blob; fileName: string },
+  fieldName = "medias",
 ) {
   const form = new FormData();
   Object.entries(fields).forEach(([key, value]) => form.append(key, value));
-  form.append("media", file.blob, file.fileName);
+  form.append(fieldName, file.blob, file.fileName);
 
   const resp = await fetch(endpoint, {
     method: "POST",
@@ -67,6 +68,23 @@ async function postProviderMedia(
   }
   return { ok: resp.ok, status: resp.status, body, raw: txt };
 }
+
+/** Tenta enviar mídia usando os nomes de campo aceitos pelo PrimeSync. */
+async function sendMediaWithFallback(
+  endpoint: string,
+  token: string,
+  fields: Record<string, string>,
+  file: { blob: Blob; fileName: string },
+) {
+  let last = await postProviderMedia(endpoint, token, fields, file, "medias");
+  if (last.ok) return last;
+  for (const field of ["media", "file"]) {
+    last = await postProviderMedia(endpoint, token, fields, file, field);
+    if (last.ok) return last;
+  }
+  return last;
+}
+
 
 function blobFromBase64(base64: string, mimeType: string) {
   const cleanBase64 = base64.includes(",") ? base64.split(",")[1] : base64;
@@ -113,12 +131,27 @@ export const sendRdoWhatsApp = createServerFn({ method: "POST" })
     let errMsg: string | null = null;
     try {
       const attempts: ProviderAttempt[] = [];
-      if (data.pdfBase64) {
+
+      // 1) O texto é sempre enviado — garante a entrega mesmo se a mídia falhar.
+      const textResult = await postProvider(endpoint, token, textPayload);
+      attempts.push({
+        kind: "text",
+        httpStatus: textResult.status,
+        ok: textResult.ok,
+        response: textResult.body,
+      });
+      if (!textResult.ok) {
+        status = "failed";
+        errMsg = `HTTP ${textResult.status}: ${textResult.raw.slice(0, 500)}`;
+      }
+
+      // 2) PDF do RDO como mídia (tenta os nomes de campo aceitos pelo provedor).
+      if (textResult.ok && data.pdfBase64) {
         const fileName = data.fileName ?? "rdo.pdf";
-        const fileResult = await postProviderMedia(endpoint, token, {
+        const fileResult = await sendMediaWithFallback(endpoint, token, {
           number,
-          body: data.message,
-          externalKey,
+          body: fileName,
+          externalKey: `${externalKey}-pdf`,
           isClosed: "false",
         }, {
           blob: blobFromBase64(data.pdfBase64, "application/pdf"),
@@ -131,27 +164,16 @@ export const sendRdoWhatsApp = createServerFn({ method: "POST" })
           ok: fileResult.ok,
           response: fileResult.body,
         });
-        if (fileResult.ok) {
-          respJson = { attempts };
+        if (!fileResult.ok) {
+          status = "partial";
+          errMsg = `PDF não enviado (HTTP ${fileResult.status})`;
         }
       }
 
-      if (!respJson) {
-        const textResult = await postProvider(endpoint, token, textPayload);
-        attempts.push({
-          kind: "text",
-          httpStatus: textResult.status,
-          ok: textResult.ok,
-          response: textResult.body,
-        });
-        respJson = { attempts };
-        if (!textResult.ok) {
-          status = "failed";
-          errMsg = `HTTP ${textResult.status}: ${textResult.raw.slice(0, 500)}`;
-        }
-      }
+      respJson = { attempts };
 
-      if (respJson && data.rdoId) {
+      if (textResult.ok && data.rdoId) {
+
         const { data: attachments, error: attachmentsError } = await supabase
           .from("rdo_anexos")
           .select("id,storage_path,legenda,tipo")
@@ -179,7 +201,7 @@ export const sendRdoWhatsApp = createServerFn({ method: "POST" })
               continue;
             }
 
-            const attachmentResult = await postProviderMedia(endpoint, token, {
+            const attachmentResult = await sendMediaWithFallback(endpoint, token, {
               number,
               body: attachment.legenda || `Anexo do RDO: ${fileName}`,
               externalKey: `${externalKey}-${attachment.id}`,

@@ -18,6 +18,7 @@ import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/lib/auth-context";
 import { estornarLancamentoAtomico } from "@/lib/estorno-financeiro";
 import { toast } from "sonner";
+import { fmtDataBR, hojeISO } from "@/lib/date-br";
 
 export const Route = createFileRoute("/app/transferencias")({
   component: TransferenciasPage,
@@ -38,7 +39,7 @@ function TransferenciasPage() {
   const [motivo, setMotivo] = useState("");
   const [form, setForm] = useState({
     conta_origem_id: "", conta_destino_id: "", valor: "",
-    data: new Date().toISOString().slice(0, 10), descricao: "",
+    data: hojeISO(), descricao: "",
   });
 
   const carregar = async () => {
@@ -68,7 +69,7 @@ function TransferenciasPage() {
     });
     if (error) return toast.error("Erro", { description: error.message });
     toast.success("Transferência registrada");
-    setForm({ conta_origem_id: "", conta_destino_id: "", valor: "", data: new Date().toISOString().slice(0, 10), descricao: "" });
+    setForm({ conta_origem_id: "", conta_destino_id: "", valor: "", data: hojeISO(), descricao: "" });
     setOpen(false); void carregar();
   };
 
@@ -149,7 +150,7 @@ function TransferenciasPage() {
                 <div>
                   <p className="font-medium">{nomeConta(t.conta_origem_id)} → {nomeConta(t.conta_destino_id)}</p>
                   <p className="text-xs text-muted-foreground">
-                    {new Date(t.data).toLocaleDateString("pt-BR")}
+                    {fmtDataBR(t.data)}
                     {t.descricao && ` · ${t.descricao}`}
                   </p>
                 </div>

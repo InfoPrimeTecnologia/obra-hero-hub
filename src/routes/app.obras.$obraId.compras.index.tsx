@@ -28,6 +28,7 @@ import {
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/lib/auth-context";
 import { toast } from "sonner";
+import { fmtDataBR, hojeISO } from "@/lib/date-br";
 
 export const Route = createFileRoute("/app/obras/$obraId/compras/")({
   component: ComprasPage,
@@ -76,8 +77,8 @@ const emptyForm = (etapaId = "", subetapaId = "") => ({
   forma_pagamento: "dinheiro",
   cartao_id: "",
   qtd_parcelas: "1",
-  data_compra: new Date().toISOString().slice(0, 10),
-  data_primeira_parcela: new Date().toISOString().slice(0, 10),
+  data_compra: hojeISO(),
+  data_primeira_parcela: hojeISO(),
   etapa_id: etapaId,
   subetapa_id: subetapaId,
 });
@@ -554,7 +555,7 @@ function ComprasPage() {
                                                 {c.numero && <span className="ml-1 text-muted-foreground">#{c.numero}</span>}
                                               </p>
                                               <p className="truncate text-xs text-muted-foreground">
-                                                {new Date(c.data_compra).toLocaleDateString("pt-BR")}
+                                                {fmtDataBR(c.data_compra)}
                                                 {f ? ` · ${f.nome}` : ""}
                                                 {c.forma_pagamento ? ` · ${formaLabels[c.forma_pagamento] ?? c.forma_pagamento}` : ""}
                                                 {c.qtd_parcelas && c.qtd_parcelas > 0 ? ` · ${c.qtd_parcelas}x` : ""}

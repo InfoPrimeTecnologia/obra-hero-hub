@@ -18,6 +18,7 @@ import { useAuth } from "@/lib/auth-context";
 import { useObraSelecionada } from "@/lib/obra-context";
 import { ObraScopeBadge } from "@/components/app/ObraScopeBadge";
 import { toast } from "sonner";
+import { fmtDataBR, hojeISO } from "@/lib/date-br";
 
 export const Route = createFileRoute("/app/contas-receber")({
   component: ContasReceberPage,
@@ -43,10 +44,10 @@ function ContasReceberPage() {
   const [recv, setRecv] = useState<CR | null>(null);
   const [filtro, setFiltro] = useState<"todos" | "pendente" | "recebido" | "vencido">("pendente");
   const [form, setForm] = useState({
-    descricao: "", valor: "", vencimento: new Date().toISOString().slice(0, 10),
+    descricao: "", valor: "", vencimento: hojeISO(),
     categoria_id: "", obra_id: "",
   });
-  const [pagto, setPagto] = useState({ data: new Date().toISOString().slice(0, 10), conta_bancaria_id: "", valor_recebido: "" });
+  const [pagto, setPagto] = useState({ data: hojeISO(), conta_bancaria_id: "", valor_recebido: "" });
 
   const carregar = async () => {
     const [{ data: cr }, { data: cb }, { data: ct }, { data: ob }] = await Promise.all([
@@ -79,7 +80,7 @@ function ContasReceberPage() {
     });
     if (error) return toast.error("Erro", { description: error.message });
     toast.success("Conta a receber criada");
-    setForm({ descricao: "", valor: "", vencimento: new Date().toISOString().slice(0, 10), categoria_id: "", obra_id: "" });
+    setForm({ descricao: "", valor: "", vencimento: hojeISO(), categoria_id: "", obra_id: "" });
     setOpen(false); void carregar();
   };
 
@@ -96,7 +97,7 @@ function ContasReceberPage() {
     if (error) return toast.error("Erro", { description: error.message });
     toast.success("Recebimento registrado");
     setRecv(null);
-    setPagto({ data: new Date().toISOString().slice(0, 10), conta_bancaria_id: "", valor_recebido: "" });
+    setPagto({ data: hojeISO(), conta_bancaria_id: "", valor_recebido: "" });
     void carregar();
   };
 
@@ -106,7 +107,7 @@ function ContasReceberPage() {
     toast.success("Cancelada"); void carregar();
   };
 
-  const hoje = new Date().toISOString().slice(0, 10);
+  const hoje = hojeISO();
   const escopo = obra ? items.filter((c) => c.obra_id === obra.id) : items;
   const filtrados = escopo.filter((c) => {
     if (filtro === "todos") return true;
@@ -190,7 +191,7 @@ function ContasReceberPage() {
                   <div>
                     <p className="font-medium">{c.descricao}</p>
                     <p className="text-xs text-muted-foreground">
-                      Venc: {new Date(c.vencimento).toLocaleDateString("pt-BR")}
+                      Venc: {fmtDataBR(c.vencimento)}
                       {c.origem !== "manual" && ` · ${c.origem}`}
                     </p>
                   </div>

@@ -21,6 +21,7 @@ import { useObraSelecionada } from "@/lib/obra-context";
 import { estornarLancamentoAtomico } from "@/lib/estorno-financeiro";
 import { ObraScopeBadge } from "@/components/app/ObraScopeBadge";
 import { toast } from "sonner";
+import { hojeISO } from "@/lib/date-br";
 
 export const Route = createFileRoute("/app/contas-pagar")({
   component: ContasPagarPage,
@@ -51,10 +52,10 @@ function ContasPagarPage() {
   const [filtroObra, setFiltroObra] = useState<string>("todos");
 
   const [form, setForm] = useState({
-    descricao: "", valor: "", vencimento: new Date().toISOString().slice(0, 10),
+    descricao: "", valor: "", vencimento: hojeISO(),
     categoria_id: "", fornecedor_id: "", obra_id: "", observacoes: "",
   });
-  const [pagto, setPagto] = useState({ data: new Date().toISOString().slice(0, 10), conta_bancaria_id: "", valor_pago: "" });
+  const [pagto, setPagto] = useState({ data: hojeISO(), conta_bancaria_id: "", valor_pago: "" });
 
   const carregar = async () => {
     const [{ data: cp }, { data: cb }, { data: ct }, { data: fo }, { data: ob }] = await Promise.all([
@@ -91,7 +92,7 @@ function ContasPagarPage() {
     });
     if (error) return toast.error("Erro", { description: error.message });
     toast.success("Conta a pagar criada");
-    setForm({ descricao: "", valor: "", vencimento: new Date().toISOString().slice(0, 10), categoria_id: "", fornecedor_id: "", obra_id: "", observacoes: "" });
+    setForm({ descricao: "", valor: "", vencimento: hojeISO(), categoria_id: "", fornecedor_id: "", obra_id: "", observacoes: "" });
     setOpen(false); void carregar();
   };
 
@@ -108,7 +109,7 @@ function ContasPagarPage() {
     if (error) return toast.error("Erro", { description: error.message });
     toast.success("Pagamento registrado");
     setPaying(null);
-    setPagto({ data: new Date().toISOString().slice(0, 10), conta_bancaria_id: "", valor_pago: "" });
+    setPagto({ data: hojeISO(), conta_bancaria_id: "", valor_pago: "" });
     void carregar();
   };
 
@@ -173,11 +174,11 @@ function ContasPagarPage() {
       c.valor_pago ? fmtNum(Number(c.valor_pago)) : "",
       c.estornado ? "sim" : "",
     ]);
-    downloadCsv(`contas-pagar-${new Date().toISOString().slice(0, 10)}`, rows, headers);
+    downloadCsv(`contas-pagar-${hojeISO()}`, rows, headers);
     toast.success("CSV exportado");
   };
 
-  const hoje = new Date().toISOString().slice(0, 10);
+  const hoje = hojeISO();
   const escopoObra = obra
     ? items.filter((c) => c.obra_id === obra.id)
     : filtroObra === "todos"

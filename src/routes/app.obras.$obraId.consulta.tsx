@@ -1,5 +1,6 @@
 import { createFileRoute, Link } from "@tanstack/react-router";
 import { useEffect, useMemo, useState } from "react";
+import { fmtDataBR } from "@/lib/date-br";
 import { Search, Eye, Loader2, FileSearch } from "lucide-react";
 import { PageHeader } from "@/components/admin/PageHeader";
 import { Card, CardContent } from "@/components/ui/card";
@@ -200,7 +201,7 @@ function ConsultaPage() {
                       <p className="mt-1 truncate text-sm text-muted-foreground">{c.descricao}</p>
                     )}
                     <p className="mt-1 text-xs text-muted-foreground">
-                      {new Date(c.data_compra).toLocaleDateString("pt-BR")}
+                      {fmtDataBR(c.data_compra)}
                       {c.qtd_parcelas && c.qtd_parcelas > 0 ? ` · ${c.qtd_parcelas}x` : ""}
                     </p>
                   </div>

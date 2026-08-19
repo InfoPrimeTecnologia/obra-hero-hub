@@ -554,43 +554,59 @@ function RdoDetailPage() {
             </Button>
           </CardHeader>
           <CardContent className="space-y-3">
-            <div className="grid grid-cols-1 gap-2 md:grid-cols-6">
-              <Select value={eqTipo} onValueChange={(v) => setEqTipo(v as "interna" | "externa")}>
-                <SelectTrigger>
-                  <SelectValue />
-                </SelectTrigger>
-                <SelectContent>
-                  <SelectItem value="interna">Interna</SelectItem>
-                  <SelectItem value="externa">Externa</SelectItem>
-                </SelectContent>
-              </Select>
-              <Input
-                placeholder={eqTipo === "externa" ? "Empreiteiro *" : "Empreiteiro"}
-                value={eqEmpreiteiro}
-                onChange={(e) => setEqEmpreiteiro(e.target.value)}
-                disabled={eqTipo === "interna"}
-              />
-              <Input
-                placeholder="Função"
-                value={eqFuncao}
-                onChange={(e) => setEqFuncao(e.target.value)}
-              />
-              <Input
-                type="number"
-                min={1}
-                placeholder="Qtd"
-                value={eqQtd}
-                onChange={(e) => setEqQtd(Number(e.target.value))}
-              />
-              <Input
-                type="number"
-                step="0.5"
-                placeholder="Horas"
-                value={eqHoras}
-                onChange={(e) => setEqHoras(Number(e.target.value))}
-              />
+            <div className="grid grid-cols-1 items-end gap-2 md:grid-cols-6">
+              <div className="space-y-1">
+                <Label className="text-xs">Tipo de equipe</Label>
+                <Select value={eqTipo} onValueChange={(v) => setEqTipo(v as "interna" | "externa")}>
+                  <SelectTrigger>
+                    <SelectValue />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="interna">Interna</SelectItem>
+                    <SelectItem value="externa">Externa</SelectItem>
+                  </SelectContent>
+                </Select>
+              </div>
+              <div className="space-y-1">
+                <Label className="text-xs">
+                  Empreiteiro {eqTipo === "externa" ? "*" : "(equipe própria)"}
+                </Label>
+                <Input
+                  placeholder={eqTipo === "externa" ? "Nome da empreiteira" : "—"}
+                  value={eqEmpreiteiro}
+                  onChange={(e) => setEqEmpreiteiro(e.target.value)}
+                  disabled={eqTipo === "interna"}
+                />
+              </div>
+              <div className="space-y-1">
+                <Label className="text-xs">Função</Label>
+                <Input
+                  placeholder="Ex.: Pedreiro"
+                  value={eqFuncao}
+                  onChange={(e) => setEqFuncao(e.target.value)}
+                />
+              </div>
+              <div className="space-y-1">
+                <Label className="text-xs">Quantidade de pessoas</Label>
+                <Input
+                  type="number"
+                  min={1}
+                  value={eqQtd}
+                  onChange={(e) => setEqQtd(Number(e.target.value))}
+                />
+              </div>
+              <div className="space-y-1">
+                <Label className="text-xs">Horas trabalhadas</Label>
+                <Input
+                  type="number"
+                  step="0.5"
+                  value={eqHoras}
+                  onChange={(e) => setEqHoras(Number(e.target.value))}
+                />
+              </div>
               <Button onClick={addEquipe}>Adicionar</Button>
             </div>
+
             {equipes.map((e) => (
               <div
                 key={e.id}
@@ -626,33 +642,43 @@ function RdoDetailPage() {
           </CardHeader>
           <CardContent className="space-y-3">
             <div className="grid grid-cols-1 gap-2 md:grid-cols-2">
-              <Select value={atEtapa} onValueChange={(v) => { setAtEtapa(v); setAtSub(""); }}>
-                <SelectTrigger>
-                  <SelectValue placeholder="Etapa (opcional)" />
-                </SelectTrigger>
-                <SelectContent>
-                  {etapas.map((e) => (
-                    <SelectItem key={e.id} value={e.id}>{e.nome}</SelectItem>
-                  ))}
-                </SelectContent>
-              </Select>
-              <Select value={atSub} onValueChange={setAtSub} disabled={!atEtapa || subFiltradas.length === 0}>
-                <SelectTrigger>
-                  <SelectValue placeholder="Subetapa (opcional)" />
-                </SelectTrigger>
-                <SelectContent>
-                  {subFiltradas.map((s) => (
-                    <SelectItem key={s.id} value={s.id}>{s.nome}</SelectItem>
-                  ))}
-                </SelectContent>
-              </Select>
+              <div className="space-y-1">
+                <Label className="text-xs">Etapa do orçamento (opcional)</Label>
+                <Select value={atEtapa} onValueChange={(v) => { setAtEtapa(v); setAtSub(""); }}>
+                  <SelectTrigger>
+                    <SelectValue placeholder="Selecione a etapa" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    {etapas.map((e) => (
+                      <SelectItem key={e.id} value={e.id}>{e.nome}</SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+              </div>
+              <div className="space-y-1">
+                <Label className="text-xs">Subetapa (opcional)</Label>
+                <Select value={atSub} onValueChange={setAtSub} disabled={!atEtapa || subFiltradas.length === 0}>
+                  <SelectTrigger>
+                    <SelectValue placeholder="Selecione a subetapa" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    {subFiltradas.map((s) => (
+                      <SelectItem key={s.id} value={s.id}>{s.nome}</SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+              </div>
             </div>
-            <Textarea
-              rows={2}
-              placeholder="Descrição da atividade"
-              value={atDesc}
-              onChange={(e) => setAtDesc(e.target.value)}
-            />
+            <div className="space-y-1">
+              <Label className="text-xs">Descrição da atividade executada</Label>
+              <Textarea
+                rows={2}
+                placeholder="Ex.: Concretagem da laje do 2º pavimento"
+                value={atDesc}
+                onChange={(e) => setAtDesc(e.target.value)}
+              />
+            </div>
+
             <div className="flex items-end gap-2">
               <div className="flex-1 space-y-1">
                 <Label className="text-xs">% concluído no dia</Label>
@@ -700,25 +726,30 @@ function RdoDetailPage() {
             </CardTitle>
           </CardHeader>
           <CardContent className="space-y-3">
-            <div className="grid grid-cols-1 gap-2 md:grid-cols-4">
-              <Select value={ocTipo} onValueChange={setOcTipo}>
-                <SelectTrigger>
-                  <SelectValue />
-                </SelectTrigger>
-                <SelectContent>
-                  <SelectItem value="atraso">Atraso</SelectItem>
-                  <SelectItem value="acidente">Acidente</SelectItem>
-                  <SelectItem value="visita">Visita</SelectItem>
-                  <SelectItem value="entrega">Entrega</SelectItem>
-                  <SelectItem value="outro">Outro</SelectItem>
-                </SelectContent>
-              </Select>
-              <Input
-                className="md:col-span-2"
-                placeholder="Descrição"
-                value={ocDesc}
-                onChange={(e) => setOcDesc(e.target.value)}
-              />
+            <div className="grid grid-cols-1 items-end gap-2 md:grid-cols-4">
+              <div className="space-y-1">
+                <Label className="text-xs">Tipo de ocorrência</Label>
+                <Select value={ocTipo} onValueChange={setOcTipo}>
+                  <SelectTrigger>
+                    <SelectValue />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="atraso">Atraso</SelectItem>
+                    <SelectItem value="acidente">Acidente</SelectItem>
+                    <SelectItem value="visita">Visita</SelectItem>
+                    <SelectItem value="entrega">Entrega</SelectItem>
+                    <SelectItem value="outro">Outro</SelectItem>
+                  </SelectContent>
+                </Select>
+              </div>
+              <div className="space-y-1 md:col-span-2">
+                <Label className="text-xs">Descrição da ocorrência</Label>
+                <Input
+                  placeholder="O que aconteceu"
+                  value={ocDesc}
+                  onChange={(e) => setOcDesc(e.target.value)}
+                />
+              </div>
               <Button onClick={addOcorrencia}>Adicionar</Button>
             </div>
             {ocorrencias.map((o) => (
