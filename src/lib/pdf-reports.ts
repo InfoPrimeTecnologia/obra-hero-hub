@@ -443,7 +443,7 @@ export async function exportMedicaoPdf(medicaoObraId: string) {
 
 export async function exportCaixaBancosPdf(obraId: string, de: string, ate: string) {
   const ctx = await fetchContext(obraId);
-  const [{ data: contas }, { data: lancs }] = await Promise.all([
+  const [{ data: contas }, { data: lancs }, { data: lancsSaldoObra }] = await Promise.all([
     supabase
       .from("contas_bancarias")
       .select("id,nome,tipo,saldo_atual,ativo")
@@ -457,6 +457,10 @@ export async function exportCaixaBancosPdf(obraId: string, de: string, ate: stri
       .gte("data", de)
       .lte("data", ate)
       .order("data"),
+    supabase
+      .from("lancamentos")
+      .select("id,tipo,valor,data,descricao,conta_bancaria_id,estornado,estorno_de_id")
+      .eq("obra_id", obraId),
   ]);
 
   const contaNome = (id: string) =>
@@ -470,8 +474,15 @@ export async function exportCaixaBancosPdf(obraId: string, de: string, ate: stri
   const saidas = efetivos
     .filter((l: any) => l.tipo === "saida")
     .reduce((s: number, l: any) => s + Number(l.valor ?? 0), 0);
-  const saldoAtual = (contas ?? []).reduce(
-    (s: number, c: any) => s + Number(c.saldo_atual ?? 0),
+  const efetivosSaldo = (lancsSaldoObra ?? []).filter((l: any) => !l.estornado && !isEstorno(l));
+  const saldoPorConta = (contaId: string) => efetivosSaldo
+    .filter((l: any) => l.conta_bancaria_id === contaId)
+    .reduce(
+      (saldo: number, l: any) => saldo + (l.tipo === "entrada" ? 1 : -1) * Number(l.valor ?? 0),
+      0,
+    );
+  const saldoAtual = efetivosSaldo.reduce(
+    (saldo: number, l: any) => saldo + (l.tipo === "entrada" ? 1 : -1) * Number(l.valor ?? 0),
     0,
   );
 
@@ -498,7 +509,7 @@ export async function exportCaixaBancosPdf(obraId: string, de: string, ate: stri
         { content: fmtBRL(entradas - saidas), styles: { halign: "right", fontStyle: "bold" } },
       ],
       [
-        { content: "Saldo atual das contas", styles: { fontStyle: "bold" } },
+        { content: "Saldo atual da obra", styles: { fontStyle: "bold" } },
         { content: fmtBRL(saldoAtual), styles: { halign: "right", fontStyle: "bold" } },
       ],
     ] as any,
@@ -509,11 +520,11 @@ export async function exportCaixaBancosPdf(obraId: string, de: string, ate: stri
     theme: "grid",
     styles: { fontSize: 9 },
     headStyles: { fillColor: [30, 41, 59] },
-    head: [["Conta", "Tipo", "Saldo atual"]],
+    head: [["Conta", "Tipo", "Saldo da obra"]],
     body: (contas ?? []).map((c: any) => [
       c.nome,
       c.tipo ?? "—",
-      { content: fmtBRL(Number(c.saldo_atual ?? 0)), styles: { halign: "right" } },
+      { content: fmtBRL(saldoPorConta(c.id)), styles: { halign: "right" } },
     ]) as any,
     foot: [[
       { content: "TOTAL", styles: { fontStyle: "bold" } },

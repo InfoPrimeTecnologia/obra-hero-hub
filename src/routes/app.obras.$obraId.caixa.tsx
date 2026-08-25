@@ -60,6 +60,7 @@ function CaixaObraPage() {
   const [ate, setAte] = useState(hoje);
   const [contas, setContas] = useState<Conta[]>([]);
   const [lancs, setLancs] = useState<Lanc[]>([]);
+  const [lancsSaldoObra, setLancsSaldoObra] = useState<Lanc[]>([]);
   const [openEntrada, setOpenEntrada] = useState(false);
   const [entrada, setEntrada] = useState({
     valor: "",
@@ -69,7 +70,7 @@ function CaixaObraPage() {
   });
 
   const carregar = async () => {
-    const [{ data: cb }, { data: l }] = await Promise.all([
+    const [{ data: cb }, { data: l }, { data: ls }] = await Promise.all([
       supabase
         .from("contas_bancarias")
         .select("id,nome,saldo_atual")
@@ -82,9 +83,14 @@ function CaixaObraPage() {
         .gte("data", de)
         .lte("data", ate)
         .order("data", { ascending: false }),
+      supabase
+        .from("lancamentos")
+        .select("id,tipo,valor,data,descricao,conta_bancaria_id,estornado,estorno_de_id,conta_pagar_id,customer_id")
+        .eq("obra_id", obraId),
     ]);
     setContas((cb as Conta[]) ?? []);
     setLancs((l as Lanc[]) ?? []);
+    setLancsSaldoObra((ls as Lanc[]) ?? []);
   };
 
   const estornarLancamento = async (l: Lanc) => {
@@ -177,7 +183,9 @@ function CaixaObraPage() {
     .reduce((s, l) => s + Number(l.valor), 0);
   const brl = (n: number) => n.toLocaleString("pt-BR", { style: "currency", currency: "BRL" });
   const contaNome = (id: string) => contas.find((c) => c.id === id)?.nome ?? "—";
-  const saldoAtual = contas.reduce((s, c) => s + Number(c.saldo_atual ?? 0), 0);
+  const saldoAtual = lancsSaldoObra
+    .filter((l) => !l.estornado && !l.estorno_de_id && !l.descricao.startsWith("ESTORNO:"))
+    .reduce((saldo, l) => saldo + (l.tipo === "entrada" ? 1 : -1) * Number(l.valor), 0);
 
   const exportarExcel = () => {
     let acumulado = 0;
@@ -197,7 +205,7 @@ function CaixaObraPage() {
     rows.push(["Entradas", "", "", "", fmtNum(entradas), ""]);
     rows.push(["Saídas", "", "", "", fmtNum(saidas), ""]);
     rows.push(["Saldo do período", "", "", "", fmtNum(entradas - saidas), ""]);
-    rows.push(["Saldo atual das contas", "", "", "", fmtNum(saldoAtual), ""]);
+    rows.push(["Saldo atual da obra", "", "", "", fmtNum(saldoAtual), ""]);
     downloadCsv(`caixa-bancos-${de}-a-${ate}`, rows, [
       "Data",
       "Tipo",
@@ -322,10 +330,10 @@ function CaixaObraPage() {
             <CardContent className="p-4">
               <div className="flex items-center gap-2 text-primary">
                 <Wallet className="h-4 w-4" />
-                <span className="text-xs">Saldo atual (contas)</span>
+                <span className="text-xs">Saldo atual da obra</span>
               </div>
               <p className="mt-1 text-2xl font-bold tabular-nums">{brl(saldoAtual)}</p>
-              <p className="text-[11px] text-muted-foreground">Disponível hoje em todas as contas da obra</p>
+              <p className="text-[11px] text-muted-foreground">Movimentações exclusivas desta obra</p>
             </CardContent>
           </Card>
 
