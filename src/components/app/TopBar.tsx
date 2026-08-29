@@ -146,7 +146,7 @@ export function TopBar() {
   const time = format(now, "HH:mm");
 
   return (
-    <header className="sticky top-0 z-30 flex h-16 items-center gap-3 border-b border-border/60 bg-background/85 px-4 backdrop-blur md:h-[68px] md:px-6">
+    <header className="sticky top-0 z-30 flex min-h-16 items-center gap-3 border-b border-border/60 bg-background/85 px-4 pt-safe pl-safe pr-safe backdrop-blur md:min-h-[68px] md:px-6">
       {/* Date / time chip */}
       <div className="hidden items-center gap-3 rounded-2xl border border-border/60 bg-card px-3 py-2 shadow-[var(--shadow-card)] md:flex">
         <div className="text-right">
