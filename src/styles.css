@@ -149,3 +149,35 @@
     color: var(--color-foreground);
   }
 }
+
+/* ============================================================
+ * Mobile / Capacitor — safe areas (notch, barra de gestos)
+ * Use as classes utilitárias abaixo em headers fixos, sidebars
+ * e barras inferiores quando rodando como app nativo.
+ * ============================================================ */
+@utility pt-safe {
+  padding-top: env(safe-area-inset-top);
+}
+@utility pb-safe {
+  padding-bottom: env(safe-area-inset-bottom);
+}
+@utility pl-safe {
+  padding-left: env(safe-area-inset-left);
+}
+@utility pr-safe {
+  padding-right: env(safe-area-inset-right);
+}
+
+@layer base {
+  /* Evita bounce/overscroll azulado no iOS e melhora toque em mobile */
+  html {
+    overscroll-behavior-y: none;
+    -webkit-tap-highlight-color: transparent;
+  }
+  input,
+  select,
+  textarea {
+    /* Impede zoom automático do iOS ao focar inputs (<16px) */
+    font-size: max(16px, 1em);
+  }
+}
