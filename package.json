@@ -10,7 +10,10 @@
     "preview": "vite preview",
     "start": "node prod-server.mjs",
     "lint": "eslint .",
-    "format": "prettier --write ."
+    "format": "prettier --write .",
+    "cap:sync": "cap sync",
+    "cap:android": "cap open android",
+    "cap:ios": "cap open ios"
   },
   "dependencies": {
     "@capacitor/android": "^8.5.0",
