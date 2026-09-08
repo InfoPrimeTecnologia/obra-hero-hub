@@ -147,7 +147,11 @@ export const createAsaasSubscription = createServerFn({ method: "POST" })
       }),
     });
 
-    const { data: inserted, error: insErr } = await supabase
+    // Escrita privilegiada: o dono/admin já foi validado acima. As policies de
+    // subscriptions/invoices não permitem insert pelo próprio cliente.
+    const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
+
+    const { data: inserted, error: insErr } = await supabaseAdmin
       .from("subscriptions")
       .insert({
         customer_id: data.customerId,
@@ -221,7 +225,7 @@ export const createAsaasSubscription = createServerFn({ method: "POST" })
       payment_link: p.invoiceUrl ?? null,
     }));
 
-    const { data: createdInvoices, error: invErr } = await supabase
+    const { data: createdInvoices, error: invErr } = await supabaseAdmin
       .from("invoices")
       .insert(rows)
       .select("id, invoice_url");
