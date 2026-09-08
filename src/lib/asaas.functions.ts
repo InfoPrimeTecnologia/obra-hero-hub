@@ -225,7 +225,7 @@ export const createAsaasSubscription = createServerFn({ method: "POST" })
       payment_link: p.invoiceUrl ?? null,
     }));
 
-    const { data: createdInvoices, error: invErr } = await supabase
+    const { data: createdInvoices, error: invErr } = await supabaseAdmin
       .from("invoices")
       .insert(rows)
       .select("id, invoice_url");
