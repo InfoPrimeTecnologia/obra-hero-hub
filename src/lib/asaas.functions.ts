@@ -306,3 +306,102 @@ export const createAsaasCharge = createServerFn({ method: "POST" })
 
     return { asaasPaymentId: pay.id, invoiceUrl: pay.invoiceUrl };
   });
+
+// ---------------------------------------------------------------------------
+// Sincronização de pagamentos: consulta o Asaas e atualiza as faturas locais.
+// Serve como rede de segurança quando o webhook não chega ao servidor.
+// ---------------------------------------------------------------------------
+
+const SyncSchema = z.object({ customerId: z.string().uuid() });
+
+type AsaasPaymentStatusResp = {
+  id: string;
+  status: string;
+  value?: number;
+  dueDate?: string;
+  paymentDate?: string;
+  clientPaymentDate?: string;
+  invoiceUrl?: string;
+  bankSlipUrl?: string;
+  billingType?: string;
+  description?: string;
+};
+
+function mapAsaasStatus(s?: string): "pending" | "paid" | "overdue" | "canceled" | "refunded" {
+  switch (s) {
+    case "RECEIVED":
+    case "CONFIRMED":
+    case "RECEIVED_IN_CASH":
+      return "paid";
+    case "OVERDUE":
+      return "overdue";
+    case "REFUNDED":
+    case "REFUND_REQUESTED":
+      return "refunded";
+    case "CHARGEBACK_REQUESTED":
+    case "CHARGEBACK_DISPUTE":
+      return "canceled";
+    default:
+      return "pending";
+  }
+}
+
+export const syncAsaasPayments = createServerFn({ method: "POST" })
+  .middleware([requireSupabaseAuth])
+  .inputValidator((i) => SyncSchema.parse(i))
+  .handler(async ({ data, context }) => {
+    const { supabase, userId } = context;
+
+    const [{ data: roles }, { data: ownedCust }] = await Promise.all([
+      supabase.from("user_roles").select("role").eq("user_id", userId),
+      supabase
+        .from("customers")
+        .select("id")
+        .eq("id", data.customerId)
+        .eq("owner_user_id", userId)
+        .maybeSingle(),
+    ]);
+    const isAdmin = (roles ?? []).some((r: { role: string }) => r.role === "admin");
+    if (!isAdmin && !ownedCust) throw new Error("Sem permissão");
+
+    const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
+
+    const { data: pendentes } = await supabaseAdmin
+      .from("invoices")
+      .select("id, asaas_payment_id, status")
+      .eq("customer_id", data.customerId)
+      .in("status", ["pending", "overdue"]);
+
+    let updated = 0;
+    for (const inv of pendentes ?? []) {
+      if (!inv.asaas_payment_id) continue;
+      try {
+        const pay = await asaasFetch<AsaasPaymentStatusResp>(
+          `/payments/${inv.asaas_payment_id}`,
+          { method: "GET" },
+        );
+        const status = mapAsaasStatus(pay.status);
+        if (status === inv.status) continue;
+        await supabaseAdmin
+          .from("invoices")
+          .update({
+            status,
+            invoice_url: pay.invoiceUrl ?? undefined,
+            bank_slip_url: pay.bankSlipUrl ?? undefined,
+            payment_link: pay.invoiceUrl ?? undefined,
+            paid_at:
+              status === "paid"
+                ? new Date(
+                    pay.paymentDate ?? pay.clientPaymentDate ?? Date.now(),
+                  ).toISOString()
+                : null,
+          })
+          .eq("id", inv.id);
+        updated += 1;
+      } catch (err) {
+        console.error(`[asaas] falha ao sincronizar payment ${inv.asaas_payment_id}:`, err);
+      }
+    }
+
+    return { checked: pendentes?.length ?? 0, updated };
+  });
