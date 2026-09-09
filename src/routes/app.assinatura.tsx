@@ -132,7 +132,7 @@ function AssinaturaPage() {
   const { user } = useAuth();
   const subscribe = useServerFn(createAsaasSubscription);
   const syncPayments = useServerFn(syncAsaasPayments);
-  const [syncing, setSyncing] = useState(false);
+
   const [loading, setLoading] = useState(true);
   const [activating, setActivating] = useState<string | null>(null);
   const [customerId, setCustomerId] = useState<string | null>(null);
