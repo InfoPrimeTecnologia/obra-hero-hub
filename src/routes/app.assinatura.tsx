@@ -204,6 +204,29 @@ function AssinaturaPage() {
     if (user) void load();
   }, [user]);
 
+  const handleSync = async () => {
+    if (!customerId) return;
+    setSyncing(true);
+    try {
+      const res = await syncPayments({ data: { customerId } });
+      if (res.updated > 0) {
+        toast.success("Status atualizado", {
+          description: `${res.updated} fatura(s) atualizada(s).`,
+        });
+      } else {
+        toast.info("Nenhuma novidade", {
+          description: "Ainda não há confirmação de pagamento para suas faturas.",
+        });
+      }
+      await load();
+    } catch (e) {
+      const msg = e instanceof Error ? e.message : String(e);
+      toast.error("Não foi possível verificar", { description: msg });
+    } finally {
+      setSyncing(false);
+    }
+  };
+
   const activeSub = useMemo(
     () => (subscription && subscription.status !== "canceled" ? subscription : null),
     [subscription],
