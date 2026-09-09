@@ -157,6 +157,13 @@ function AssinaturaPage() {
       setPlans((plansData as Plan[]) ?? []);
 
       if (custId) {
+        // Rede de segurança: confirma no provedor se alguma fatura pendente já foi paga
+        try {
+          await syncPayments({ data: { customerId: custId } });
+        } catch {
+          /* silencioso: a tela continua funcionando com os dados locais */
+        }
+
         const { data: subData } = await supabase
           .from("subscriptions")
           .select(
