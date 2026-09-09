@@ -132,7 +132,7 @@ function AssinaturaPage() {
   const { user } = useAuth();
   const subscribe = useServerFn(createAsaasSubscription);
   const syncPayments = useServerFn(syncAsaasPayments);
-  const [syncing, setSyncing] = useState(false);
+
   const [loading, setLoading] = useState(true);
   const [activating, setActivating] = useState<string | null>(null);
   const [customerId, setCustomerId] = useState<string | null>(null);
@@ -204,28 +204,42 @@ function AssinaturaPage() {
     if (user) void load();
   }, [user]);
 
-  const handleSync = async () => {
+  // Atualização automática: assim que o webhook do provedor marcar a fatura
+  // como paga no banco, a tela recarrega sozinha (sem botão manual).
+  useEffect(() => {
     if (!customerId) return;
-    setSyncing(true);
-    try {
-      const res = await syncPayments({ data: { customerId } });
-      if (res.updated > 0) {
-        toast.success("Status atualizado", {
-          description: `${res.updated} fatura(s) atualizada(s).`,
-        });
-      } else {
-        toast.info("Nenhuma novidade", {
-          description: "Ainda não há confirmação de pagamento para suas faturas.",
-        });
-      }
-      await load();
-    } catch (e) {
-      const msg = e instanceof Error ? e.message : String(e);
-      toast.error("Não foi possível verificar", { description: msg });
-    } finally {
-      setSyncing(false);
-    }
-  };
+    const channel = supabase
+      .channel(`assinatura-${customerId}`)
+      .on(
+        "postgres_changes",
+        {
+          event: "*",
+          schema: "public",
+          table: "invoices",
+          filter: `customer_id=eq.${customerId}`,
+        },
+        () => {
+          void load();
+        },
+      )
+      .on(
+        "postgres_changes",
+        {
+          event: "*",
+          schema: "public",
+          table: "subscriptions",
+          filter: `customer_id=eq.${customerId}`,
+        },
+        () => {
+          void load();
+        },
+      )
+      .subscribe();
+    return () => {
+      void supabase.removeChannel(channel);
+    };
+  }, [customerId]);
+
 
   const activeSub = useMemo(
     () => (subscription && subscription.status !== "canceled" ? subscription : null),
@@ -271,22 +285,11 @@ function AssinaturaPage() {
 
   return (
     <div className="space-y-6">
-      <div className="flex flex-wrap items-start justify-between gap-3">
-        <PageHeader
-          title="Assinatura"
-          description="Gerencie o plano da sua empresa e acompanhe suas faturas."
-        />
-        {customerId && (
-          <Button variant="outline" onClick={handleSync} disabled={syncing}>
-            {syncing ? (
-              <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-            ) : (
-              <FileCheck2 className="mr-2 h-4 w-4" />
-            )}
-            Verificar pagamento
-          </Button>
-        )}
-      </div>
+      <PageHeader
+        title="Assinatura"
+        description="Gerencie o plano da sua empresa e acompanhe suas faturas."
+      />
+
 
 
       {loading ? (
