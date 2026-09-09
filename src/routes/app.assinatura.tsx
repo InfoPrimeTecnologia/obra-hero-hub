@@ -271,10 +271,23 @@ function AssinaturaPage() {
 
   return (
     <div className="space-y-6">
-      <PageHeader
-        title="Assinatura"
-        description="Gerencie o plano da sua empresa e acompanhe suas faturas."
-      />
+      <div className="flex flex-wrap items-start justify-between gap-3">
+        <PageHeader
+          title="Assinatura"
+          description="Gerencie o plano da sua empresa e acompanhe suas faturas."
+        />
+        {customerId && (
+          <Button variant="outline" onClick={handleSync} disabled={syncing}>
+            {syncing ? (
+              <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+            ) : (
+              <FileCheck2 className="mr-2 h-4 w-4" />
+            )}
+            Verificar pagamento
+          </Button>
+        )}
+      </div>
+
 
       {loading ? (
         <div className="flex items-center justify-center py-20">
