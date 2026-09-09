@@ -31,7 +31,7 @@ import {
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/lib/auth-context";
 import { getCurrentCustomerId } from "@/lib/customer";
-import { createAsaasSubscription } from "@/lib/asaas.functions";
+import { createAsaasSubscription, syncAsaasPayments } from "@/lib/asaas.functions";
 import { toast } from "sonner";
 
 export const Route = createFileRoute("/app/assinatura")({
