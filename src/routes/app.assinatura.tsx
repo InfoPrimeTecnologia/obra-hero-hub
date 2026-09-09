@@ -204,28 +204,42 @@ function AssinaturaPage() {
     if (user) void load();
   }, [user]);
 
-  const handleSync = async () => {
+  // Atualização automática: assim que o webhook do provedor marcar a fatura
+  // como paga no banco, a tela recarrega sozinha (sem botão manual).
+  useEffect(() => {
     if (!customerId) return;
-    setSyncing(true);
-    try {
-      const res = await syncPayments({ data: { customerId } });
-      if (res.updated > 0) {
-        toast.success("Status atualizado", {
-          description: `${res.updated} fatura(s) atualizada(s).`,
-        });
-      } else {
-        toast.info("Nenhuma novidade", {
-          description: "Ainda não há confirmação de pagamento para suas faturas.",
-        });
-      }
-      await load();
-    } catch (e) {
-      const msg = e instanceof Error ? e.message : String(e);
-      toast.error("Não foi possível verificar", { description: msg });
-    } finally {
-      setSyncing(false);
-    }
-  };
+    const channel = supabase
+      .channel(`assinatura-${customerId}`)
+      .on(
+        "postgres_changes",
+        {
+          event: "*",
+          schema: "public",
+          table: "invoices",
+          filter: `customer_id=eq.${customerId}`,
+        },
+        () => {
+          void load();
+        },
+      )
+      .on(
+        "postgres_changes",
+        {
+          event: "*",
+          schema: "public",
+          table: "subscriptions",
+          filter: `customer_id=eq.${customerId}`,
+        },
+        () => {
+          void load();
+        },
+      )
+      .subscribe();
+    return () => {
+      void supabase.removeChannel(channel);
+    };
+  }, [customerId]);
+
 
   const activeSub = useMemo(
     () => (subscription && subscription.status !== "canceled" ? subscription : null),
