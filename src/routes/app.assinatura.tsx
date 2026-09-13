@@ -408,8 +408,7 @@ function AssinaturaPage() {
                         <AlertDialogCancel disabled={canceling}>Manter renovação</AlertDialogCancel>
                         <AlertDialogAction
                           disabled={canceling}
-                          onClick={(event) => {
-                            event.preventDefault();
+                          onClick={() => {
                             void handleCancelRenewal();
                           }}
                         >
