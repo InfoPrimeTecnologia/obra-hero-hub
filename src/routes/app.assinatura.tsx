@@ -22,6 +22,17 @@ import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Tabs, TabsList, TabsTrigger, TabsContent } from "@/components/ui/tabs";
 import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+  AlertDialogTrigger,
+} from "@/components/ui/alert-dialog";
+import {
   Select,
   SelectContent,
   SelectItem,
@@ -31,7 +42,11 @@ import {
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/lib/auth-context";
 import { getCurrentCustomerId } from "@/lib/customer";
-import { createAsaasSubscription, syncAsaasPayments } from "@/lib/asaas.functions";
+import {
+  cancelAsaasSubscriptionRenewal,
+  createAsaasSubscription,
+  syncAsaasPayments,
+} from "@/lib/asaas.functions";
 import { toast } from "sonner";
 
 export const Route = createFileRoute("/app/assinatura")({
@@ -58,6 +73,8 @@ type Subscription = {
   started_at?: string | null;
   next_due_date: string | null;
   asaas_subscription_id: string | null;
+  cancel_at_period_end: boolean;
+  access_until: string | null;
   plan: { name: string } | null;
 };
 
@@ -132,9 +149,11 @@ function AssinaturaPage() {
   const { user } = useAuth();
   const subscribe = useServerFn(createAsaasSubscription);
   const syncPayments = useServerFn(syncAsaasPayments);
+  const cancelRenewal = useServerFn(cancelAsaasSubscriptionRenewal);
 
   const [loading, setLoading] = useState(true);
   const [activating, setActivating] = useState<string | null>(null);
+  const [canceling, setCanceling] = useState(false);
   const [customerId, setCustomerId] = useState<string | null>(null);
   const [plans, setPlans] = useState<Plan[]>([]);
   const [subscription, setSubscription] = useState<Subscription | null>(null);
@@ -167,7 +186,7 @@ function AssinaturaPage() {
         const { data: subData } = await supabase
           .from("subscriptions")
           .select(
-            "id,plan_id,status,price,cycle,started_at,next_due_date,asaas_subscription_id,plan:plans(name)",
+            "id,plan_id,status,price,cycle,started_at,next_due_date,asaas_subscription_id,cancel_at_period_end,access_until,plan:plans(name)",
           )
           .eq("customer_id", custId)
           .order("started_at", { ascending: false })
@@ -242,7 +261,12 @@ function AssinaturaPage() {
 
 
   const activeSub = useMemo(
-    () => (subscription && subscription.status !== "canceled" ? subscription : null),
+    () => {
+      if (!subscription) return null;
+      if (subscription.status !== "canceled") return subscription;
+      const end = subscription.access_until ?? subscription.next_due_date;
+      return end && end >= new Date().toISOString().slice(0, 10) ? subscription : null;
+    },
     [subscription],
   );
 
@@ -280,6 +304,25 @@ function AssinaturaPage() {
       toast.error("Erro ao ativar assinatura", { description: msg });
     } finally {
       setActivating(null);
+    }
+  };
+
+  const handleCancelRenewal = async () => {
+    if (!activeSub) return;
+    setCanceling(true);
+    try {
+      const result = await cancelRenewal({ data: { subscriptionId: activeSub.id } });
+      toast.success("Renovação automática cancelada", {
+        description: result.accessUntil
+          ? `Seu acesso continua disponível até ${formatDate(result.accessUntil)}.`
+          : "Seu acesso continua disponível até o fim do período já pago.",
+      });
+      await load();
+    } catch (e) {
+      const msg = e instanceof Error ? e.message : String(e);
+      toast.error("Não foi possível cancelar a renovação", { description: msg });
+    } finally {
+      setCanceling(false);
     }
   };
 
@@ -330,8 +373,8 @@ function AssinaturaPage() {
                       <h2 className="text-2xl font-bold tracking-tight">
                         {activeSub.plan?.name ?? "Plano"}
                       </h2>
-                      <span className="inline-flex items-center rounded-full bg-emerald-100 px-2.5 py-0.5 text-[11px] font-bold uppercase tracking-wide text-emerald-700 dark:bg-emerald-500/15 dark:text-emerald-400">
-                        Ativo
+                      <span className={`inline-flex items-center rounded-full px-2.5 py-0.5 text-[11px] font-bold uppercase tracking-wide ${activeSub.cancel_at_period_end ? "bg-amber-100 text-amber-700 dark:bg-amber-500/15 dark:text-amber-400" : "bg-emerald-100 text-emerald-700 dark:bg-emerald-500/15 dark:text-emerald-400"}`}>
+                        {activeSub.cancel_at_period_end ? "Renovação cancelada" : "Ativo"}
                       </span>
                       <span className="inline-flex items-center rounded-full bg-muted px-2.5 py-0.5 text-[11px] font-bold uppercase tracking-wide text-muted-foreground">
                         {cycleBadge[activeSub.cycle] ?? activeSub.cycle}
@@ -345,13 +388,40 @@ function AssinaturaPage() {
                     </p>
                   </div>
                 </div>
-                <Button
-                  variant="outline"
-                  className="gap-2 rounded-full border-red-200 text-red-600 hover:bg-red-50 hover:text-red-700 dark:border-red-900/50 dark:hover:bg-red-950/30"
-                >
-                  <XCircle className="h-4 w-4" />
-                  Cancelar assinatura
-                </Button>
+                {!activeSub.cancel_at_period_end && (
+                  <AlertDialog>
+                    <AlertDialogTrigger asChild>
+                      <Button
+                        variant="outline"
+                        className="gap-2 rounded-full border-red-200 text-red-600 hover:bg-red-50 hover:text-red-700 dark:border-red-900/50 dark:hover:bg-red-950/30"
+                      >
+                        <XCircle className="h-4 w-4" />
+                        Cancelar renovação
+                      </Button>
+                    </AlertDialogTrigger>
+                    <AlertDialogContent>
+                      <AlertDialogHeader>
+                        <AlertDialogTitle>Cancelar a renovação automática?</AlertDialogTitle>
+                        <AlertDialogDescription>
+                          Nenhuma nova cobrança será gerada. Seu plano continuará disponível até {formatDate(activeSub.next_due_date)}.
+                        </AlertDialogDescription>
+                      </AlertDialogHeader>
+                      <AlertDialogFooter>
+                        <AlertDialogCancel disabled={canceling}>Manter renovação</AlertDialogCancel>
+                        <AlertDialogAction
+                          disabled={canceling}
+                          onClick={(event) => {
+                            event.preventDefault();
+                            void handleCancelRenewal();
+                          }}
+                        >
+                          {canceling && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
+                          Confirmar cancelamento
+                        </AlertDialogAction>
+                      </AlertDialogFooter>
+                    </AlertDialogContent>
+                  </AlertDialog>
+                )}
               </div>
 
               {/* Período */}
@@ -386,7 +456,7 @@ function AssinaturaPage() {
                         dias restantes
                       </p>
                       <p className="mt-1 text-[11px] text-emerald-700/60 dark:text-emerald-400/60">
-                        até o próximo pagamento
+                        {activeSub.cancel_at_period_end ? "até o fim do acesso" : "até o próximo pagamento"}
                       </p>
                     </div>
                   </div>

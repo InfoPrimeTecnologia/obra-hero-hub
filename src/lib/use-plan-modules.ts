@@ -37,14 +37,19 @@ export function usePlanModules() {
       }
       const { data: sub } = await supabase
         .from("subscriptions")
-        .select("plan_id, status, plans(modules, features)")
+        .select("plan_id, status, access_until, next_due_date, plans(modules, features)")
         .eq("customer_id", cust.id)
-        .eq("status", "active")
+        .in("status", ["active", "canceled"])
         .order("started_at", { ascending: false })
         .limit(1)
         .maybeSingle();
-      const planMods = (sub as any)?.plans?.modules;
-      const planFeats = (sub as any)?.plans?.features;
+      const periodEnd = sub?.access_until ?? sub?.next_due_date;
+      const canUsePlan =
+        sub?.status === "active" ||
+        (sub?.status === "canceled" &&
+          Boolean(periodEnd && periodEnd >= new Date().toISOString().slice(0, 10)));
+      const planMods = canUsePlan ? (sub as any)?.plans?.modules : null;
+      const planFeats = canUsePlan ? (sub as any)?.plans?.features : null;
       if (!cancelled) {
         setModules(Array.isArray(planMods) ? planMods : ALL_MODULES);
         setFeatures(Array.isArray(planFeats) ? planFeats : ALL_FEATURES);

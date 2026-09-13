@@ -23,6 +23,10 @@ type AsaasSubscriptionResp = {
   nextDueDate: string;
 };
 
+type AsaasSubscriptionDetailsResp = AsaasSubscriptionResp & {
+  deleted?: boolean;
+};
+
 function mapPaymentMethod(
   billingType: AsaasBillingType,
 ): "boleto" | "pix" | "credit_card" | "undefined" {
@@ -244,6 +248,69 @@ export const createAsaasSubscription = createServerFn({ method: "POST" })
       invoiceCount: createdInvoices?.length ?? 0,
       firstInvoiceUrl: createdInvoices?.[0]?.invoice_url ?? null,
     };
+  });
+
+const CancelSubscriptionSchema = z.object({ subscriptionId: z.string().uuid() });
+
+export const cancelAsaasSubscriptionRenewal = createServerFn({ method: "POST" })
+  .middleware([requireSupabaseAuth])
+  .inputValidator((i) => CancelSubscriptionSchema.parse(i))
+  .handler(async ({ data, context }) => {
+    const { supabase, userId } = context;
+
+    const { data: subscription, error } = await supabase
+      .from("subscriptions")
+      .select("id, customer_id, status, next_due_date, asaas_subscription_id")
+      .eq("id", data.subscriptionId)
+      .maybeSingle();
+    if (error || !subscription) throw new Error("Assinatura não encontrada");
+    if (subscription.status === "canceled") {
+      return { accessUntil: subscription.next_due_date, alreadyCanceled: true };
+    }
+
+    const [{ data: roles }, { data: ownedCust }] = await Promise.all([
+      supabase.from("user_roles").select("role").eq("user_id", userId),
+      supabase
+        .from("customers")
+        .select("id")
+        .eq("id", subscription.customer_id)
+        .eq("owner_user_id", userId)
+        .maybeSingle(),
+    ]);
+    const isAdmin = (roles ?? []).some((r: { role: string }) => r.role === "admin");
+    if (!isAdmin && !ownedCust) throw new Error("Sem permissão");
+    if (!subscription.asaas_subscription_id) {
+      throw new Error("Esta assinatura não possui renovação vinculada ao Asaas");
+    }
+
+    let accessUntil = subscription.next_due_date;
+    try {
+      const remote = await asaasFetch<AsaasSubscriptionDetailsResp>(
+        `/subscriptions/${subscription.asaas_subscription_id}`,
+        { method: "GET" },
+      );
+      accessUntil = remote.nextDueDate || accessUntil;
+    } catch (err) {
+      console.error("[asaas] não foi possível consultar a data final antes do cancelamento:", err);
+    }
+
+    await asaasFetch(`/subscriptions/${subscription.asaas_subscription_id}`, {
+      method: "DELETE",
+    });
+
+    const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
+    const { error: updateError } = await supabaseAdmin
+      .from("subscriptions")
+      .update({
+        status: "canceled",
+        cancel_at_period_end: true,
+        canceled_at: new Date().toISOString(),
+        access_until: accessUntil,
+      })
+      .eq("id", subscription.id);
+    if (updateError) throw new Error(updateError.message);
+
+    return { accessUntil, alreadyCanceled: false };
   });
 
 const ChargeSchema = z.object({
