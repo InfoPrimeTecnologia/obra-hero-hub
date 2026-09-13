@@ -238,9 +238,11 @@ export const updateTeamMember = createServerFn({ method: "POST" })
     if (data.role) patch.role = data.role;
     if (data.status) patch.status = data.status;
     if (data.permissions) patch.permissions = data.permissions;
-    if (data.can_access_all_obras !== undefined) patch.can_access_all_obras = data.can_access_all_obras;
+    if (data.can_access_all_obras !== undefined)
+      patch.can_access_all_obras = data.can_access_all_obras;
     if (data.allowed_obras) patch.allowed_obras = data.allowed_obras;
-    if (data.pode_aprovar_compras !== undefined) patch.pode_aprovar_compras = data.pode_aprovar_compras;
+    if (data.pode_aprovar_compras !== undefined)
+      patch.pode_aprovar_compras = data.pode_aprovar_compras;
     const { error } = await supabaseAdmin
       .from("customer_members")
       .update(patch)
