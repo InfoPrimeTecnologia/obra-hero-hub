@@ -37,11 +37,18 @@ async function getOwnedCustomerId(supabaseAdmin: any, userId: string) {
 async function getPlanMaxUsers(supabaseAdmin: any, customerId: string): Promise<number | null> {
   const { data: sub } = await supabaseAdmin
     .from("subscriptions")
-    .select("plan_id, status")
+    .select("plan_id, status, access_until, next_due_date")
     .eq("customer_id", customerId)
-    .in("status", ["active", "trialing"])
+    .in("status", ["active", "canceled"])
+    .order("started_at", { ascending: false })
+    .limit(1)
     .maybeSingle();
-  if (!sub?.plan_id) return null;
+  const periodEnd = sub?.access_until ?? sub?.next_due_date;
+  const isValid =
+    sub?.status === "active" ||
+    (sub?.status === "canceled" &&
+      Boolean(periodEnd && periodEnd >= new Date().toISOString().slice(0, 10)));
+  if (!sub?.plan_id || !isValid) return null;
   const { data: plan } = await supabaseAdmin
     .from("plans")
     .select("limits, max_usuarios")
