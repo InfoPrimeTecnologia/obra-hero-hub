@@ -2889,7 +2889,9 @@ export type Database = {
       }
       subscriptions: {
         Row: {
+          access_until: string | null
           asaas_subscription_id: string | null
+          cancel_at_period_end: boolean
           canceled_at: string | null
           created_at: string
           customer_id: string
@@ -2904,7 +2906,9 @@ export type Database = {
           updated_at: string
         }
         Insert: {
+          access_until?: string | null
           asaas_subscription_id?: string | null
+          cancel_at_period_end?: boolean
           canceled_at?: string | null
           created_at?: string
           customer_id: string
@@ -2919,7 +2923,9 @@ export type Database = {
           updated_at?: string
         }
         Update: {
+          access_until?: string | null
           asaas_subscription_id?: string | null
+          cancel_at_period_end?: boolean
           canceled_at?: string | null
           created_at?: string
           customer_id?: string

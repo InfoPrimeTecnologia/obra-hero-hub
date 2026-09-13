@@ -1,12 +1,7 @@
 import { createServerFn } from "@tanstack/react-start";
 import { z } from "zod";
 import { requireSupabaseAuth } from "@/integrations/supabase/auth-middleware";
-import {
-  asaasFetch,
-  mapCycle,
-  onlyDigits,
-  type AsaasBillingType,
-} from "./asaas.server";
+import { asaasFetch, mapCycle, onlyDigits, type AsaasBillingType } from "./asaas.server";
 
 type AsaasCustomerResp = { id: string };
 type AsaasPaymentResp = {
@@ -21,6 +16,10 @@ type AsaasSubscriptionResp = {
   id: string;
   status: string;
   nextDueDate: string;
+};
+
+type AsaasSubscriptionDetailsResp = AsaasSubscriptionResp & {
+  deleted?: boolean;
 };
 
 function mapPaymentMethod(
@@ -63,10 +62,7 @@ async function ensureAsaasCustomer(supabase: any, customerId: string): Promise<s
     }),
   });
 
-  await supabase
-    .from("customers")
-    .update({ asaas_customer_id: created.id })
-    .eq("id", customer.id);
+  await supabase.from("customers").update({ asaas_customer_id: created.id }).eq("id", customer.id);
 
   return created.id;
 }
@@ -206,9 +202,7 @@ export const createAsaasSubscription = createServerFn({ method: "POST" })
     }
 
     if (firstPayments.length === 0) {
-      throw new Error(
-        "Assinatura criada no Asaas, mas nenhuma cobrança inicial foi retornada.",
-      );
+      throw new Error("Assinatura criada no Asaas, mas nenhuma cobrança inicial foi retornada.");
     }
 
     const rows = firstPayments.map((p) => ({
@@ -231,7 +225,9 @@ export const createAsaasSubscription = createServerFn({ method: "POST" })
       .select("id, invoice_url");
     if (invErr) {
       console.error("[asaas] erro ao inserir faturas locais:", invErr);
-      throw new Error(`Cobrança criada no Asaas, mas falhou ao salvar no sistema: ${invErr.message}`);
+      throw new Error(
+        `Cobrança criada no Asaas, mas falhou ao salvar no sistema: ${invErr.message}`,
+      );
     }
 
     console.log(
@@ -246,6 +242,69 @@ export const createAsaasSubscription = createServerFn({ method: "POST" })
     };
   });
 
+const CancelSubscriptionSchema = z.object({ subscriptionId: z.string().uuid() });
+
+export const cancelAsaasSubscriptionRenewal = createServerFn({ method: "POST" })
+  .middleware([requireSupabaseAuth])
+  .inputValidator((i) => CancelSubscriptionSchema.parse(i))
+  .handler(async ({ data, context }) => {
+    const { supabase, userId } = context;
+
+    const { data: subscription, error } = await supabase
+      .from("subscriptions")
+      .select("id, customer_id, status, next_due_date, asaas_subscription_id")
+      .eq("id", data.subscriptionId)
+      .maybeSingle();
+    if (error || !subscription) throw new Error("Assinatura não encontrada");
+    if (subscription.status === "canceled") {
+      return { accessUntil: subscription.next_due_date, alreadyCanceled: true };
+    }
+
+    const [{ data: roles }, { data: ownedCust }] = await Promise.all([
+      supabase.from("user_roles").select("role").eq("user_id", userId),
+      supabase
+        .from("customers")
+        .select("id")
+        .eq("id", subscription.customer_id)
+        .eq("owner_user_id", userId)
+        .maybeSingle(),
+    ]);
+    const isAdmin = (roles ?? []).some((r: { role: string }) => r.role === "admin");
+    if (!isAdmin && !ownedCust) throw new Error("Sem permissão");
+    if (!subscription.asaas_subscription_id) {
+      throw new Error("Esta assinatura não possui renovação vinculada ao Asaas");
+    }
+
+    let accessUntil = subscription.next_due_date;
+    try {
+      const remote = await asaasFetch<AsaasSubscriptionDetailsResp>(
+        `/subscriptions/${subscription.asaas_subscription_id}`,
+        { method: "GET" },
+      );
+      accessUntil = remote.nextDueDate || accessUntil;
+    } catch (err) {
+      console.error("[asaas] não foi possível consultar a data final antes do cancelamento:", err);
+    }
+
+    await asaasFetch(`/subscriptions/${subscription.asaas_subscription_id}`, {
+      method: "DELETE",
+    });
+
+    const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
+    const { error: updateError } = await supabaseAdmin
+      .from("subscriptions")
+      .update({
+        status: "canceled",
+        cancel_at_period_end: true,
+        canceled_at: new Date().toISOString(),
+        access_until: accessUntil,
+      })
+      .eq("id", subscription.id);
+    if (updateError) throw new Error(updateError.message);
+
+    return { accessUntil, alreadyCanceled: false };
+  });
+
 const ChargeSchema = z.object({
   invoiceId: z.string().uuid(),
   billingType: z.enum(["BOLETO", "PIX", "CREDIT_CARD", "UNDEFINED"]).default("UNDEFINED"),
@@ -257,10 +316,7 @@ export const createAsaasCharge = createServerFn({ method: "POST" })
   .handler(async ({ data, context }) => {
     const { supabase, userId } = context;
 
-    const { data: roles } = await supabase
-      .from("user_roles")
-      .select("role")
-      .eq("user_id", userId);
+    const { data: roles } = await supabase.from("user_roles").select("role").eq("user_id", userId);
     const isAdmin = (roles ?? []).some((r: { role: string }) => r.role === "admin");
     if (!isAdmin) throw new Error("Apenas admin pode gerar cobranças avulsas");
 
@@ -376,10 +432,9 @@ export const syncAsaasPayments = createServerFn({ method: "POST" })
     for (const inv of pendentes ?? []) {
       if (!inv.asaas_payment_id) continue;
       try {
-        const pay = await asaasFetch<AsaasPaymentStatusResp>(
-          `/payments/${inv.asaas_payment_id}`,
-          { method: "GET" },
-        );
+        const pay = await asaasFetch<AsaasPaymentStatusResp>(`/payments/${inv.asaas_payment_id}`, {
+          method: "GET",
+        });
         const status = mapAsaasStatus(pay.status);
         if (status === inv.status) continue;
         await supabaseAdmin
@@ -391,9 +446,7 @@ export const syncAsaasPayments = createServerFn({ method: "POST" })
             payment_link: pay.invoiceUrl ?? undefined,
             paid_at:
               status === "paid"
-                ? new Date(
-                    pay.paymentDate ?? pay.clientPaymentDate ?? Date.now(),
-                  ).toISOString()
+                ? new Date(pay.paymentDate ?? pay.clientPaymentDate ?? Date.now()).toISOString()
                 : null,
           })
           .eq("id", inv.id);

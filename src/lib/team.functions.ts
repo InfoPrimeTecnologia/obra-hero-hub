@@ -37,11 +37,18 @@ async function getOwnedCustomerId(supabaseAdmin: any, userId: string) {
 async function getPlanMaxUsers(supabaseAdmin: any, customerId: string): Promise<number | null> {
   const { data: sub } = await supabaseAdmin
     .from("subscriptions")
-    .select("plan_id, status")
+    .select("plan_id, status, access_until, next_due_date")
     .eq("customer_id", customerId)
-    .in("status", ["active", "trialing"])
+    .in("status", ["active", "canceled"])
+    .order("started_at", { ascending: false })
+    .limit(1)
     .maybeSingle();
-  if (!sub?.plan_id) return null;
+  const periodEnd = sub?.access_until ?? sub?.next_due_date;
+  const isValid =
+    sub?.status === "active" ||
+    (sub?.status === "canceled" &&
+      Boolean(periodEnd && periodEnd >= new Date().toISOString().slice(0, 10)));
+  if (!sub?.plan_id || !isValid) return null;
   const { data: plan } = await supabaseAdmin
     .from("plans")
     .select("limits, max_usuarios")
@@ -231,9 +238,11 @@ export const updateTeamMember = createServerFn({ method: "POST" })
     if (data.role) patch.role = data.role;
     if (data.status) patch.status = data.status;
     if (data.permissions) patch.permissions = data.permissions;
-    if (data.can_access_all_obras !== undefined) patch.can_access_all_obras = data.can_access_all_obras;
+    if (data.can_access_all_obras !== undefined)
+      patch.can_access_all_obras = data.can_access_all_obras;
     if (data.allowed_obras) patch.allowed_obras = data.allowed_obras;
-    if (data.pode_aprovar_compras !== undefined) patch.pode_aprovar_compras = data.pode_aprovar_compras;
+    if (data.pode_aprovar_compras !== undefined)
+      patch.pode_aprovar_compras = data.pode_aprovar_compras;
     const { error } = await supabaseAdmin
       .from("customer_members")
       .update(patch)
