@@ -1,12 +1,7 @@
 import { createServerFn } from "@tanstack/react-start";
 import { z } from "zod";
 import { requireSupabaseAuth } from "@/integrations/supabase/auth-middleware";
-import {
-  asaasFetch,
-  mapCycle,
-  onlyDigits,
-  type AsaasBillingType,
-} from "./asaas.server";
+import { asaasFetch, mapCycle, onlyDigits, type AsaasBillingType } from "./asaas.server";
 
 type AsaasCustomerResp = { id: string };
 type AsaasPaymentResp = {
@@ -67,10 +62,7 @@ async function ensureAsaasCustomer(supabase: any, customerId: string): Promise<s
     }),
   });
 
-  await supabase
-    .from("customers")
-    .update({ asaas_customer_id: created.id })
-    .eq("id", customer.id);
+  await supabase.from("customers").update({ asaas_customer_id: created.id }).eq("id", customer.id);
 
   return created.id;
 }
@@ -210,9 +202,7 @@ export const createAsaasSubscription = createServerFn({ method: "POST" })
     }
 
     if (firstPayments.length === 0) {
-      throw new Error(
-        "Assinatura criada no Asaas, mas nenhuma cobrança inicial foi retornada.",
-      );
+      throw new Error("Assinatura criada no Asaas, mas nenhuma cobrança inicial foi retornada.");
     }
 
     const rows = firstPayments.map((p) => ({
@@ -235,7 +225,9 @@ export const createAsaasSubscription = createServerFn({ method: "POST" })
       .select("id, invoice_url");
     if (invErr) {
       console.error("[asaas] erro ao inserir faturas locais:", invErr);
-      throw new Error(`Cobrança criada no Asaas, mas falhou ao salvar no sistema: ${invErr.message}`);
+      throw new Error(
+        `Cobrança criada no Asaas, mas falhou ao salvar no sistema: ${invErr.message}`,
+      );
     }
 
     console.log(
@@ -324,10 +316,7 @@ export const createAsaasCharge = createServerFn({ method: "POST" })
   .handler(async ({ data, context }) => {
     const { supabase, userId } = context;
 
-    const { data: roles } = await supabase
-      .from("user_roles")
-      .select("role")
-      .eq("user_id", userId);
+    const { data: roles } = await supabase.from("user_roles").select("role").eq("user_id", userId);
     const isAdmin = (roles ?? []).some((r: { role: string }) => r.role === "admin");
     if (!isAdmin) throw new Error("Apenas admin pode gerar cobranças avulsas");
 
@@ -443,10 +432,9 @@ export const syncAsaasPayments = createServerFn({ method: "POST" })
     for (const inv of pendentes ?? []) {
       if (!inv.asaas_payment_id) continue;
       try {
-        const pay = await asaasFetch<AsaasPaymentStatusResp>(
-          `/payments/${inv.asaas_payment_id}`,
-          { method: "GET" },
-        );
+        const pay = await asaasFetch<AsaasPaymentStatusResp>(`/payments/${inv.asaas_payment_id}`, {
+          method: "GET",
+        });
         const status = mapAsaasStatus(pay.status);
         if (status === inv.status) continue;
         await supabaseAdmin
@@ -458,9 +446,7 @@ export const syncAsaasPayments = createServerFn({ method: "POST" })
             payment_link: pay.invoiceUrl ?? undefined,
             paid_at:
               status === "paid"
-                ? new Date(
-                    pay.paymentDate ?? pay.clientPaymentDate ?? Date.now(),
-                  ).toISOString()
+                ? new Date(pay.paymentDate ?? pay.clientPaymentDate ?? Date.now()).toISOString()
                 : null,
           })
           .eq("id", inv.id);

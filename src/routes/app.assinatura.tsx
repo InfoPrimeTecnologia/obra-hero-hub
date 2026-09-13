@@ -160,7 +160,9 @@ function AssinaturaPage() {
   const [invoices, setInvoices] = useState<Invoice[]>([]);
   const [recargas, setRecargas] = useState<CreditTx[]>([]);
   const [billingType, setBillingType] = useState<BillingType>("UNDEFINED");
-  const [billingPeriod, setBillingPeriod] = useState<"monthly" | "semiannual" | "annual">("monthly");
+  const [billingPeriod, setBillingPeriod] = useState<"monthly" | "semiannual" | "annual">(
+    "monthly",
+  );
 
   const load = async () => {
     setLoading(true);
@@ -259,23 +261,17 @@ function AssinaturaPage() {
     };
   }, [customerId]);
 
-
-  const activeSub = useMemo(
-    () => {
-      if (!subscription) return null;
-      if (subscription.status !== "canceled") return subscription;
-      const end = subscription.access_until ?? subscription.next_due_date;
-      return end && end >= new Date().toISOString().slice(0, 10) ? subscription : null;
-    },
-    [subscription],
-  );
+  const activeSub = useMemo(() => {
+    if (!subscription) return null;
+    if (subscription.status !== "canceled") return subscription;
+    const end = subscription.access_until ?? subscription.next_due_date;
+    return end && end >= new Date().toISOString().slice(0, 10) ? subscription : null;
+  }, [subscription]);
 
   const periodInfo = useMemo(() => {
     if (!activeSub) return null;
     const start = activeSub.started_at ? new Date(activeSub.started_at) : null;
-    const next = activeSub.next_due_date
-      ? new Date(activeSub.next_due_date + "T00:00:00")
-      : null;
+    const next = activeSub.next_due_date ? new Date(activeSub.next_due_date + "T00:00:00") : null;
     const today = new Date();
     if (!start || !next) return null;
     const total = Math.max(1, daysBetween(start, next));
@@ -333,8 +329,6 @@ function AssinaturaPage() {
         description="Gerencie o plano da sua empresa e acompanhe suas faturas."
       />
 
-
-
       {loading ? (
         <div className="flex items-center justify-center py-20">
           <Loader2 className="h-8 w-8 animate-spin text-muted-foreground" />
@@ -350,7 +344,8 @@ function AssinaturaPage() {
                 <div className="flex-1">
                   <p className="font-semibold">Cadastre os dados da empresa</p>
                   <p className="text-sm text-muted-foreground">
-                    Para assinar um plano, precisamos do CNPJ e dados da empresa. Acesse Configurações para preencher.
+                    Para assinar um plano, precisamos do CNPJ e dados da empresa. Acesse
+                    Configurações para preencher.
                   </p>
                   <Button asChild size="sm" className="mt-3">
                     <Link to="/app/configuracoes">Ir para Configurações</Link>
@@ -373,7 +368,9 @@ function AssinaturaPage() {
                       <h2 className="text-2xl font-bold tracking-tight">
                         {activeSub.plan?.name ?? "Plano"}
                       </h2>
-                      <span className={`inline-flex items-center rounded-full px-2.5 py-0.5 text-[11px] font-bold uppercase tracking-wide ${activeSub.cancel_at_period_end ? "bg-amber-100 text-amber-700 dark:bg-amber-500/15 dark:text-amber-400" : "bg-emerald-100 text-emerald-700 dark:bg-emerald-500/15 dark:text-emerald-400"}`}>
+                      <span
+                        className={`inline-flex items-center rounded-full px-2.5 py-0.5 text-[11px] font-bold uppercase tracking-wide ${activeSub.cancel_at_period_end ? "bg-amber-100 text-amber-700 dark:bg-amber-500/15 dark:text-amber-400" : "bg-emerald-100 text-emerald-700 dark:bg-emerald-500/15 dark:text-emerald-400"}`}
+                      >
                         {activeSub.cancel_at_period_end ? "Renovação cancelada" : "Ativo"}
                       </span>
                       <span className="inline-flex items-center rounded-full bg-muted px-2.5 py-0.5 text-[11px] font-bold uppercase tracking-wide text-muted-foreground">
@@ -403,7 +400,8 @@ function AssinaturaPage() {
                       <AlertDialogHeader>
                         <AlertDialogTitle>Cancelar a renovação automática?</AlertDialogTitle>
                         <AlertDialogDescription>
-                          Nenhuma nova cobrança será gerada. Seu plano continuará disponível até {formatDate(activeSub.next_due_date)}.
+                          Nenhuma nova cobrança será gerada. Seu plano continuará disponível até{" "}
+                          {formatDate(activeSub.next_due_date)}.
                         </AlertDialogDescription>
                       </AlertDialogHeader>
                       <AlertDialogFooter>
@@ -456,7 +454,9 @@ function AssinaturaPage() {
                         dias restantes
                       </p>
                       <p className="mt-1 text-[11px] text-emerald-700/60 dark:text-emerald-400/60">
-                        {activeSub.cancel_at_period_end ? "até o fim do acesso" : "até o próximo pagamento"}
+                        {activeSub.cancel_at_period_end
+                          ? "até o fim do acesso"
+                          : "até o próximo pagamento"}
                       </p>
                     </div>
                   </div>
@@ -581,7 +581,8 @@ function AssinaturaPage() {
                             <td className="px-6 py-4">
                               <span
                                 className={`inline-flex items-center rounded-full px-2.5 py-1 text-[10px] font-bold uppercase tracking-wider ${
-                                  invoiceStatusStyles[inv.status] ?? "bg-muted text-muted-foreground"
+                                  invoiceStatusStyles[inv.status] ??
+                                  "bg-muted text-muted-foreground"
                                 }`}
                               >
                                 {invoiceStatusLabel[inv.status] ?? inv.status.toUpperCase()}
@@ -666,7 +667,9 @@ function AssinaturaPage() {
                                 key={inv.id}
                                 className="border-t border-border/40 transition-colors hover:bg-muted/30"
                               >
-                                <td className="px-6 py-4 font-semibold">{inv.description ?? "—"}</td>
+                                <td className="px-6 py-4 font-semibold">
+                                  {inv.description ?? "—"}
+                                </td>
                                 <td className="whitespace-nowrap px-6 py-4 text-muted-foreground">
                                   {formatDate(inv.due_date)}
                                 </td>
@@ -818,10 +821,14 @@ function AssinaturaPage() {
                         const periodMonths =
                           billingPeriod === "annual" ? 12 : billingPeriod === "semiannual" ? 6 : 1;
                         const discount =
-                          billingPeriod === "annual" ? 0.1 : billingPeriod === "semiannual" ? 0.05 : 0;
-                        const total = Math.round(monthly * periodMonths * (1 - discount) * 100) / 100;
-                        const effectiveMonthly =
-                          Math.round((total / periodMonths) * 100) / 100;
+                          billingPeriod === "annual"
+                            ? 0.1
+                            : billingPeriod === "semiannual"
+                              ? 0.05
+                              : 0;
+                        const total =
+                          Math.round(monthly * periodMonths * (1 - discount) * 100) / 100;
+                        const effectiveMonthly = Math.round((total / periodMonths) * 100) / 100;
                         const periodLabel =
                           billingPeriod === "annual"
                             ? "ano"
@@ -895,7 +902,9 @@ function AssinaturaPage() {
                             <div className="mt-auto pt-2">
                               <Button
                                 className="w-full rounded-full"
-                                variant={isCurrent ? "outline" : plan.is_featured ? "default" : "secondary"}
+                                variant={
+                                  isCurrent ? "outline" : plan.is_featured ? "default" : "secondary"
+                                }
                                 disabled={isCurrent || activating !== null || !customerId}
                                 onClick={() => handleActivate(plan.id)}
                               >

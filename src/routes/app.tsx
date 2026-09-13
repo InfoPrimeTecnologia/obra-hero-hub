@@ -95,9 +95,7 @@ function AppGate() {
     );
   }
 
-  const onAllowedRoute = ALLOWED_WITHOUT_SUB.some((p) =>
-    location.pathname.startsWith(p),
-  );
+  const onAllowedRoute = ALLOWED_WITHOUT_SUB.some((p) => location.pathname.startsWith(p));
 
   if (!accessGranted && !onAllowedRoute) {
     return <SubscriptionRequired />;
@@ -123,9 +121,9 @@ function SubscriptionRequired() {
           </div>
           <CardTitle className="text-2xl">Bem-vindo ao Mestre 360</CardTitle>
           <p className="mt-2 text-sm text-muted-foreground">
-            Para acessar o sistema você precisa ativar um plano. Escolha a opção
-            que melhor se encaixa na sua operação — após a confirmação do
-            pagamento, todos os recursos do plano são liberados automaticamente.
+            Para acessar o sistema você precisa ativar um plano. Escolha a opção que melhor se
+            encaixa na sua operação — após a confirmação do pagamento, todos os recursos do plano
+            são liberados automaticamente.
           </p>
         </CardHeader>
         <CardContent className="space-y-5">
@@ -151,12 +149,13 @@ function SubscriptionRequired() {
           </div>
 
           <div className="flex flex-col gap-2 sm:flex-row sm:justify-end">
-            <Button variant="ghost" onClick={() => signOut().then(() => navigate({ to: "/login" }))}>
+            <Button
+              variant="ghost"
+              onClick={() => signOut().then(() => navigate({ to: "/login" }))}
+            >
               Sair
             </Button>
-            <Button onClick={() => navigate({ to: "/app/assinatura" })}>
-              Escolher meu plano
-            </Button>
+            <Button onClick={() => navigate({ to: "/app/assinatura" })}>Escolher meu plano</Button>
           </div>
         </CardContent>
       </Card>
