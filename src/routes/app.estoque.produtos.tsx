@@ -104,6 +104,10 @@ function Page() {
     setUploading(true);
     const customer_id = await getCurrentCustomerId();
     if (!customer_id) { setUploading(false); return toast.error("Conta não identificada"); }
+    try {
+      const { assertStorageAvailable } = await import("@/lib/storage-quota");
+      await assertStorageAvailable(file.size);
+    } catch (e) { setUploading(false); return toast.error(e instanceof Error ? e.message : String(e)); }
     const ext = file.name.split(".").pop() || "jpg";
     const path = `${customer_id}/${Date.now()}.${ext}`;
     const { error } = await supabase.storage.from("produto-fotos").upload(path, file, { upsert: true });

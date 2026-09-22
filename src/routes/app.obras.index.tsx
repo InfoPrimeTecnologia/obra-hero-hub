@@ -145,6 +145,8 @@ function ObrasPage() {
       const obra = obras.find((o) => o.id === obraId);
       const customer_id = obra?.customer_id;
       if (!customer_id) throw new Error("Conta não identificada");
+      const { assertStorageAvailable } = await import("@/lib/storage-quota");
+      await assertStorageAvailable(file.size);
       const ext = file.name.split(".").pop() ?? "jpg";
       const path = `${customer_id}/${obraId}/${Date.now()}.${ext}`;
       const { error: upErr } = await supabase.storage.from("obra-fotos").upload(path, file, { upsert: true });
@@ -198,6 +200,21 @@ function ObrasPage() {
       setSaving(false);
       toast.error("Não foi possível identificar sua conta.");
       return;
+    }
+    const { data: currentSub } = await supabase.from("subscriptions")
+      .select("plan:plans(limits)")
+      .eq("customer_id", customer.id).eq("status", "active")
+      .order("started_at", { ascending: false }).limit(1).maybeSingle();
+    const maxObras = (currentSub?.plan as { limits?: { max_obras?: number | null } } | null)?.limits?.max_obras;
+    if (typeof maxObras === "number") {
+      const { count, error: countError } = await supabase.from("obras").select("id", { count: "exact", head: true })
+        .eq("customer_id", customer.id).neq("status", "arquivada");
+      if (countError) { setSaving(false); toast.error(countError.message); return; }
+      if ((count ?? 0) >= maxObras) {
+        setSaving(false);
+        toast.error(`Limite de ${maxObras} obra(s) do plano atingido.`);
+        return;
+      }
     }
     const { error } = await supabase.from("obras").insert({
       customer_id: customer.id,

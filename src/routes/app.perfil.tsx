@@ -54,6 +54,10 @@ function PerfilPage() {
     }
     const ext = file.name.split(".").pop() || "jpg";
     const path = `${user.id}/avatar-${Date.now()}.${ext}`;
+    try {
+      const { assertStorageAvailable } = await import("@/lib/storage-quota");
+      await assertStorageAvailable(file.size);
+    } catch (e) { toast.error(e instanceof Error ? e.message : String(e)); return; }
     const { error: upErr } = await supabase.storage.from("avatars").upload(path, file, { upsert: true });
     if (upErr) {
       toast.error("Erro no upload: " + upErr.message);

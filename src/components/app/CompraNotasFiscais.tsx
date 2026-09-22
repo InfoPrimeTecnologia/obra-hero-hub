@@ -105,6 +105,8 @@ export function CompraNotasFiscais({ compraId, customerId, empresarial = false }
       let arquivo_url: string | null = null;
       let arquivo_nome: string | null = null;
       if (arquivo) {
+        const { assertStorageAvailable } = await import("@/lib/storage-quota");
+        await assertStorageAvailable(arquivo.size);
         const path = `${customerId}/${compraId}/${Date.now()}-${arquivo.name}`;
         const { error: upErr } = await supabase.storage.from("notas-fiscais").upload(path, arquivo, {
           upsert: false,

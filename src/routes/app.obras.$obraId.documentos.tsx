@@ -28,6 +28,7 @@ import {
   AlertDialogTitle,
 } from "@/components/ui/alert-dialog";
 import { toast } from "sonner";
+import { assertStorageAvailable } from "@/lib/storage-quota";
 
 export const Route = createFileRoute("/app/obras/$obraId/documentos")({
   component: DocumentosPage,
@@ -125,6 +126,7 @@ function DocumentosPage() {
     if (!customerId) return toast.error("Empresa não identificada");
     setUploading(true);
     try {
+      await assertStorageAvailable(file.size);
       const ext = file.name.split(".").pop() ?? "bin";
       const path = `${customerId}/${obraId}/${crypto.randomUUID()}.${ext}`;
       const { error: upErr } = await supabase.storage
