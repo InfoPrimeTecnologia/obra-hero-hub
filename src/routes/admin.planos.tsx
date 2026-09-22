@@ -89,6 +89,7 @@ function Page() {
       name: form.name, description: form.description || null, price: Number(form.price), cycle: form.cycle,
       features: form.features.split("\n").map((s) => s.trim()).filter(Boolean),
       modules: form.modules, limits,
+      max_usuarios: Number(form.max_usuarios) || 1,
       is_featured: form.is_featured, is_active: form.is_active, display_order: Number(form.display_order),
     };
     if (editing) {

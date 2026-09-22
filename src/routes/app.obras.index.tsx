@@ -201,10 +201,11 @@ function ObrasPage() {
       toast.error("Não foi possível identificar sua conta.");
       return;
     }
-    const { data: currentSub } = await supabase.from("subscriptions")
+    const { data: currentSub, error: subError } = await supabase.from("subscriptions")
       .select("plan:plans(limits)")
       .eq("customer_id", customer.id).in("status", ["active", "canceled"])
       .order("started_at", { ascending: false }).limit(1).maybeSingle();
+    if (subError) { setSaving(false); toast.error(subError.message); return; }
     const maxObras = (currentSub?.plan as { limits?: { max_obras?: number | null } } | null)?.limits?.max_obras;
     if (typeof maxObras === "number") {
       const { count, error: countError } = await supabase.from("obras").select("id", { count: "exact", head: true })
