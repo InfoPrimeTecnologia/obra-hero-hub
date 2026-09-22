@@ -284,6 +284,10 @@ function RdoDetailPage() {
   const uploadAnexos = async (files: FileList | null) => {
     if (!files?.length || !rdo || !obra) return;
     for (const file of Array.from(files)) {
+      try {
+        const { assertStorageAvailable } = await import("@/lib/storage-quota");
+        await assertStorageAvailable(file.size);
+      } catch (e) { toast.error(e instanceof Error ? e.message : String(e)); break; }
       const ext = file.name.split(".").pop() || "jpg";
       const path = `${obra.customer_id}/${obra.id}/rdo/${rdo.id}/${crypto.randomUUID()}.${ext}`;
       const { error: upErr } = await supabase.storage.from("obra-fotos").upload(path, file);
