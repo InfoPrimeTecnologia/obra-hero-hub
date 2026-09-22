@@ -165,6 +165,11 @@ export const Route = createFileRoute("/api/public/asaas-webhook")({
               })
               .eq("id", inv.id);
 
+            if (status === "paid" && inv.subscription_id) {
+              const { error: grantError } = await supabaseAdmin.rpc("grant_plan_credits", { _invoice_id: inv.id });
+              if (grantError) throw grantError;
+            }
+
             // Recarga de créditos: identificar pela externalReference
             const ref = pay.externalReference ?? "";
             if (status === "paid" && ref.startsWith("credit_recharge:")) {

@@ -31,7 +31,7 @@ const MODULES = [
 type Cycle = "monthly" | "quarterly" | "semiannual" | "annual";
 type Plan = {
   id: string; name: string; description: string | null; price: number; cycle: Cycle;
-  features: string[]; modules: string[]; limits: { max_obras: number | null; max_colaboradores: number | null; max_usuarios: number | null };
+  features: string[]; modules: string[]; limits: { max_obras: number | null; max_colaboradores: number | null; max_usuarios: number | null; storage_gb?: number; ai_credits?: number };
   is_featured: boolean; is_active: boolean; display_order: number;
 };
 
@@ -39,6 +39,7 @@ const initial = {
   name: "", description: "", price: 0, cycle: "monthly" as Cycle,
   features: "", modules: ["obras", "financeiro", "compras"] as string[],
   max_obras: "" as string, max_colaboradores: "" as string, max_usuarios: "" as string,
+  storage_gb: "" as string, ai_credits: "0" as string,
   is_featured: false, is_active: true, display_order: 0,
 };
 
@@ -67,6 +68,8 @@ function Page() {
       max_obras: p.limits?.max_obras?.toString() ?? "",
       max_colaboradores: p.limits?.max_colaboradores?.toString() ?? "",
       max_usuarios: p.limits?.max_usuarios?.toString() ?? "",
+      storage_gb: p.limits?.storage_gb?.toString() ?? "",
+      ai_credits: p.limits?.ai_credits?.toString() ?? "0",
       is_featured: p.is_featured, is_active: p.is_active, display_order: p.display_order,
     });
     setOpen(true);
@@ -79,6 +82,8 @@ function Page() {
       max_obras: form.max_obras ? Number(form.max_obras) : null,
       max_colaboradores: form.max_colaboradores ? Number(form.max_colaboradores) : null,
       max_usuarios: form.max_usuarios ? Number(form.max_usuarios) : null,
+      storage_gb: form.storage_gb ? Number(form.storage_gb) : null,
+      ai_credits: Number(form.ai_credits) || 0,
     };
     const payload = {
       name: form.name, description: form.description || null, price: Number(form.price), cycle: form.cycle,
@@ -165,6 +170,12 @@ function Page() {
                       <Input type="number" placeholder="∞" value={form.max_usuarios} onChange={(e) => setForm({ ...form, max_usuarios: e.target.value })} /></div>
                   </div>
                 </div>
+                <div className="grid grid-cols-2 gap-3">
+                  <div className="space-y-1"><Label>Armazenamento (GB)</Label>
+                    <Input type="number" min="0" step="0.1" placeholder="∞" value={form.storage_gb} onChange={(e) => setForm({ ...form, storage_gb: e.target.value })} /></div>
+                  <div className="space-y-1"><Label>Créditos IA por pagamento</Label>
+                    <Input type="number" min="0" step="1" value={form.ai_credits} onChange={(e) => setForm({ ...form, ai_credits: e.target.value })} /></div>
+                </div>
 
                 <div className="space-y-2"><Label>Recursos (um por linha)</Label>
                   <Textarea rows={3} value={form.features} onChange={(e) => setForm({ ...form, features: e.target.value })} /></div>
@@ -202,6 +213,7 @@ function Page() {
               <p className="text-xs text-muted-foreground">
                 Limites: obras {p.limits?.max_obras ?? "∞"} · colab {p.limits?.max_colaboradores ?? "∞"} · usuários {p.limits?.max_usuarios ?? "∞"}
               </p>
+              <p className="text-xs text-muted-foreground">Armazenamento: {p.limits?.storage_gb ?? "∞"} GB · IA: {p.limits?.ai_credits ?? 0} créditos/pagamento</p>
             </div>
             <div className="flex gap-2">
               <Button size="sm" variant="outline" onClick={() => edit(p)}><Pencil className="mr-2 h-4 w-4" /> Editar</Button>
