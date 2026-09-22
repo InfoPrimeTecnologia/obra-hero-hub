@@ -1290,6 +1290,7 @@ export type Database = {
           owner_user_id: string | null
           phone: string | null
           status: Database["public"]["Enums"]["customer_status"]
+          storage_extra_gb: number
           updated_at: string
           whatsapp: string | null
         }
@@ -1316,6 +1317,7 @@ export type Database = {
           owner_user_id?: string | null
           phone?: string | null
           status?: Database["public"]["Enums"]["customer_status"]
+          storage_extra_gb?: number
           updated_at?: string
           whatsapp?: string | null
         }
@@ -1342,6 +1344,7 @@ export type Database = {
           owner_user_id?: string | null
           phone?: string | null
           status?: Database["public"]["Enums"]["customer_status"]
+          storage_extra_gb?: number
           updated_at?: string
           whatsapp?: string | null
         }
@@ -3449,6 +3452,7 @@ export type Database = {
           estorno_token: string
         }[]
       }
+      grant_plan_credits: { Args: { _invoice_id: string }; Returns: number }
       has_role: {
         Args: {
           _role: Database["public"]["Enums"]["app_role"]
@@ -3468,6 +3472,13 @@ export type Database = {
           source_queue: string
         }
         Returns: number
+      }
+      my_storage_quota: {
+        Args: never
+        Returns: {
+          limit_bytes: number
+          used_bytes: number
+        }[]
       }
       pode_aprovar_compra: {
         Args: { _customer_id: string; _user_id: string }

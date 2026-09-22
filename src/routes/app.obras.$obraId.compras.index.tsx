@@ -323,6 +323,10 @@ function ComprasPage() {
       let arquivoUrl: string | null = null;
       if (nfFile) {
         const bin = Uint8Array.from(atob(nfFile.base64), (c) => c.charCodeAt(0));
+        try {
+          const { assertStorageAvailable } = await import("@/lib/storage-quota");
+          await assertStorageAvailable(bin.byteLength);
+        } catch (e) { toast.error(e instanceof Error ? e.message : String(e)); setSaving(false); return; }
         const path = `${customerId}/${compraId}/${Date.now()}-${nfFile.filename}`;
         const { error: eUp } = await supabase.storage.from("notas-fiscais").upload(path, bin, {
           contentType: nfFile.mimeType, upsert: false,

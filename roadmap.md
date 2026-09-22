@@ -1,0 +1,5 @@
+- [x] Investigar o erro de login relatado em todos os usuários.
+- [x] Atualizar os três planos e seus limites.
+- [x] Exibir consumo real, limitar novos arquivos e creditar IA após pagamento.
+- [ ] Registrar versão e entregar SQL idempotente para produção.
+- [ ] Validar os fluxos alterados.

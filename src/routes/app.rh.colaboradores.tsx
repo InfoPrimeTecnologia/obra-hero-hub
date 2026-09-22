@@ -98,6 +98,10 @@ function Page() {
 
   const uploadFoto = async (customer_id: string): Promise<string | null> => {
     if (!foto) return null;
+    try {
+      const { assertStorageAvailable } = await import("@/lib/storage-quota");
+      await assertStorageAvailable(foto.size);
+    } catch (e) { toast.error(e instanceof Error ? e.message : String(e)); return null; }
     const ext = foto.name.split(".").pop();
     const path = `${customer_id}/${crypto.randomUUID()}.${ext}`;
     const { error } = await supabase.storage.from("colaborador-fotos").upload(path, foto);

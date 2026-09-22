@@ -450,6 +450,10 @@ export const syncAsaasPayments = createServerFn({ method: "POST" })
                 : null,
           })
           .eq("id", inv.id);
+        if (status === "paid") {
+          const { error: grantError } = await supabaseAdmin.rpc("grant_plan_credits", { _invoice_id: inv.id });
+          if (grantError) throw grantError;
+        }
         updated += 1;
       } catch (err) {
         console.error(`[asaas] falha ao sincronizar payment ${inv.asaas_payment_id}:`, err);

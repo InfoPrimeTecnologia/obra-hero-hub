@@ -42,6 +42,7 @@ import {
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/lib/auth-context";
 import { getCurrentCustomerId } from "@/lib/customer";
+import { formatStorage, getStorageQuota, type StorageQuota } from "@/lib/storage-quota";
 import {
   cancelAsaasSubscriptionRenewal,
   createAsaasSubscription,
@@ -62,6 +63,7 @@ type Plan = {
   features: string[];
   is_featured: boolean;
   display_order: number;
+  limits: { storage_gb?: number; ai_credits?: number; max_obras?: number | null; max_usuarios?: number | null };
 };
 
 type Subscription = {
@@ -156,6 +158,7 @@ function AssinaturaPage() {
   const [canceling, setCanceling] = useState(false);
   const [customerId, setCustomerId] = useState<string | null>(null);
   const [plans, setPlans] = useState<Plan[]>([]);
+  const [storageQuota, setStorageQuota] = useState<StorageQuota | null>(null);
   const [subscription, setSubscription] = useState<Subscription | null>(null);
   const [invoices, setInvoices] = useState<Invoice[]>([]);
   const [recargas, setRecargas] = useState<CreditTx[]>([]);
@@ -172,12 +175,17 @@ function AssinaturaPage() {
 
       const { data: plansData } = await supabase
         .from("plans")
-        .select("id,name,description,price,cycle,features,is_featured,display_order")
+        .select("id,name,description,price,cycle,features,is_featured,display_order,limits")
         .eq("is_active", true)
         .order("display_order");
       setPlans((plansData as Plan[]) ?? []);
 
       if (custId) {
+        try {
+          setStorageQuota(await getStorageQuota());
+        } catch {
+          setStorageQuota(null);
+        }
         // Rede de segurança: confirma no provedor se alguma fatura pendente já foi paga
         try {
           await syncPayments({ data: { customerId: custId } });
@@ -208,7 +216,8 @@ function AssinaturaPage() {
           .from("credit_transactions")
           .select("id,tipo,delta,saldo_apos,descricao,invoice_id,created_at")
           .eq("customer_id", custId)
-          .eq("tipo", "recarga")
+        .in("tipo", ["recarga", "ajuste"])
+        .gt("delta", 0)
           .order("created_at", { ascending: false })
           .limit(50);
         setRecargas((txData as CreditTx[]) ?? []);
@@ -710,7 +719,7 @@ function AssinaturaPage() {
                   <div className="flex flex-col items-center justify-center px-6 py-16 text-center">
                     <Coins className="mb-3 h-10 w-10 text-muted-foreground/40" />
                     <p className="text-sm text-muted-foreground">
-                      Nenhuma recarga de créditos realizada.
+                      Nenhum crédito recebido ainda.
                     </p>
                   </div>
                 ) : (
@@ -718,14 +727,14 @@ function AssinaturaPage() {
                     <div className="flex items-center justify-between border-b border-border/40 px-6 py-4">
                       <div>
                         <p className="text-xs font-semibold uppercase tracking-wider text-muted-foreground">
-                          Total de créditos recarregados
+                          Total de créditos recebidos
                         </p>
                         <p className="mt-0.5 text-2xl font-bold text-primary">
                           {recargas.reduce((s, r) => s + r.delta, 0)}
                         </p>
                       </div>
                       <span className="text-xs text-muted-foreground">
-                        {recargas.length} recarga{recargas.length === 1 ? "" : "s"}
+                        {recargas.length} lançamento{recargas.length === 1 ? "" : "s"}
                       </span>
                     </div>
                     <div className="overflow-x-auto">
@@ -766,6 +775,19 @@ function AssinaturaPage() {
               </TabsContent>
 
               <TabsContent value="plans" className="m-0 p-6">
+                {storageQuota && (
+                  <div className="mb-6 border-b border-border pb-5">
+                    <p className="text-sm font-medium">Armazenamento utilizado</p>
+                    <p className="mt-1 text-sm text-muted-foreground">
+                      {formatStorage(storageQuota.used_bytes)} de {storageQuota.limit_bytes == null ? "ilimitado" : formatStorage(storageQuota.limit_bytes)}
+                    </p>
+                    {storageQuota.limit_bytes != null && (
+                      <div className="mt-3 h-2 overflow-hidden rounded bg-muted" role="progressbar" aria-label="Armazenamento utilizado" aria-valuenow={Math.min(100, Math.round(storageQuota.used_bytes / Math.max(1, storageQuota.limit_bytes) * 100))} aria-valuemin={0} aria-valuemax={100}>
+                        <div className="h-full bg-primary" style={{ width: `${Math.min(100, storageQuota.used_bytes / Math.max(1, storageQuota.limit_bytes) * 100)}%` }} />
+                      </div>
+                    )}
+                  </div>
+                )}
                 {plans.length === 0 ? (
                   <div className="flex flex-col items-center justify-center py-12 text-center">
                     <Package className="mb-3 h-10 w-10 text-muted-foreground/40" />
