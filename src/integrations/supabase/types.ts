@@ -3452,6 +3452,7 @@ export type Database = {
           estorno_token: string
         }[]
       }
+      grant_plan_credits: { Args: { _invoice_id: string }; Returns: number }
       has_role: {
         Args: {
           _role: Database["public"]["Enums"]["app_role"]
