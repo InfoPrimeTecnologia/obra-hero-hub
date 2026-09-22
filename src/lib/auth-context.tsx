@@ -119,12 +119,21 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   }, []);
 
   const signIn = async (email: string, password: string) => {
-    const { data, error } = await supabase.auth.signInWithPassword({ email, password });
-    if (!error && data.user?.app_metadata?.mestre_email_confirmed === false) {
-      await supabase.auth.signOut();
-      return { error: new Error("E-mail ainda não confirmado. Verifique sua caixa de entrada.") };
+    try {
+      const { data, error } = await supabase.auth.signInWithPassword({ email, password });
+      if (!error && data.user?.app_metadata?.mestre_email_confirmed === false) {
+        await supabase.auth.signOut();
+        return { error: new Error("E-mail ainda não confirmado. Verifique sua caixa de entrada.") };
+      }
+      if (error && /failed to fetch|network|fetch failed/i.test(error.message)) {
+        return { error: new Error("Não foi possível conectar ao serviço de login. Verifique sua conexão e a configuração do Supabase no servidor; tente novamente.") };
+      }
+      return { error };
+    } catch (error) {
+      return { error: new Error(/failed to fetch|network|fetch failed/i.test(String(error))
+        ? "Não foi possível conectar ao serviço de login. Verifique sua conexão e a configuração do Supabase no servidor; tente novamente."
+        : error instanceof Error ? error.message : "Falha inesperada ao entrar.") };
     }
-    return { error };
   };
 
   const signUp = async (input: SignUpInput) => {
