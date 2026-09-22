@@ -719,7 +719,7 @@ function AssinaturaPage() {
                   <div className="flex flex-col items-center justify-center px-6 py-16 text-center">
                     <Coins className="mb-3 h-10 w-10 text-muted-foreground/40" />
                     <p className="text-sm text-muted-foreground">
-                      Nenhuma recarga de créditos realizada.
+                      Nenhum crédito recebido ainda.
                     </p>
                   </div>
                 ) : (
@@ -727,14 +727,14 @@ function AssinaturaPage() {
                     <div className="flex items-center justify-between border-b border-border/40 px-6 py-4">
                       <div>
                         <p className="text-xs font-semibold uppercase tracking-wider text-muted-foreground">
-                          Total de créditos recarregados
+                          Total de créditos recebidos
                         </p>
                         <p className="mt-0.5 text-2xl font-bold text-primary">
                           {recargas.reduce((s, r) => s + r.delta, 0)}
                         </p>
                       </div>
                       <span className="text-xs text-muted-foreground">
-                        {recargas.length} recarga{recargas.length === 1 ? "" : "s"}
+                        {recargas.length} lançamento{recargas.length === 1 ? "" : "s"}
                       </span>
                     </div>
                     <div className="overflow-x-auto">
