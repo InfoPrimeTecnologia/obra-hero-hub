@@ -203,7 +203,7 @@ function ObrasPage() {
     }
     const { data: currentSub } = await supabase.from("subscriptions")
       .select("plan:plans(limits)")
-      .eq("customer_id", customer.id).eq("status", "active")
+      .eq("customer_id", customer.id).in("status", ["active", "canceled"])
       .order("started_at", { ascending: false }).limit(1).maybeSingle();
     const maxObras = (currentSub?.plan as { limits?: { max_obras?: number | null } } | null)?.limits?.max_obras;
     if (typeof maxObras === "number") {

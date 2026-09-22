@@ -216,7 +216,8 @@ function AssinaturaPage() {
           .from("credit_transactions")
           .select("id,tipo,delta,saldo_apos,descricao,invoice_id,created_at")
           .eq("customer_id", custId)
-          .eq("tipo", "recarga")
+        .in("tipo", ["recarga", "ajuste"])
+        .gt("delta", 0)
           .order("created_at", { ascending: false })
           .limit(50);
         setRecargas((txData as CreditTx[]) ?? []);
