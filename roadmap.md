@@ -1,5 +1,5 @@
 - [x] Investigar o erro de login relatado em todos os usuários.
 - [x] Atualizar os três planos e seus limites.
 - [x] Exibir consumo real, limitar novos arquivos e creditar IA após pagamento.
-- [ ] Registrar versão e entregar SQL idempotente para produção.
-- [ ] Validar os fluxos alterados.
+- [x] Registrar versão e preparar SQL idempotente para produção.
+- [x] Validar as alterações disponíveis e identificar a correção necessária no servidor de produção para o login.
