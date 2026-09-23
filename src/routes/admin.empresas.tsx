@@ -62,6 +62,7 @@ type Customer = {
   status: string;
   created_at: string;
   owner_user_id: string | null;
+  storage_extra_gb: number;
 };
 
 type Plan = { id: string; name: string; price: number; cycle: string; modules?: any; features?: any };
@@ -115,6 +116,7 @@ function EmpresasPage() {
     phone: "",
     whatsapp: "",
     status: "active",
+    storage_extra_gb: "0",
   });
 
   // delete
@@ -144,7 +146,7 @@ function EmpresasPage() {
     const [{ data: cs, error }, { data: ss }, { data: ps }] = await Promise.all([
       supabase
         .from("customers")
-        .select("id, name, email, company_name, cpf_cnpj, phone, whatsapp, status, created_at, owner_user_id")
+        .select("id, name, email, company_name, cpf_cnpj, phone, whatsapp, status, created_at, owner_user_id, storage_extra_gb")
         .order("created_at", { ascending: false }),
       supabase
         .from("subscriptions")
@@ -189,7 +191,7 @@ function EmpresasPage() {
   }, [customers, search]);
 
   const reset = () => {
-    setForm({ name: "", company_name: "", email: "", cpf_cnpj: "", phone: "", whatsapp: "", status: "active" });
+    setForm({ name: "", company_name: "", email: "", cpf_cnpj: "", phone: "", whatsapp: "", status: "active", storage_extra_gb: "0" });
     setEditingId(null);
   };
 
@@ -208,6 +210,7 @@ function EmpresasPage() {
       phone: c.phone ?? "",
       whatsapp: c.whatsapp ?? "",
       status: c.status,
+      storage_extra_gb: String(c.storage_extra_gb ?? 0),
     });
     setOpen(true);
   };
@@ -223,6 +226,7 @@ function EmpresasPage() {
       phone: form.phone || null,
       whatsapp: form.whatsapp || null,
       status: form.status as "active" | "inactive" | "canceled" | "overdue",
+      storage_extra_gb: Number(form.storage_extra_gb),
     };
     const { error } = editingId
       ? await supabase.from("customers").update(payload).eq("id", editingId)
@@ -543,6 +547,11 @@ function EmpresasPage() {
                   </SelectContent>
                 </Select>
               </div>
+            </div>
+            <div className="space-y-2">
+              <Label htmlFor="c-storage-extra">Armazenamento adicional (GB)</Label>
+              <Input id="c-storage-extra" type="number" min="0" step="0.01" required
+                value={form.storage_extra_gb} onChange={(e) => setForm({ ...form, storage_extra_gb: e.target.value })} />
             </div>
             <DialogFooter>
               <Button type="button" variant="outline" onClick={() => setOpen(false)}>Cancelar</Button>

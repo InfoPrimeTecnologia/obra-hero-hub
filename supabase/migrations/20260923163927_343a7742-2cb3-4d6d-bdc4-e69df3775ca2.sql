@@ -1,0 +1,12 @@
+INSERT INTO public.plans (id, name, description, price, cycle, features, modules, limits, max_usuarios, is_active, is_featured, display_order)
+VALUES
+('6f912ee1-9215-4a0f-9adc-7d1b3f2ab463', 'PLANO-01', 'Para começar a organizar suas obras.', 109.90, 'monthly', ARRAY['1 obra','2 usuários','1,2 GB de armazenamento'], '["obras","financeiro","compras","rh","relatorios","tarefas","agenda"]'::jsonb, '{"max_obras":1,"max_usuarios":2,"max_colaboradores":null,"storage_gb":1.2,"ai_credits":0}'::jsonb, 2, true, false, 1),
+('fe3ee892-acfd-4c76-b402-050fe49e742d', 'PLANO-02', 'Mais obras e equipe, com créditos de IA.', 179.90, 'monthly', ARRAY['10 obras','10 usuários','24 GB de armazenamento','300 créditos de IA'], '["obras","financeiro","compras","rh","relatorios","tarefas","agenda"]'::jsonb, '{"max_obras":10,"max_usuarios":10,"max_colaboradores":null,"storage_gb":24,"ai_credits":300}'::jsonb, 10, true, true, 2),
+('8d9f2899-9bce-49a0-b7f8-c3f14e91873a', 'PLANO-03', 'Obras e usuários ilimitados, com armazenamento expansível.', 329.90, 'monthly', ARRAY['Obras ilimitadas','Usuários ilimitados','60 GB de armazenamento (expansível)','500 créditos de IA'], '["obras","financeiro","compras","rh","relatorios","tarefas","agenda"]'::jsonb, '{"max_obras":null,"max_usuarios":null,"max_colaboradores":null,"storage_gb":60,"ai_credits":500}'::jsonb, 1, true, false, 3)
+ON CONFLICT (id) DO UPDATE SET
+ name=EXCLUDED.name, description=EXCLUDED.description, price=EXCLUDED.price, cycle=EXCLUDED.cycle,
+ features=EXCLUDED.features, modules=EXCLUDED.modules, limits=EXCLUDED.limits, max_usuarios=EXCLUDED.max_usuarios,
+ is_active=EXCLUDED.is_active, is_featured=EXCLUDED.is_featured, display_order=EXCLUDED.display_order;
+INSERT INTO public.app_releases (version, highlight, items, released_at)
+VALUES ('1.10.0', 'Novos planos e armazenamento por empresa', '[{"type":"feature","description":"PLANO-01, PLANO-02 e PLANO-03 com preços e limites atualizados"},{"type":"improvement","description":"Consumo de armazenamento exibido em tempo real na assinatura e capacidade adicional configurável por empresa"},{"type":"improvement","description":"Créditos de IA incluídos após confirmação de cada mensalidade paga"}]'::jsonb, now())
+ON CONFLICT (version) DO UPDATE SET highlight=EXCLUDED.highlight, items=EXCLUDED.items;

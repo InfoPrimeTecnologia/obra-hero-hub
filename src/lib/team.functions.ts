@@ -55,6 +55,7 @@ async function getPlanMaxUsers(supabaseAdmin: any, customerId: string): Promise<
     .eq("id", sub.plan_id)
     .maybeSingle();
   const fromLimits = plan?.limits?.max_usuarios;
+  if (fromLimits === null) return null;
   if (typeof fromLimits === "number") return fromLimits;
   if (typeof plan?.max_usuarios === "number") return plan.max_usuarios;
   return null;

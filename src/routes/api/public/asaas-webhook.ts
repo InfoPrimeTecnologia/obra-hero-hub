@@ -1,5 +1,5 @@
 import { createFileRoute } from "@tanstack/react-router";
-import { supabaseAdmin } from "@/integrations/supabase/client.server";
+import { z } from "zod";
 
 type AsaasWebhookEvent = {
   event: string;
@@ -68,16 +68,21 @@ export const Route = createFileRoute("/api/public/asaas-webhook")({
           request.headers.get("asaas-access-token") ??
           request.headers.get("Asaas-Access-Token") ??
           "";
-        if (expected && provided !== expected) {
+        if (!expected || provided !== expected) {
           return new Response("Unauthorized", { status: 401 });
         }
 
         let body: AsaasWebhookEvent;
         try {
-          body = (await request.json()) as AsaasWebhookEvent;
+          body = z.object({
+            event: z.string(),
+            payment: z.object({ id: z.string().min(1) }).passthrough().optional(),
+          }).passthrough().parse(await request.json()) as AsaasWebhookEvent;
         } catch {
           return new Response("Invalid JSON", { status: 400 });
         }
+
+        const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
 
         // Log event
         const { data: logged } = await supabaseAdmin
@@ -147,7 +152,7 @@ export const Route = createFileRoute("/api/public/asaas-webhook")({
 
           if (inv) {
             const status = mapStatus(pay.status);
-            await supabaseAdmin
+            const { error: updateError } = await supabaseAdmin
               .from("invoices")
               .update({
                 status,
@@ -164,6 +169,7 @@ export const Route = createFileRoute("/api/public/asaas-webhook")({
                     : null,
               })
               .eq("id", inv.id);
+            if (updateError) throw updateError;
 
             if (status === "paid" && inv.subscription_id) {
               const { error: grantError } = await supabaseAdmin.rpc("grant_plan_credits", { _invoice_id: inv.id });

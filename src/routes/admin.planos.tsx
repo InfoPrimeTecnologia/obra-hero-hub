@@ -21,7 +21,6 @@ const MODULES = [
   { id: "obras", label: "Obras" },
   { id: "financeiro", label: "Financeiro" },
   { id: "compras", label: "Compras" },
-  { id: "estoque", label: "Estoque" },
   { id: "rh", label: "RH" },
   { id: "relatorios", label: "Relatórios" },
   { id: "tarefas", label: "Tarefas (Kanban)" },

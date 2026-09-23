@@ -202,11 +202,13 @@ function ObrasPage() {
       return;
     }
     const { data: currentSub, error: subError } = await supabase.from("subscriptions")
-      .select("plan:plans(limits)")
+      .select("status,access_until,next_due_date,plan:plans(limits)")
       .eq("customer_id", customer.id).in("status", ["active", "canceled"])
       .order("started_at", { ascending: false }).limit(1).maybeSingle();
     if (subError) { setSaving(false); toast.error(subError.message); return; }
-    const maxObras = (currentSub?.plan as { limits?: { max_obras?: number | null } } | null)?.limits?.max_obras;
+    const validSub = currentSub?.status === "active" || (currentSub?.status === "canceled" &&
+      (currentSub.access_until ?? currentSub.next_due_date ?? "") >= new Date().toISOString().slice(0, 10));
+    const maxObras = validSub ? (currentSub?.plan as { limits?: { max_obras?: number | null } } | null)?.limits?.max_obras : null;
     if (typeof maxObras === "number") {
       const { count, error: countError } = await supabase.from("obras").select("id", { count: "exact", head: true })
         .eq("customer_id", customer.id).neq("status", "arquivada");
