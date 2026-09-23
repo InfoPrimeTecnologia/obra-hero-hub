@@ -729,7 +729,8 @@ const SECTIONS: Section[] = [
     to: "/app/assinatura",
     summary: "Gestão do seu plano, faturas e módulos liberados.",
     steps: [
-      "Visualize o plano atual e o que está incluso.",
+      "Visualize o plano atual, seus limites de obras e usuários, a franquia de armazenamento e os créditos de IA incluídos após cada mensalidade paga.",
+      "Acompanhe em Assinatura o espaço já ocupado e o espaço disponível; os novos arquivos são bloqueados quando a franquia se esgota. Solicite capacidade adicional à administração.",
       "Consulte e baixe as faturas emitidas.",
       "Faça upgrade/downgrade quando precisar de mais usuários ou módulos.",
     ],

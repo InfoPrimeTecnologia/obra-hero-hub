@@ -108,6 +108,8 @@ NODE_ENV=production
 
 > **IMPORTANTE:** mantenha as chaves reais apenas em `.env.production.local`. O `git pull` pode substituir o `.env` do repositório, mas não deve tocar nesse arquivo local.
 
+> **Login — “Failed to fetch”:** confirme que `VITE_SUPABASE_URL` e `SUPABASE_URL` apontam para o mesmo endereço **atual e acessível do banco de produção do cliente**, e que `VITE_SUPABASE_PUBLISHABLE_KEY` e `SUPABASE_PUBLISHABLE_KEY` correspondem a esse mesmo projeto. A publicação consultada em setembro de 2026 continha um endereço antigo que não resolvia, impedindo o login de todos os usuários. Não substitua esse endereço pelo banco de testes da Lovable. Corrija `.env.production.local` **antes** de reconstruir com `bash deploy-aapanel.sh`, publique novamente a pasta `dist/` completa e reinicie o serviço com `pm2 restart mestre360`. Reiniciar o serviço sem reconstruir não troca o endereço já gravado nos arquivos do navegador; depois da publicação, atualize a página sem cache.
+
 ### 5. Iniciar com PM2
 
 ```bash

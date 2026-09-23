@@ -1,0 +1,3 @@
+INSERT INTO public.app_releases (version, highlight, items, released_at)
+VALUES ('1.10.0', 'Novos planos e armazenamento por empresa', '[{"type":"feature","description":"PLANO-01, PLANO-02 e PLANO-03 com preços e limites atualizados"},{"type":"improvement","description":"Consumo de armazenamento exibido em tempo real na assinatura e capacidade adicional configurável por empresa"},{"type":"improvement","description":"Créditos de IA incluídos após confirmação de cada mensalidade paga"}]'::jsonb, now())
+ON CONFLICT (version) DO UPDATE SET highlight = EXCLUDED.highlight, items = EXCLUDED.items;
