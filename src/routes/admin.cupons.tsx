@@ -35,7 +35,7 @@ type Redemption = {
   id: string; coupon_id: string; code: string; percent: number; original_amount: number;
   discount_amount: number; final_amount: number; created_at: string;
   customers: { name: string | null; company_name: string | null } | null;
-  plans: { name: string } | null;
+  plan_id: string | null;
 };
 
 const brl = (v: number) => Number(v).toLocaleString("pt-BR", { style: "currency", currency: "BRL" });
@@ -49,16 +49,19 @@ function Page() {
   const [editing, setEditing] = useState<Coupon | null>(null);
   const [form, setForm] = useState(initial);
   const [saving, setSaving] = useState(false);
+  const [planNames, setPlanNames] = useState<Record<string, string>>({});
   const [historyOf, setHistoryOf] = useState<Coupon | null>(null);
 
   const load = async () => {
-    const [c, r] = await Promise.all([
+    const [c, r, p] = await Promise.all([
       supabase.from("coupons").select("*").order("created_at", { ascending: false }),
       supabase
         .from("coupon_redemptions")
-        .select("*, customers(name, company_name), plans:plan_id(name)")
+        .select("*, customers(name, company_name)")
         .order("created_at", { ascending: false }),
+      supabase.from("plans").select("id, name"),
     ]);
+    setPlanNames(Object.fromEntries((p.data ?? []).map((x) => [x.id, x.name])));
     if (c.error) return toast.error(c.error.message);
     setItems((c.data ?? []) as unknown as Coupon[]);
     setUses((r.data ?? []) as unknown as Redemption[]);
@@ -223,7 +226,7 @@ function Page() {
                     <tr key={u.id} className="border-t">
                       <td className="p-2">{dt(u.created_at)}</td>
                       <td className="p-2">{u.customers?.company_name || u.customers?.name || "—"}</td>
-                      <td className="p-2">{u.plans?.name ?? "—"}</td>
+                      <td className="p-2">{(u.plan_id && planNames[u.plan_id]) || "—"}</td>
                       <td className="p-2 text-right">{brl(u.discount_amount)} ({Number(u.percent)}%)</td>
                       <td className="p-2 text-right">{brl(u.final_amount)}</td>
                     </tr>
