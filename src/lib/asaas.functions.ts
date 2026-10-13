@@ -75,7 +75,56 @@ const SubscribeSchema = z.object({
   // Período da assinatura escolhido pelo cliente (override do plano).
   // monthly = preço cheio; semiannual = 6x com 5% off; annual = 12x com 10% off.
   billingPeriod: z.enum(["monthly", "semiannual", "annual"]).optional(),
+  couponCode: z.string().trim().max(40).optional(),
 });
+
+// ---------- Cupons ----------
+async function loadCouponForCustomer(code: string, customerId: string) {
+  const { normalizeCode, couponError } = await import("./coupons");
+  const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
+  const norm = normalizeCode(code);
+  const { data: rows } = await supabaseAdmin
+    .from("coupons")
+    .select("id, code, percent, expires_at, max_uses, is_active")
+    .ilike("code", norm.replace(/[%_]/g, ""));
+  const coupon = (rows ?? []).find((r) => r.code.toUpperCase() === norm) ?? null;
+  let usesCount = 0;
+  let already = false;
+  if (coupon) {
+    const [{ count }, { data: mine }] = await Promise.all([
+      supabaseAdmin.from("coupon_redemptions").select("id", { count: "exact", head: true }).eq("coupon_id", coupon.id),
+      supabaseAdmin.from("coupon_redemptions").select("id").eq("coupon_id", coupon.id).eq("customer_id", customerId).maybeSingle(),
+    ]);
+    usesCount = count ?? 0;
+    already = !!mine;
+  }
+  const today = new Date().toISOString().slice(0, 10);
+  const err = couponError(coupon ? { ...coupon, percent: Number(coupon.percent) } : null, {
+    usesCount,
+    alreadyUsedByCustomer: already,
+    today,
+  });
+  if (err || !coupon) throw new Error(err ?? "Cupom inválido");
+  return { ...coupon, percent: Number(coupon.percent) };
+}
+
+async function assertOwnerOrAdmin(supabase: any, userId: string, customerId: string) {
+  const [{ data: roles }, { data: ownedCust }] = await Promise.all([
+    supabase.from("user_roles").select("role").eq("user_id", userId),
+    supabase.from("customers").select("id").eq("id", customerId).eq("owner_user_id", userId).maybeSingle(),
+  ]);
+  const isAdmin = (roles ?? []).some((r: { role: string }) => r.role === "admin");
+  if (!isAdmin && !ownedCust) throw new Error("Sem permissão");
+}
+
+export const validateCoupon = createServerFn({ method: "POST" })
+  .middleware([requireSupabaseAuth])
+  .inputValidator((i) => z.object({ customerId: z.string().uuid(), code: z.string().trim().min(1).max(40) }).parse(i))
+  .handler(async ({ data, context }) => {
+    await assertOwnerOrAdmin(context.supabase, context.userId, data.customerId);
+    const c = await loadCouponForCustomer(data.code, data.customerId);
+    return { code: c.code, percent: c.percent };
+  });
 
 export const createAsaasSubscription = createServerFn({ method: "POST" })
   .middleware([requireSupabaseAuth])
@@ -129,6 +178,9 @@ export const createAsaasSubscription = createServerFn({ method: "POST" })
       effectiveCycle = "annual";
       effectiveValue = Math.round(monthlyPrice * 12 * 0.9 * 100) / 100;
     }
+
+    // Cupom: validado antes de qualquer cobrança.
+    const coupon = data.couponCode ? await loadCouponForCustomer(data.couponCode, data.customerId) : null;
 
     const sub = await asaasFetch<AsaasSubscriptionResp>("/subscriptions", {
       method: "POST",
@@ -205,6 +257,21 @@ export const createAsaasSubscription = createServerFn({ method: "POST" })
       throw new Error("Assinatura criada no Asaas, mas nenhuma cobrança inicial foi retornada.");
     }
 
+    // Desconto do cupom somente na 1ª mensalidade.
+    let redemption: { original: number; discount: number; final: number; paymentId: string } | null = null;
+    if (coupon) {
+      const { applyPercent } = await import("./coupons");
+      const first = [...firstPayments].sort((a, b) => String(a.dueDate).localeCompare(String(b.dueDate)))[0];
+      const original = Number(first.value);
+      const { discount, final } = applyPercent(original, coupon.percent);
+      const updated = await asaasFetch<AsaasPaymentResp>(`/payments/${first.id}`, {
+        method: "POST",
+        body: JSON.stringify({ billingType: data.billingType, value: final, dueDate: first.dueDate }),
+      });
+      firstPayments = firstPayments.map((p) => (p.id === first.id ? { ...p, ...updated, value: final } : p));
+      redemption = { original, discount, final, paymentId: first.id };
+    }
+
     const rows = firstPayments.map((p) => ({
       customer_id: data.customerId,
       subscription_id: inserted.id,
@@ -222,12 +289,30 @@ export const createAsaasSubscription = createServerFn({ method: "POST" })
     const { data: createdInvoices, error: invErr } = await supabaseAdmin
       .from("invoices")
       .insert(rows)
-      .select("id, invoice_url");
+      .select("id, invoice_url, asaas_payment_id");
     if (invErr) {
       console.error("[asaas] erro ao inserir faturas locais:", invErr);
       throw new Error(
         `Cobrança criada no Asaas, mas falhou ao salvar no sistema: ${invErr.message}`,
       );
+    }
+
+    if (coupon && redemption) {
+      const inv = (createdInvoices ?? []).find((i) => i.asaas_payment_id === redemption!.paymentId);
+      const { error: redErr } = await supabaseAdmin.from("coupon_redemptions").insert({
+        coupon_id: coupon.id,
+        customer_id: data.customerId,
+        subscription_id: inserted.id,
+        invoice_id: inv?.id ?? null,
+        plan_id: data.planId,
+        code: coupon.code,
+        percent: coupon.percent,
+        original_amount: redemption.original,
+        discount_amount: redemption.discount,
+        final_amount: redemption.final,
+        redeemed_by: userId,
+      });
+      if (redErr) console.error("[asaas] falha ao registrar uso do cupom:", redErr);
     }
 
     console.log(
