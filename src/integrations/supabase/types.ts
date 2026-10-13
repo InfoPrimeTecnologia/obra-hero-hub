@@ -996,6 +996,108 @@ export type Database = {
           },
         ]
       }
+      coupon_redemptions: {
+        Row: {
+          code: string
+          coupon_id: string
+          created_at: string
+          customer_id: string
+          discount_amount: number
+          final_amount: number
+          id: string
+          invoice_id: string | null
+          original_amount: number
+          percent: number
+          plan_id: string | null
+          redeemed_by: string | null
+          subscription_id: string | null
+        }
+        Insert: {
+          code: string
+          coupon_id: string
+          created_at?: string
+          customer_id: string
+          discount_amount: number
+          final_amount: number
+          id?: string
+          invoice_id?: string | null
+          original_amount: number
+          percent: number
+          plan_id?: string | null
+          redeemed_by?: string | null
+          subscription_id?: string | null
+        }
+        Update: {
+          code?: string
+          coupon_id?: string
+          created_at?: string
+          customer_id?: string
+          discount_amount?: number
+          final_amount?: number
+          id?: string
+          invoice_id?: string | null
+          original_amount?: number
+          percent?: number
+          plan_id?: string | null
+          redeemed_by?: string | null
+          subscription_id?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "coupon_redemptions_coupon_id_fkey"
+            columns: ["coupon_id"]
+            isOneToOne: false
+            referencedRelation: "coupons"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "coupon_redemptions_customer_id_fkey"
+            columns: ["customer_id"]
+            isOneToOne: false
+            referencedRelation: "customers"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      coupons: {
+        Row: {
+          code: string
+          created_at: string
+          created_by: string | null
+          description: string | null
+          expires_at: string | null
+          id: string
+          is_active: boolean
+          max_uses: number | null
+          percent: number
+          updated_at: string
+        }
+        Insert: {
+          code: string
+          created_at?: string
+          created_by?: string | null
+          description?: string | null
+          expires_at?: string | null
+          id?: string
+          is_active?: boolean
+          max_uses?: number | null
+          percent: number
+          updated_at?: string
+        }
+        Update: {
+          code?: string
+          created_at?: string
+          created_by?: string | null
+          description?: string | null
+          expires_at?: string | null
+          id?: string
+          is_active?: boolean
+          max_uses?: number | null
+          percent?: number
+          updated_at?: string
+        }
+        Relationships: []
+      }
       credit_action_costs: {
         Row: {
           action_key: string

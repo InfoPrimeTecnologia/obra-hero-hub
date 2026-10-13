@@ -46,6 +46,7 @@ import { formatStorage, getStorageQuota, type StorageQuota } from "@/lib/storage
 import {
   cancelAsaasSubscriptionRenewal,
   createAsaasSubscription,
+  validateCoupon,
   syncAsaasPayments,
 } from "@/lib/asaas.functions";
 import { toast } from "sonner";
@@ -150,6 +151,24 @@ function daysBetween(from: Date, to: Date): number {
 function AssinaturaPage() {
   const { user } = useAuth();
   const subscribe = useServerFn(createAsaasSubscription);
+  const checkCoupon = useServerFn(validateCoupon);
+  const [couponInput, setCouponInput] = useState("");
+  const [coupon, setCoupon] = useState<{ code: string; percent: number } | null>(null);
+  const [checkingCoupon, setCheckingCoupon] = useState(false);
+  const applyCoupon = async () => {
+    if (!customerId || !couponInput.trim()) return;
+    setCheckingCoupon(true);
+    try {
+      const c = await checkCoupon({ data: { customerId, code: couponInput } });
+      setCoupon(c);
+      toast.success(`Cupom ${c.code} aplicado: ${c.percent}% de desconto na 1ª mensalidade`);
+    } catch (e) {
+      setCoupon(null);
+      toast.error(e instanceof Error ? e.message : String(e));
+    } finally {
+      setCheckingCoupon(false);
+    }
+  };
   const syncPayments = useServerFn(syncAsaasPayments);
   const cancelRenewal = useServerFn(cancelAsaasSubscriptionRenewal);
 
@@ -299,7 +318,11 @@ function AssinaturaPage() {
     }
     setActivating(planId);
     try {
-      await subscribe({ data: { customerId, planId, billingType, billingPeriod } });
+      await subscribe({
+        data: { customerId, planId, billingType, billingPeriod, couponCode: coupon?.code },
+      });
+      setCoupon(null);
+      setCouponInput("");
       toast.success("Assinatura ativada!", {
         description: "Sua cobrança já está disponível em 'Faturas'.",
       });
@@ -795,6 +818,34 @@ function AssinaturaPage() {
                   </div>
                 ) : (
                   <>
+                    {/* Cupom */}
+                    <div className="mb-4 flex flex-col items-center gap-2">
+                      <div className="flex w-full max-w-sm gap-2">
+                        <input
+                          value={couponInput}
+                          onChange={(e) => {
+                            setCouponInput(e.target.value.toUpperCase());
+                            setCoupon(null);
+                          }}
+                          placeholder="Tem um cupom? Digite aqui"
+                          className="h-9 flex-1 rounded-md border border-input bg-background px-3 text-sm uppercase"
+                        />
+                        <Button
+                          type="button"
+                          variant="outline"
+                          size="sm"
+                          onClick={applyCoupon}
+                          disabled={checkingCoupon || !couponInput.trim()}
+                        >
+                          {checkingCoupon ? "Validando..." : "Aplicar"}
+                        </Button>
+                      </div>
+                      {coupon && (
+                        <p className="text-xs text-primary">
+                          Cupom {coupon.code}: {coupon.percent}% de desconto na 1ª mensalidade
+                        </p>
+                      )}
+                    </div>
                     {/* Period toggle */}
                     <div className="mb-6 flex justify-center">
                       <div className="inline-flex items-center gap-1 rounded-full border border-border/60 bg-muted/40 p-1">

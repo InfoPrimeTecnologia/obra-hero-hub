@@ -17,6 +17,7 @@ import { Route as AdminIndexRouteImport } from './routes/admin.index'
 import { Route as AdminChangelogRouteImport } from './routes/admin.changelog'
 import { Route as AdminConfiguracoesRouteImport } from './routes/admin.configuracoes'
 import { Route as AdminCreditosRouteImport } from './routes/admin.creditos'
+import { Route as AdminCuponsRouteImport } from './routes/admin.cupons'
 import { Route as AdminEmpresasRouteImport } from './routes/admin.empresas'
 import { Route as AdminFaturasRouteImport } from './routes/admin.faturas'
 import { Route as AdminPlanosRouteImport } from './routes/admin.planos'
@@ -124,6 +125,11 @@ const AdminConfiguracoesRoute = AdminConfiguracoesRouteImport.update({
 const AdminCreditosRoute = AdminCreditosRouteImport.update({
   id: '/creditos',
   path: '/creditos',
+  getParentRoute: () => AdminRoute,
+} as any)
+const AdminCuponsRoute = AdminCuponsRouteImport.update({
+  id: '/cupons',
+  path: '/cupons',
   getParentRoute: () => AdminRoute,
 } as any)
 const AdminEmpresasRoute = AdminEmpresasRouteImport.update({
@@ -490,6 +496,7 @@ export interface FileRoutesByFullPath {
   '/admin/changelog': typeof AdminChangelogRoute
   '/admin/configuracoes': typeof AdminConfiguracoesRoute
   '/admin/creditos': typeof AdminCreditosRoute
+  '/admin/cupons': typeof AdminCuponsRoute
   '/admin/empresas': typeof AdminEmpresasRoute
   '/admin/faturas': typeof AdminFaturasRoute
   '/admin/planos': typeof AdminPlanosRoute
@@ -566,6 +573,7 @@ export interface FileRoutesByTo {
   '/admin/changelog': typeof AdminChangelogRoute
   '/admin/configuracoes': typeof AdminConfiguracoesRoute
   '/admin/creditos': typeof AdminCreditosRoute
+  '/admin/cupons': typeof AdminCuponsRoute
   '/admin/empresas': typeof AdminEmpresasRoute
   '/admin/faturas': typeof AdminFaturasRoute
   '/admin/planos': typeof AdminPlanosRoute
@@ -642,6 +650,7 @@ export interface FileRoutesById {
   '/admin/changelog': typeof AdminChangelogRoute
   '/admin/configuracoes': typeof AdminConfiguracoesRoute
   '/admin/creditos': typeof AdminCreditosRoute
+  '/admin/cupons': typeof AdminCuponsRoute
   '/admin/empresas': typeof AdminEmpresasRoute
   '/admin/faturas': typeof AdminFaturasRoute
   '/admin/planos': typeof AdminPlanosRoute
@@ -722,6 +731,7 @@ export interface FileRouteTypes {
     | '/admin/changelog'
     | '/admin/configuracoes'
     | '/admin/creditos'
+    | '/admin/cupons'
     | '/admin/empresas'
     | '/admin/faturas'
     | '/admin/planos'
@@ -798,6 +808,7 @@ export interface FileRouteTypes {
     | '/admin/changelog'
     | '/admin/configuracoes'
     | '/admin/creditos'
+    | '/admin/cupons'
     | '/admin/empresas'
     | '/admin/faturas'
     | '/admin/planos'
@@ -873,6 +884,7 @@ export interface FileRouteTypes {
     | '/admin/changelog'
     | '/admin/configuracoes'
     | '/admin/creditos'
+    | '/admin/cupons'
     | '/admin/empresas'
     | '/admin/faturas'
     | '/admin/planos'
@@ -1019,6 +1031,13 @@ declare module '@tanstack/react-router' {
       path: '/creditos'
       fullPath: '/admin/creditos'
       preLoaderRoute: typeof AdminCreditosRouteImport
+      parentRoute: typeof AdminRoute
+    }
+    '/admin/cupons': {
+      id: '/admin/cupons'
+      path: '/cupons'
+      fullPath: '/admin/cupons'
+      preLoaderRoute: typeof AdminCuponsRouteImport
       parentRoute: typeof AdminRoute
     }
     '/admin/empresas': {
@@ -1504,6 +1523,7 @@ interface AdminRouteChildren {
   AdminChangelogRoute: typeof AdminChangelogRoute
   AdminConfiguracoesRoute: typeof AdminConfiguracoesRoute
   AdminCreditosRoute: typeof AdminCreditosRoute
+  AdminCuponsRoute: typeof AdminCuponsRoute
   AdminEmpresasRoute: typeof AdminEmpresasRoute
   AdminFaturasRoute: typeof AdminFaturasRoute
   AdminPlanosRoute: typeof AdminPlanosRoute
@@ -1516,6 +1536,7 @@ const AdminRouteChildren: AdminRouteChildren = {
   AdminChangelogRoute: AdminChangelogRoute,
   AdminConfiguracoesRoute: AdminConfiguracoesRoute,
   AdminCreditosRoute: AdminCreditosRoute,
+  AdminCuponsRoute: AdminCuponsRoute,
   AdminEmpresasRoute: AdminEmpresasRoute,
   AdminFaturasRoute: AdminFaturasRoute,
   AdminPlanosRoute: AdminPlanosRoute,
