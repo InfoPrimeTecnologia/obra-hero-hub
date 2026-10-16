@@ -461,14 +461,16 @@ async function getCustomerId(supabase: any, userId: string): Promise<string> {
 async function isEmpresarial(supabase: any, customerId: string): Promise<boolean> {
   const { data } = await supabase
     .from("subscriptions")
-    .select("plans(features)")
+    .select("plans(features, limits)")
     .eq("customer_id", customerId)
     .eq("status", "active")
     .order("started_at", { ascending: false })
     .limit(1)
     .maybeSingle();
-  const feats = (data as any)?.plans?.features;
-  return Array.isArray(feats) && feats.includes("ai_assistant");
+  const plan = (data as any)?.plans;
+  const feats = plan?.features;
+  if (Array.isArray(feats) && feats.includes("ai_assistant")) return true;
+  return Number(plan?.limits?.ai_credits ?? 0) > 0;
 }
 
 async function findObra(supabase: any, customerId: string, nome: string) {

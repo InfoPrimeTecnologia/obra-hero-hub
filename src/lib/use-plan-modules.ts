@@ -46,7 +46,7 @@ export function usePlanModules() {
       }
       const { data: sub } = await supabase
         .from("subscriptions")
-        .select("plan_id, status, access_until, next_due_date, plans(modules, features)")
+        .select("plan_id, status, access_until, next_due_date, plans(modules, features, limits)")
         .eq("customer_id", cust.id)
         .in("status", ["active", "canceled"])
         .order("started_at", { ascending: false })
@@ -57,11 +57,22 @@ export function usePlanModules() {
         sub?.status === "active" ||
         (sub?.status === "canceled" &&
           Boolean(periodEnd && periodEnd >= new Date().toISOString().slice(0, 10)));
-      const planMods = canUsePlan ? (sub as any)?.plans?.modules : null;
-      const planFeats = canUsePlan ? (sub as any)?.plans?.features : null;
+      const plan = canUsePlan ? (sub as any)?.plans : null;
+      const planMods = plan?.modules;
+      // `features` passou a guardar textos de vitrine; os recursos técnicos são derivados dos limites.
+      let planFeats: string[] | null = null;
+      if (plan) {
+        const rawFeats: string[] = Array.isArray(plan.features) ? plan.features : [];
+        const set = new Set(rawFeats.filter((f) => ALL_FEATURES.includes(f)));
+        set.add("rdo_whatsapp");
+        set.add("nf_xml");
+        const aiCredits = Number(plan.limits?.ai_credits ?? 0);
+        if (aiCredits > 0) set.add("ai_assistant");
+        planFeats = Array.from(set);
+      }
       if (!cancelled) {
         setModules(Array.isArray(planMods) ? planMods : ALL_MODULES);
-        setFeatures(Array.isArray(planFeats) ? planFeats : ALL_FEATURES);
+        setFeatures(planFeats ?? ALL_FEATURES);
         setLoading(false);
       }
     }

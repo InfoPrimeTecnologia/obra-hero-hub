@@ -26,7 +26,7 @@ export const Route = createFileRoute("/portal/$token")({
   // Envolvidos em expressões inline: o code-splitter do router não consegue
   // dividir estas opções quando recebem apenas o identificador da função.
   notFoundComponent: () => <PortalNotFound />,
-  errorComponent: ({ error }) => <PortalError error={error} />,
+  errorComponent: ({ error }) => <PortalError error={error as Error} />,
 });
 
 const brl = (v: number) =>
