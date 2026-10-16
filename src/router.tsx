@@ -62,7 +62,9 @@ export const getRouter = () => {
     context: { queryClient },
     scrollRestoration: true,
     defaultPreloadStaleTime: 0,
-    defaultErrorComponent: DefaultErrorComponent,
+    defaultErrorComponent: ({ error, reset }) => (
+      <DefaultErrorComponent error={error as Error} reset={reset} />
+    ),
     Wrap: ({ children }) => (
       <QueryClientProvider client={queryClient}>{children}</QueryClientProvider>
     ),
