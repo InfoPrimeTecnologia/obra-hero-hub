@@ -8,6 +8,8 @@ import {
   adminListInvoices,
   adminSyncInvoice,
   adminSyncPendingInvoices,
+  adminSuspendInvoice,
+  adminDeleteInvoice,
 } from "@/lib/admin-billing.functions";
 import { Card, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
@@ -28,7 +30,7 @@ import {
   TableHeader,
   TableRow,
 } from "@/components/ui/table";
-import { Loader2, RefreshCw, RotateCw, ExternalLink } from "lucide-react";
+import { Loader2, RefreshCw, RotateCw, ExternalLink, Ban, Trash2 } from "lucide-react";
 
 export const Route = createFileRoute("/admin/faturas")({ component: FaturasPage });
 
@@ -60,6 +62,17 @@ function FaturasPage() {
   const syncAll = useServerFn(adminSyncPendingInvoices);
   const [status, setStatus] = useState<any>("all");
   const [q, setQ] = useState("");
+  const suspendFn = useServerFn(adminSuspendInvoice);
+  const deleteFn = useServerFn(adminDeleteInvoice);
+  const actionMut = useMutation({
+    mutationFn: ({ id, action }: { id: string; action: "suspend" | "delete" }) =>
+      action === "suspend" ? suspendFn({ data: { invoiceId: id } }) : deleteFn({ data: { invoiceId: id } }),
+    onSuccess: (_r, v) => {
+      qc.invalidateQueries({ queryKey: ["admin-invoices"] });
+      toast.success(v.action === "suspend" ? "Fatura suspensa" : "Fatura excluída");
+    },
+    onError: (e: any) => toast.error("Erro", { description: e.message }),
+  });
   const [syncingId, setSyncingId] = useState<string | null>(null);
 
   const list = useQuery({
@@ -217,7 +230,29 @@ function FaturasPage() {
                           </div>
                         ) : "—"}
                       </TableCell>
-                      <TableCell className="text-right">
+                      <TableCell className="space-x-1 whitespace-nowrap text-right">
+                        <Button
+                          size="sm"
+                          variant="outline"
+                          title="Suspender (cancela a cobrança)"
+                          disabled={!["pending", "overdue"].includes(inv.status) || actionMut.isPending}
+                          onClick={() => {
+                            if (confirm("Suspender esta fatura? A cobrança será cancelada no provedor.")) actionMut.mutate({ id: inv.id, action: "suspend" });
+                          }}
+                        >
+                          <Ban className="h-4 w-4" />
+                        </Button>
+                        <Button
+                          size="sm"
+                          variant="outline"
+                          title="Excluir fatura"
+                          disabled={inv.status === "paid" || actionMut.isPending}
+                          onClick={() => {
+                            if (confirm("Excluir esta fatura definitivamente?")) actionMut.mutate({ id: inv.id, action: "delete" });
+                          }}
+                        >
+                          <Trash2 className="h-4 w-4 text-destructive" />
+                        </Button>
                         <Button
                           size="sm"
                           variant="outline"

@@ -360,3 +360,43 @@ export async function getBalance(supabase: any, customerId: string): Promise<num
     .maybeSingle();
   return data?.saldo ?? 0;
 }
+
+// ---------- Cliente: recargas pendentes / cancelar ----------
+export const listMyPendingRecharges = createServerFn({ method: "GET" })
+  .middleware([requireSupabaseAuth])
+  .handler(async ({ context }) => {
+    const customerId = await getCustomerId(context.supabase, context.userId);
+    const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
+    const { data, error } = await supabaseAdmin
+      .from("invoices")
+      .select("id, description, amount, status, due_date, invoice_url, created_at")
+      .eq("customer_id", customerId)
+      .in("status", ["pending", "overdue"])
+      .ilike("description", "Recarga%")
+      .order("created_at", { ascending: false });
+    if (error) throw new Error(error.message);
+    return data ?? [];
+  });
+
+export const cancelMyRecharge = createServerFn({ method: "POST" })
+  .middleware([requireSupabaseAuth])
+  .inputValidator((i: { invoiceId: string }) => z.object({ invoiceId: z.string().uuid() }).parse(i))
+  .handler(async ({ data, context }) => {
+    const customerId = await getCustomerId(context.supabase, context.userId);
+    const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
+    const { data: inv } = await supabaseAdmin
+      .from("invoices")
+      .select("id, customer_id, status, description, asaas_payment_id")
+      .eq("id", data.invoiceId)
+      .maybeSingle();
+    if (!inv || inv.customer_id !== customerId) throw new Error("Fatura não encontrada");
+    if (!String(inv.description ?? "").startsWith("Recarga")) throw new Error("Somente recargas de créditos podem ser canceladas aqui");
+    if (!["pending", "overdue"].includes(inv.status)) throw new Error("Só é possível cancelar recargas ainda não pagas");
+    if (inv.asaas_payment_id) {
+      const { asaasFetch } = await import("./asaas.server");
+      await asaasFetch(`/payments/${inv.asaas_payment_id}`, { method: "DELETE" });
+    }
+    const { error } = await supabaseAdmin.from("invoices").update({ status: "canceled" }).eq("id", inv.id);
+    if (error) throw new Error(error.message);
+    return { ok: true };
+  });

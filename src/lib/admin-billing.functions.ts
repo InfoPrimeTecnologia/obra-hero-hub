@@ -236,3 +236,46 @@ export const adminWebhookStats = createServerFn({ method: "GET" })
       lastReceivedAt: last?.[0]?.created_at ?? null,
     };
   });
+
+// ---------- Admin: suspender / excluir fatura ----------
+async function cancelRemotePayment(asaasPaymentId: string | null) {
+  if (!asaasPaymentId) return;
+  const { asaasFetch } = await import("./asaas.server");
+  try {
+    await asaasFetch(`/payments/${asaasPaymentId}`, { method: "DELETE" });
+  } catch (e: any) {
+    const msg = String(e?.message ?? "");
+    // Já removida no Asaas: segue com a ação local
+    if (!/not.?found|404|removid|deleted/i.test(msg)) throw e;
+  }
+}
+
+export const adminSuspendInvoice = createServerFn({ method: "POST" })
+  .middleware([requireSupabaseAuth])
+  .inputValidator((i: { invoiceId: string }) => z.object({ invoiceId: z.string().uuid() }).parse(i))
+  .handler(async ({ data, context }) => {
+    await assertAdmin(context.supabase, context.userId);
+    const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
+    const { data: inv } = await supabaseAdmin.from("invoices").select("id, status, asaas_payment_id").eq("id", data.invoiceId).maybeSingle();
+    if (!inv) throw new Error("Fatura não encontrada");
+    if (!["pending", "overdue"].includes(inv.status)) throw new Error("Só faturas não pagas podem ser suspensas");
+    await cancelRemotePayment(inv.asaas_payment_id);
+    const { error } = await supabaseAdmin.from("invoices").update({ status: "canceled" }).eq("id", inv.id);
+    if (error) throw new Error(error.message);
+    return { ok: true };
+  });
+
+export const adminDeleteInvoice = createServerFn({ method: "POST" })
+  .middleware([requireSupabaseAuth])
+  .inputValidator((i: { invoiceId: string }) => z.object({ invoiceId: z.string().uuid() }).parse(i))
+  .handler(async ({ data, context }) => {
+    await assertAdmin(context.supabase, context.userId);
+    const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
+    const { data: inv } = await supabaseAdmin.from("invoices").select("id, status, asaas_payment_id").eq("id", data.invoiceId).maybeSingle();
+    if (!inv) throw new Error("Fatura não encontrada");
+    if (inv.status === "paid") throw new Error("Faturas pagas não podem ser excluídas");
+    if (["pending", "overdue"].includes(inv.status)) await cancelRemotePayment(inv.asaas_payment_id);
+    const { error } = await supabaseAdmin.from("invoices").delete().eq("id", inv.id);
+    if (error) throw new Error(error.message.includes("foreign key") ? "Fatura possui registros vinculados e não pode ser excluída; use Suspender" : error.message);
+    return { ok: true };
+  });
