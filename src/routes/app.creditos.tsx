@@ -7,6 +7,8 @@ import {
   getMyCredits,
   listCreditPackages,
   createCreditRecharge,
+  listMyPendingRecharges,
+  cancelMyRecharge,
 } from "@/lib/credits.functions";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
@@ -50,6 +52,17 @@ function CreditosPage() {
   const listPkgs = useServerFn(listCreditPackages);
   const recharge = useServerFn(createCreditRecharge);
   const [buyingId, setBuyingId] = useState<string | null>(null);
+  const listPending = useServerFn(listMyPendingRecharges);
+  const cancelFn = useServerFn(cancelMyRecharge);
+  const pending = useQuery({ queryKey: ["pending-recharges"], queryFn: () => listPending() });
+  const cancelMut = useMutation({
+    mutationFn: (invoiceId: string) => cancelFn({ data: { invoiceId } }),
+    onSuccess: () => {
+      qc.invalidateQueries({ queryKey: ["pending-recharges"] });
+      toast.success("Recarga cancelada", { description: "A cobrança não será mais enviada." });
+    },
+    onError: (e: any) => toast.error("Não foi possível cancelar", { description: e.message }),
+  });
 
   const credits = useQuery({ queryKey: ["my-credits"], queryFn: () => getCredits() });
   const pkgs = useQuery({ queryKey: ["credit-packages"], queryFn: () => listPkgs() });
@@ -62,6 +75,7 @@ function CreditosPage() {
       recharge({ data: { packageId, billingType: "PIX" } }),
     onSuccess: (res) => {
       qc.invalidateQueries({ queryKey: ["my-credits"] });
+      qc.invalidateQueries({ queryKey: ["pending-recharges"] });
       if (res.paymentUrl) {
         window.open(res.paymentUrl, "_blank");
         toast.success("Fatura gerada", {
@@ -105,6 +119,58 @@ function CreditosPage() {
           <Sparkles className="h-10 w-10 text-primary/30" />
         </CardContent>
       </Card>
+
+      {(pending.data ?? []).length > 0 && (
+        <Card>
+          <CardHeader>
+            <CardTitle className="text-base">Recargas aguardando pagamento</CardTitle>
+          </CardHeader>
+          <CardContent>
+            <Table>
+              <TableHeader>
+                <TableRow>
+                  <TableHead>Descrição</TableHead>
+                  <TableHead>Vencimento</TableHead>
+                  <TableHead className="text-right">Valor</TableHead>
+                  <TableHead></TableHead>
+                </TableRow>
+              </TableHeader>
+              <TableBody>
+                {(pending.data ?? []).map((inv: any) => (
+                  <TableRow key={inv.id}>
+                    <TableCell className="text-sm">{inv.description}</TableCell>
+                    <TableCell className="text-xs">
+                      {inv.due_date ? new Date(inv.due_date + "T12:00:00").toLocaleDateString("pt-BR") : "—"}
+                    </TableCell>
+                    <TableCell className="text-right font-mono text-sm">{fmtBRL(Number(inv.amount))}</TableCell>
+                    <TableCell className="space-x-2 text-right">
+                      {inv.invoice_url && (
+                        <Button size="sm" variant="outline" asChild>
+                          <a href={inv.invoice_url} target="_blank" rel="noreferrer">Pagar</a>
+                        </Button>
+                      )}
+                      <Button
+                        size="sm"
+                        variant="destructive"
+                        disabled={cancelMut.isPending}
+                        onClick={() => {
+                          if (confirm("Cancelar esta recarga? A cobrança será removida.")) cancelMut.mutate(inv.id);
+                        }}
+                      >
+                        {cancelMut.isPending && cancelMut.variables === inv.id ? (
+                          <Loader2 className="h-4 w-4 animate-spin" />
+                        ) : (
+                          "Cancelar"
+                        )}
+                      </Button>
+                    </TableCell>
+                  </TableRow>
+                ))}
+              </TableBody>
+            </Table>
+          </CardContent>
+        </Card>
+      )}
 
       {(creditsError || packagesError) && (
         <Alert variant="destructive">
