@@ -1,5 +1,5 @@
 import { useEffect, useRef, useState } from "react";
-import { Sparkles, Send, Mic, Square, Loader2, X, Check, XCircle, Coins } from "lucide-react";
+import { Sparkles, Send, Mic, Square, Loader2, X, Check, XCircle, Coins, Paperclip, FileText } from "lucide-react";
 import { Link } from "@tanstack/react-router";
 import { useServerFn } from "@tanstack/react-start";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
@@ -12,8 +12,44 @@ import { Badge } from "@/components/ui/badge";
 import { cn } from "@/lib/utils";
 import { toast } from "sonner";
 
+type Attachment = { name: string; mime: string; dataUrl?: string; text?: string };
+
+const MAX_FILES = 3;
+const MAX_BYTES = 8 * 1024 * 1024;
+
+function readAsDataUrl(f: File): Promise<string> {
+  return new Promise((res, rej) => {
+    const r = new FileReader();
+    r.onload = () => res(String(r.result));
+    r.onerror = () => rej(r.error);
+    r.readAsDataURL(f);
+  });
+}
+
+async function fileToAttachment(f: File): Promise<Attachment> {
+  if (f.size > MAX_BYTES) throw new Error(`${f.name}: limite de 8 MB por arquivo`);
+  const mime = f.type || "application/octet-stream";
+  if (mime.startsWith("image/") || mime === "application/pdf")
+    return { name: f.name, mime, dataUrl: await readAsDataUrl(f) };
+  if (mime.startsWith("text/") || /\.(csv|txt|md|json|xml)$/i.test(f.name))
+    return { name: f.name, mime, text: (await f.text()).slice(0, 60000) };
+  throw new Error(`${f.name}: envie imagens, PDF ou arquivos de texto/CSV`);
+}
+
+function contentForApi(text: string, atts: Attachment[]): any {
+  if (!atts.length) return text;
+  const parts: any[] = [{ type: "text", text: text || "Analise os anexos." }];
+  for (const a of atts) {
+    if (a.mime.startsWith("image/")) parts.push({ type: "image_url", image_url: { url: a.dataUrl } });
+    else if (a.mime === "application/pdf")
+      parts.push({ type: "file", file: { filename: a.name, file_data: a.dataUrl } });
+    else parts.push({ type: "text", text: `Conteúdo do arquivo ${a.name}:\n${a.text}` });
+  }
+  return parts;
+}
+
 type Msg =
-  | { role: "user"; content: string }
+  | { role: "user"; content: string; attachments?: Attachment[] }
   | { role: "assistant"; content: string }
   | {
       role: "proposal";
@@ -142,6 +178,26 @@ export function AIAssistant() {
   const [open, setOpen] = useState(false);
   const [messages, setMessages] = useState<Msg[]>([]);
   const [input, setInput] = useState("");
+  const [files, setFiles] = useState<Attachment[]>([]);
+  const fileRef = useRef<HTMLInputElement>(null);
+
+  async function addFiles(list: FileList | null) {
+    if (!list) return;
+    const next = [...files];
+    for (const f of Array.from(list)) {
+      if (next.length >= MAX_FILES) {
+        toast.error(`Máximo de ${MAX_FILES} anexos por mensagem`);
+        break;
+      }
+      try {
+        next.push(await fileToAttachment(f));
+      } catch (e: any) {
+        toast.error(e.message);
+      }
+    }
+    setFiles(next);
+    if (fileRef.current) fileRef.current.value = "";
+  }
   const [busy, setBusy] = useState(false);
   const [recording, setRecording] = useState(false);
   const mediaRef = useRef<MediaRecorder | null>(null);
@@ -178,7 +234,13 @@ export function AIAssistant() {
   function historyForApi(): any[] {
     const out: any[] = [];
     for (const m of messages) {
-      if (m.role === "user") out.push({ role: "user", content: m.content });
+      if (m.role === "user")
+        out.push({
+          role: "user",
+          content: m.attachments?.length
+            ? `${m.content}\n[anexos enviados anteriormente: ${m.attachments.map((a) => a.name).join(", ")}]`
+            : m.content,
+        });
       else if (m.role === "assistant") out.push({ role: "assistant", content: m.content });
       // proposals are internal to the UI; if confirmed we'll append a synthetic assistant msg below
       else if (m.role === "proposal" && m.status === "done") {
@@ -197,13 +259,15 @@ export function AIAssistant() {
 
   async function send(text: string) {
     const trimmed = text.trim();
-    if (!trimmed || busy) return;
-    const next: Msg[] = [...messages, { role: "user", content: trimmed }];
+    const atts = files;
+    if ((!trimmed && !atts.length) || busy) return;
+    const next: Msg[] = [...messages, { role: "user", content: trimmed, attachments: atts }];
     setMessages(next);
     setInput("");
+    setFiles([]);
     setBusy(true);
     try {
-      const history = [...historyForApi(), { role: "user", content: trimmed }];
+      const history = [...historyForApi(), { role: "user", content: contentForApi(trimmed, atts) }];
       const res: any = await chat({ data: { messages: history } });
       if (res.type === "message") {
         setMessages((m) => [...m, { role: "assistant", content: res.text || "" }]);
@@ -379,6 +443,15 @@ export function AIAssistant() {
                 return (
                   <div key={i} className="ml-auto max-w-[85%] rounded-lg bg-primary px-3 py-2 text-primary-foreground">
                     {m.content}
+                    {m.attachments?.map((a) => (
+                      <div key={a.name} className="mt-1 flex items-center gap-1 text-xs opacity-90">
+                        {a.mime.startsWith("image/") && a.dataUrl ? (
+                          <img src={a.dataUrl} alt={a.name} className="max-h-32 rounded" />
+                        ) : (
+                          <><FileText className="h-3 w-3" />{a.name}</>
+                        )}
+                      </div>
+                    ))}
                   </div>
                 );
               if (m.role === "assistant")
@@ -440,6 +513,27 @@ export function AIAssistant() {
           </div>
 
           <div className="border-t border-border p-3">
+            {files.length > 0 && (
+              <div className="mb-2 flex flex-wrap gap-1.5">
+                {files.map((a, i) => (
+                  <span key={i} className="inline-flex items-center gap-1 rounded-full border border-border bg-secondary px-2 py-0.5 text-xs">
+                    <FileText className="h-3 w-3" />
+                    <span className="max-w-[140px] truncate">{a.name}</span>
+                    <button onClick={() => setFiles((f) => f.filter((_, j) => j !== i))} aria-label="Remover anexo">
+                      <X className="h-3 w-3" />
+                    </button>
+                  </span>
+                ))}
+              </div>
+            )}
+            <input
+              ref={fileRef}
+              type="file"
+              multiple
+              accept="image/*,application/pdf,.txt,.csv,.md,.json,.xml"
+              className="hidden"
+              onChange={(e) => void addFiles(e.target.files)}
+            />
             <div className="flex gap-2">
               <Textarea
                 ref={taRef}
@@ -456,7 +550,7 @@ export function AIAssistant() {
                 disabled={busy || recording}
                 className="resize-none text-sm"
               />
-              <div className="flex flex-col gap-1.5">
+              <div className="flex flex-col gap-1">
                 <Button
                   size="icon"
                   variant={recording ? "destructive" : "outline"}
@@ -466,7 +560,16 @@ export function AIAssistant() {
                 >
                   {recording ? <Square className="h-4 w-4" /> : <Mic className="h-4 w-4" />}
                 </Button>
-                <Button size="icon" onClick={() => void send(input)} disabled={busy || !input.trim()}>
+                <Button
+                  size="icon"
+                  variant="outline"
+                  onClick={() => fileRef.current?.click()}
+                  disabled={busy || recording}
+                  title="Anexar fotos ou arquivos"
+                >
+                  <Paperclip className="h-4 w-4" />
+                </Button>
+                <Button size="icon" onClick={() => void send(input)} disabled={busy || (!input.trim() && !files.length)}>
                   <Send className="h-4 w-4" />
                 </Button>
               </div>

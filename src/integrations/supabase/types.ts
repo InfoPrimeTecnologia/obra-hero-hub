@@ -3003,6 +3003,7 @@ export type Database = {
           cycle: Database["public"]["Enums"]["plan_cycle"]
           due_day: number
           id: string
+          is_trial: boolean
           next_due_date: string | null
           plan_id: string
           price: number
@@ -3020,6 +3021,7 @@ export type Database = {
           cycle: Database["public"]["Enums"]["plan_cycle"]
           due_day: number
           id?: string
+          is_trial?: boolean
           next_due_date?: string | null
           plan_id: string
           price: number
@@ -3037,6 +3039,7 @@ export type Database = {
           cycle?: Database["public"]["Enums"]["plan_cycle"]
           due_day?: number
           id?: string
+          is_trial?: boolean
           next_due_date?: string | null
           plan_id?: string
           price?: number
@@ -3405,6 +3408,67 @@ export type Database = {
           valor?: number
         }
         Relationships: []
+      }
+      trial_registrations: {
+        Row: {
+          created_at: string
+          credits: number
+          customer_id: string | null
+          email: string
+          ends_at: string
+          id: string
+          plan_id: string | null
+          started_at: string
+          subscription_id: string | null
+          user_id: string | null
+        }
+        Insert: {
+          created_at?: string
+          credits?: number
+          customer_id?: string | null
+          email: string
+          ends_at: string
+          id?: string
+          plan_id?: string | null
+          started_at?: string
+          subscription_id?: string | null
+          user_id?: string | null
+        }
+        Update: {
+          created_at?: string
+          credits?: number
+          customer_id?: string | null
+          email?: string
+          ends_at?: string
+          id?: string
+          plan_id?: string | null
+          started_at?: string
+          subscription_id?: string | null
+          user_id?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "trial_registrations_customer_id_fkey"
+            columns: ["customer_id"]
+            isOneToOne: false
+            referencedRelation: "customers"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "trial_registrations_plan_id_fkey"
+            columns: ["plan_id"]
+            isOneToOne: false
+            referencedRelation: "plans"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "trial_registrations_subscription_id_fkey"
+            columns: ["subscription_id"]
+            isOneToOne: false
+            referencedRelation: "subscriptions"
+            referencedColumns: ["id"]
+          },
+        ]
       }
       user_roles: {
         Row: {

@@ -8,6 +8,7 @@ import { supabase } from "@/integrations/supabase/client";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Sparkles, ShieldCheck, Clock } from "lucide-react";
+import { FreeTrialOffer } from "@/components/app/FreeTrialOffer";
 
 export const Route = createFileRoute("/app")({
   component: AppGate,
@@ -147,6 +148,9 @@ function SubscriptionRequired() {
               </div>
             </div>
           </div>
+
+          <FreeTrialOffer />
+
 
           <div className="flex flex-col gap-2 sm:flex-row sm:justify-end">
             <Button

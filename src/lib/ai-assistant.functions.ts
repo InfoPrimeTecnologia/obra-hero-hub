@@ -1658,7 +1658,7 @@ async function executeTool(
 // ---------- Server Functions ----------
 type ChatMessage = {
   role: "user" | "assistant" | "system" | "tool";
-  content: string | null;
+  content: string | any[] | null;
   tool_calls?: any[];
   tool_call_id?: string;
   name?: string;
