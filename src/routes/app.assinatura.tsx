@@ -50,6 +50,7 @@ import {
   syncAsaasPayments,
 } from "@/lib/asaas.functions";
 import { toast } from "sonner";
+import { FreeTrialOffer } from "@/components/app/FreeTrialOffer";
 
 export const Route = createFileRoute("/app/assinatura")({
   component: AssinaturaPage,
@@ -818,6 +819,9 @@ function AssinaturaPage() {
                   </div>
                 ) : (
                   <>
+                    <div className="mb-4">
+                      <FreeTrialOffer />
+                    </div>
                     {/* Cupom */}
                     <div className="mb-4 flex flex-col items-center gap-2">
                       <div className="flex w-full max-w-sm gap-2">

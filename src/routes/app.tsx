@@ -148,6 +148,9 @@ function SubscriptionRequired() {
             </div>
           </div>
 
+          <FreeTrialOffer />
+
+
           <div className="flex flex-col gap-2 sm:flex-row sm:justify-end">
             <Button
               variant="ghost"
