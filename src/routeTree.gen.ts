@@ -21,6 +21,7 @@ import { Route as AdminCuponsRouteImport } from './routes/admin.cupons'
 import { Route as AdminEmpresasRouteImport } from './routes/admin.empresas'
 import { Route as AdminFaturasRouteImport } from './routes/admin.faturas'
 import { Route as AdminPlanosRouteImport } from './routes/admin.planos'
+import { Route as AdminTestesRouteImport } from './routes/admin.testes'
 import { Route as AdminTicketsRouteImport } from './routes/admin.tickets'
 import { Route as AdminWebhooksRouteImport } from './routes/admin.webhooks'
 import { Route as AppIndexRouteImport } from './routes/app.index'
@@ -145,6 +146,11 @@ const AdminFaturasRoute = AdminFaturasRouteImport.update({
 const AdminPlanosRoute = AdminPlanosRouteImport.update({
   id: '/planos',
   path: '/planos',
+  getParentRoute: () => AdminRoute,
+} as any)
+const AdminTestesRoute = AdminTestesRouteImport.update({
+  id: '/testes',
+  path: '/testes',
   getParentRoute: () => AdminRoute,
 } as any)
 const AdminTicketsRoute = AdminTicketsRouteImport.update({
@@ -500,6 +506,7 @@ export interface FileRoutesByFullPath {
   '/admin/empresas': typeof AdminEmpresasRoute
   '/admin/faturas': typeof AdminFaturasRoute
   '/admin/planos': typeof AdminPlanosRoute
+  '/admin/testes': typeof AdminTestesRoute
   '/admin/tickets': typeof AdminTicketsRoute
   '/admin/webhooks': typeof AdminWebhooksRoute
   '/app/agenda': typeof AppAgendaRoute
@@ -577,6 +584,7 @@ export interface FileRoutesByTo {
   '/admin/empresas': typeof AdminEmpresasRoute
   '/admin/faturas': typeof AdminFaturasRoute
   '/admin/planos': typeof AdminPlanosRoute
+  '/admin/testes': typeof AdminTestesRoute
   '/admin/tickets': typeof AdminTicketsRoute
   '/admin/webhooks': typeof AdminWebhooksRoute
   '/app/agenda': typeof AppAgendaRoute
@@ -654,6 +662,7 @@ export interface FileRoutesById {
   '/admin/empresas': typeof AdminEmpresasRoute
   '/admin/faturas': typeof AdminFaturasRoute
   '/admin/planos': typeof AdminPlanosRoute
+  '/admin/testes': typeof AdminTestesRoute
   '/admin/tickets': typeof AdminTicketsRoute
   '/admin/webhooks': typeof AdminWebhooksRoute
   '/app/agenda': typeof AppAgendaRoute
@@ -735,6 +744,7 @@ export interface FileRouteTypes {
     | '/admin/empresas'
     | '/admin/faturas'
     | '/admin/planos'
+    | '/admin/testes'
     | '/admin/tickets'
     | '/admin/webhooks'
     | '/app/agenda'
@@ -812,6 +822,7 @@ export interface FileRouteTypes {
     | '/admin/empresas'
     | '/admin/faturas'
     | '/admin/planos'
+    | '/admin/testes'
     | '/admin/tickets'
     | '/admin/webhooks'
     | '/app/agenda'
@@ -888,6 +899,7 @@ export interface FileRouteTypes {
     | '/admin/empresas'
     | '/admin/faturas'
     | '/admin/planos'
+    | '/admin/testes'
     | '/admin/tickets'
     | '/admin/webhooks'
     | '/app/agenda'
@@ -1059,6 +1071,13 @@ declare module '@tanstack/react-router' {
       path: '/planos'
       fullPath: '/admin/planos'
       preLoaderRoute: typeof AdminPlanosRouteImport
+      parentRoute: typeof AdminRoute
+    }
+    '/admin/testes': {
+      id: '/admin/testes'
+      path: '/testes'
+      fullPath: '/admin/testes'
+      preLoaderRoute: typeof AdminTestesRouteImport
       parentRoute: typeof AdminRoute
     }
     '/admin/tickets': {
@@ -1527,6 +1546,7 @@ interface AdminRouteChildren {
   AdminEmpresasRoute: typeof AdminEmpresasRoute
   AdminFaturasRoute: typeof AdminFaturasRoute
   AdminPlanosRoute: typeof AdminPlanosRoute
+  AdminTestesRoute: typeof AdminTestesRoute
   AdminTicketsRoute: typeof AdminTicketsRoute
   AdminWebhooksRoute: typeof AdminWebhooksRoute
   AdminIndexRoute: typeof AdminIndexRoute
@@ -1540,6 +1560,7 @@ const AdminRouteChildren: AdminRouteChildren = {
   AdminEmpresasRoute: AdminEmpresasRoute,
   AdminFaturasRoute: AdminFaturasRoute,
   AdminPlanosRoute: AdminPlanosRoute,
+  AdminTestesRoute: AdminTestesRoute,
   AdminTicketsRoute: AdminTicketsRoute,
   AdminWebhooksRoute: AdminWebhooksRoute,
   AdminIndexRoute: AdminIndexRoute,
