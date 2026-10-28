@@ -11,6 +11,7 @@ import {
   Coins,
   Webhook,
   TicketPercent,
+  Gift,
 } from "lucide-react";
 import { Logo } from "@/components/Logo";
 import { useAuth } from "@/lib/auth-context";
@@ -24,6 +25,7 @@ const nav = [
   { to: "/admin/faturas", label: "Faturas", icon: Receipt },
   { to: "/admin/creditos", label: "Créditos", icon: Coins },
   { to: "/admin/cupons", label: "Cupons", icon: TicketPercent },
+  { to: "/admin/testes", label: "Testes grátis", icon: Gift },
   { to: "/admin/webhooks", label: "Webhooks", icon: Webhook },
   { to: "/admin/tickets", label: "Tickets", icon: LifeBuoy },
   { to: "/admin/changelog", label: "Versões", icon: GitBranch },
