@@ -7,7 +7,9 @@ import {
   LogOut,
   KeyRound,
   HelpCircle,
+  Menu,
 } from "lucide-react";
+import { setMobileNavOpen } from "@/components/app/ResponsiveSidebar";
 
 import { format } from "date-fns";
 import { ptBR } from "date-fns/locale";
@@ -146,7 +148,15 @@ export function TopBar() {
   const time = format(now, "HH:mm");
 
   return (
-    <header className="sticky top-0 z-30 flex min-h-16 items-center gap-3 border-b border-border/60 bg-background/85 px-4 pt-safe pl-safe pr-safe backdrop-blur md:min-h-[68px] md:px-6">
+    <header className="sticky top-0 z-30 flex min-h-16 items-center gap-2 border-b border-border/60 bg-background/85 px-3 pt-safe pl-safe pr-safe backdrop-blur md:min-h-[68px] md:gap-3 md:px-6">
+      <button
+        type="button"
+        aria-label="Abrir menu"
+        onClick={() => setMobileNavOpen(true)}
+        className="inline-flex h-10 w-10 shrink-0 items-center justify-center rounded-full border border-border/60 bg-card text-foreground md:hidden"
+      >
+        <Menu className="h-5 w-5" />
+      </button>
       {/* Date / time chip */}
       <div className="hidden items-center gap-3 rounded-2xl border border-border/60 bg-card px-3 py-2 shadow-[var(--shadow-card)] md:flex">
         <div className="text-right">

@@ -26,6 +26,7 @@ import { useObraSelecionada } from "@/lib/obra-context";
 import { Button } from "@/components/ui/button";
 import { Logo } from "@/components/Logo";
 import { cn } from "@/lib/utils";
+import { ResponsiveSidebar } from "@/components/app/ResponsiveSidebar";
 
 type Item = { to: string; label: string; icon: typeof LayoutDashboard; exact?: boolean };
 type Group = { label: string; items: Item[] };
@@ -107,7 +108,7 @@ export function ObraSidebar({ obraId }: { obraId: string }) {
   const sair = () => void signOut().then(() => navigate({ to: "/login" }));
 
   return (
-    <aside className="sticky top-0 flex h-screen w-64 flex-col bg-sidebar text-sidebar-foreground">
+    <ResponsiveSidebar>
       <div className="relative flex h-16 items-center justify-center bg-sidebar px-4 md:h-[68px] after:absolute after:inset-x-3 after:bottom-0 after:h-px after:bg-[linear-gradient(to_right,transparent,color-mix(in_oklab,var(--sidebar-primary)_55%,transparent)_50%,transparent)]">
         <Logo variant="light" className="h-8" />
       </div>
@@ -195,6 +196,6 @@ export function ObraSidebar({ obraId }: { obraId: string }) {
           Sair
         </Button>
       </div>
-    </aside>
+    </ResponsiveSidebar>
   );
 }
