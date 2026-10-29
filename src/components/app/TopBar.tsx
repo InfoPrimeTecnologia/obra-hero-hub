@@ -242,13 +242,15 @@ export function TopBar() {
         ) : null}
       </div>
 
-      <div className="ml-auto flex items-center gap-1.5">
+      <div className="ml-auto flex shrink-0 items-center gap-1.5">
+        <div className="hidden items-center gap-1.5 sm:flex">
         <IconBtn title="Configurações" to="/app/configuracoes">
           <Settings className="h-[18px] w-[18px]" />
         </IconBtn>
         <IconBtn title="Ajuda" to="/app/configuracoes">
           <HelpCircle className="h-[18px] w-[18px]" />
         </IconBtn>
+        </div>
         <NotificationBell />
 
 
