@@ -141,14 +141,46 @@ const TOOLS = [
   }, ["compra_id"]),
 
   // ===== RDO =====
-  T("create_rdo", "Cria um Diário de Obra (RDO).", {
+  T("create_rdo", "Cria um Diário de Obra (RDO) completo. Só chame depois de coletar TODOS os campos do roteiro de RDO com o usuário.", {
     obra_nome: { type: "string" },
-    data: { type: "string", description: "YYYY-MM-DD; default hoje" },
-    condicao: { type: "string", enum: ["trabalhada", "parcial", "parada"] },
-    clima: { type: "string" },
-    atividade: { type: "string" },
-    observacoes: { type: "string" },
-  }, ["obra_nome", "condicao"]),
+    data: { type: "string", description: "YYYY-MM-DD" },
+    clima_manha: { type: "string", description: "Ex.: ensolarado, nublado, chuvoso" },
+    clima_tarde: { type: "string" },
+    condicao: { type: "string", enum: ["praticavel", "parcial", "impraticavel"] },
+    observacoes: { type: "string", description: "Observações gerais" },
+    equipe: {
+      type: "array",
+      description: "Equipe interna/externa",
+      items: {
+        type: "object",
+        properties: {
+          funcao: { type: "string" },
+          quantidade: { type: "integer" },
+          horas: { type: "number" },
+          tipo: { type: "string", enum: ["interna", "externa"] },
+          empreiteiro: { type: "string" },
+        },
+        required: ["funcao", "quantidade", "horas"],
+      },
+    },
+    atividades: { type: "array", description: "Descrição das atividades executadas", items: { type: "string" } },
+    ocorrencias: {
+      type: "array",
+      items: {
+        type: "object",
+        properties: {
+          tipo: { type: "string", enum: ["atraso", "acidente", "visita", "entrega", "outro"] },
+          descricao: { type: "string" },
+        },
+        required: ["tipo", "descricao"],
+      },
+    },
+    anexar_arquivos: { type: "boolean", description: "true para anexar ao RDO as fotos/arquivos enviados pelo usuário nesta conversa" },
+  }, ["obra_nome", "data", "condicao"]),
+  T("anexar_arquivos_rdo", "Anexa ao RDO (da data informada ou o mais recente) as fotos/arquivos que o usuário enviou na conversa.", {
+    obra_nome: { type: "string" },
+    data: { type: "string", description: "YYYY-MM-DD; default último RDO" },
+  }, ["obra_nome"]),
   T("add_rdo_equipe", "Adiciona equipe ao RDO mais recente da obra (ou de uma data).", {
     obra_nome: { type: "string" },
     data: { type: "string", description: "YYYY-MM-DD; default último RDO" },
@@ -404,6 +436,7 @@ const MUTATING_TOOLS = new Set([
   "add_rdo_equipe",
   "add_rdo_atividade",
   "add_rdo_ocorrencia",
+  "anexar_arquivos_rdo",
   "create_conta_pagar",
   "create_conta_receber",
   "pagar_conta",
@@ -445,7 +478,28 @@ REGRA CRÍTICA DE COMPRAS:
 - Antes de chamar create_compra, GUIE o usuário passo a passo:
   1) confirme a obra; 2) pergunte a etapa do orçamento; 3) pergunte a subetapa.
 - Se o usuário não souber, use list_etapas/list_subetapas (ou peça que liste) para mostrar as opções existentes antes de prosseguir.
-- Nunca chame create_compra sem etapa_nome e subetapa_nome — peça essas informações primeiro.`;
+- Nunca chame create_compra sem etapa_nome e subetapa_nome — peça essas informações primeiro.
+
+ROTEIRO OBRIGATÓRIO DE RDO (Diário de Obra):
+- Quando o usuário quiser criar/preencher um RDO, confirme a obra e responda exatamente com o roteiro numerado abaixo, pedindo que ele envie as informações (pode responder tudo de uma vez ou por partes):
+  "Vamos preencher seu RDO, me forneça as informações abaixo:
+  1- Data
+  2- Clima manhã
+  3- Clima tarde
+  4- Condição (praticável, parcialmente praticável, impraticável)
+  5- Observações gerais
+  6- Equipe interna (função, quantidade de pessoas, horas trabalhadas)
+  7- Descrição das atividades executadas
+  8- Ocorrências (atraso, acidente, visita, entrega, outros)
+  9- Descrição da ocorrência
+  10- Anexar fotos (use o clipe 📎 para enviar)"
+- Se faltar algum item, pergunte especificamente pelos que faltam. O usuário pode dizer "sem ocorrências"/"sem fotos" — aceite.
+- Só então chame create_rdo UMA vez com todos os campos (equipe, atividades e ocorrências como listas). Se o usuário enviou fotos/arquivos na conversa, passe anexar_arquivos=true.
+- Para anexar fotos a um RDO já existente, use anexar_arquivos_rdo. Os arquivos que o usuário enviou no chat são anexados automaticamente pelo sistema ao executar — nunca diga que não consegue anexar.
+
+NOTAS FISCAIS:
+- Se o usuário enviar foto ou PDF de nota fiscal (NF-e, DANFE, cupom, NFS-e) e pedir análise, leia o documento e extraia: emitente (razão social, CNPJ), número/série, data de emissão, itens (descrição, quantidade, unidade, valor unitário, total), impostos destacados, valor total, forma/condição de pagamento e vencimentos. Apresente em lista/tabela clara e aponte inconsistências (soma dos itens ≠ total, CNPJ inválido, data futura).
+- Depois ofereça lançar como compra (create_compra, seguindo a regra de etapa/subetapa) ou conta a pagar, usando os dados extraídos.`;
 
 // ---------- Helpers ----------
 async function getCustomerId(supabase: any, userId: string): Promise<string> {
@@ -615,7 +669,7 @@ async function getOrCreateRdoId(supabase: any, customerId: string, userId: strin
         customer_id: customerId,
         obra_id: obraId,
         data: dataStr,
-        condicao: "trabalhada",
+        condicao: "praticavel",
         created_by: userId,
       })
       .select("id")
@@ -900,29 +954,68 @@ async function executeTool(
     case "create_rdo": {
       const obra = await findObra(supabase, customerId, args.obra_nome);
       const dataRdo = args.data || new Date().toISOString().slice(0, 10);
+      const cond = ({ trabalhada: "praticavel", parada: "impraticavel" } as Record<string, string>)[args.condicao] ?? args.condicao ?? "praticavel";
       const { data: rdo, error } = await supabase
         .from("rdos")
         .insert({
           customer_id: customerId,
           obra_id: obra.id,
           data: dataRdo,
-          condicao: args.condicao,
-          clima_manha: args.clima || null,
+          condicao: cond,
+          clima_manha: args.clima_manha || args.clima || null,
+          clima_tarde: args.clima_tarde || null,
           observacoes: args.observacoes || null,
           created_by: userId,
         })
         .select("id")
         .single();
       if (error) throw new Error(error.message);
-      if (args.atividade) {
-        await supabase.from("rdo_atividades").insert({
-          customer_id: customerId,
-          rdo_id: rdo.id,
-          descricao: args.atividade,
-          percentual: 0,
-        });
+      const equipe = Array.isArray(args.equipe) ? args.equipe : [];
+      if (equipe.length) {
+        const { error: e1 } = await supabase.from("rdo_equipes").insert(
+          equipe.map((q: any) => ({
+            customer_id: customerId,
+            rdo_id: rdo.id,
+            funcao: String(q.funcao),
+            quantidade: Number(q.quantidade) || 1,
+            horas: Number(q.horas) || 0,
+            tipo: q.tipo === "externa" ? "externa" : "interna",
+            empreiteiro: q.empreiteiro || null,
+          })),
+        );
+        if (e1) throw new Error(`Equipe: ${e1.message}`);
       }
-      return { ok: true, summary: `RDO de ${dataRdo} criado para ${obra.name} (${args.condicao}).`, data: rdo };
+      const atividades: string[] = [
+        ...(Array.isArray(args.atividades) ? args.atividades : []),
+        ...(args.atividade ? [args.atividade] : []),
+      ].filter(Boolean);
+      if (atividades.length) {
+        const { error: e2 } = await supabase.from("rdo_atividades").insert(
+          atividades.map((d) => ({ customer_id: customerId, rdo_id: rdo.id, descricao: String(d), percentual: 0 })),
+        );
+        if (e2) throw new Error(`Atividades: ${e2.message}`);
+      }
+      const ocorr = Array.isArray(args.ocorrencias) ? args.ocorrencias : [];
+      if (ocorr.length) {
+        const { error: e3 } = await supabase.from("rdo_ocorrencias").insert(
+          ocorr.map((o: any) => ({ customer_id: customerId, rdo_id: rdo.id, tipo: String(o.tipo || "outro"), descricao: String(o.descricao || "") })),
+        );
+        if (e3) throw new Error(`Ocorrências: ${e3.message}`);
+      }
+      return {
+        ok: true,
+        summary: `RDO de ${dataRdo} criado para ${obra.name} (${equipe.length} equipe(s), ${atividades.length} atividade(s), ${ocorr.length} ocorrência(s)).`,
+        data: { rdo_id: rdo.id, obra_id: obra.id, customer_id: customerId, attach: !!args.anexar_arquivos },
+      };
+    }
+    case "anexar_arquivos_rdo": {
+      const obra = await findObra(supabase, customerId, args.obra_nome);
+      const rdoId = await getOrCreateRdoId(supabase, customerId, userId, obra.id, args.data);
+      return {
+        ok: true,
+        summary: `Anexando arquivos ao RDO de ${obra.name}.`,
+        data: { rdo_id: rdoId, obra_id: obra.id, customer_id: customerId, attach: true },
+      };
     }
     case "add_rdo_equipe": {
       const obra = await findObra(supabase, customerId, args.obra_nome);
