@@ -11,6 +11,7 @@ import { Card } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { cn } from "@/lib/utils";
 import { toast } from "sonner";
+import { supabase } from "@/integrations/supabase/client";
 
 type Attachment = { name: string; mime: string; dataUrl?: string; text?: string };
 
@@ -180,6 +181,39 @@ export function AIAssistant() {
   const [input, setInput] = useState("");
   const [files, setFiles] = useState<Attachment[]>([]);
   const fileRef = useRef<HTMLInputElement>(null);
+  // Arquivos enviados na conversa que ainda não foram anexados a um RDO
+  const pendingUploadsRef = useRef<Attachment[]>([]);
+
+  async function uploadToRdo(target: { rdo_id: string; obra_id: string; customer_id: string }) {
+    const list = pendingUploadsRef.current.filter((a) => a.dataUrl);
+    if (!list.length) return "Nenhuma foto/arquivo enviado na conversa para anexar.";
+    const { data: auth } = await supabase.auth.getUser();
+    let ok = 0;
+    for (const a of list) {
+      try {
+        const blob = await (await fetch(a.dataUrl!)).blob();
+        const ext = a.name.split(".").pop() || (a.mime.split("/")[1] ?? "bin");
+        const path = `${target.customer_id}/${target.obra_id}/rdo/${target.rdo_id}/${crypto.randomUUID()}.${ext}`;
+        const { error: upErr } = await supabase.storage.from("obra-fotos").upload(path, blob, { contentType: a.mime });
+        if (upErr) throw upErr;
+        const { error } = await supabase.from("rdo_anexos").insert({
+          rdo_id: target.rdo_id,
+          obra_id: target.obra_id,
+          customer_id: target.customer_id,
+          storage_path: path,
+          tipo: a.mime.startsWith("image/") ? "foto" : "documento",
+          legenda: a.name,
+          created_by: auth.user?.id ?? null,
+        });
+        if (error) throw error;
+        ok++;
+      } catch (e: any) {
+        toast.error(`Falha ao anexar ${a.name}`, { description: e.message });
+      }
+    }
+    pendingUploadsRef.current = [];
+    return `📎 ${ok} arquivo(s) anexado(s) ao RDO.`;
+  }
 
   async function addFiles(list: FileList | null) {
     if (!list) return;
@@ -265,6 +299,7 @@ export function AIAssistant() {
     setMessages(next);
     setInput("");
     setFiles([]);
+    if (atts.length) pendingUploadsRef.current = [...pendingUploadsRef.current, ...atts];
     setBusy(true);
     try {
       const history = [...historyForApi(), { role: "user", content: contentForApi(trimmed, atts) }];
@@ -301,7 +336,9 @@ export function AIAssistant() {
       for (const p of msg.proposals) {
         try {
           const r: any = await execAction({ data: { tool: p.tool, args: p.args } });
-          results.push({ ok: true, summary: r.summary });
+          let summary = r.summary;
+          if (r.data?.attach && r.data?.rdo_id) summary += " " + (await uploadToRdo(r.data));
+          results.push({ ok: true, summary });
         } catch (e: any) {
           results.push({ ok: false, summary: `❌ ${e.message}` });
         }
