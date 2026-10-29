@@ -16,7 +16,7 @@ function ObraLayout() {
   return (
     <div className="flex min-h-screen bg-background">
       <ObraSidebar obraId={obraId} />
-      <main className="flex-1 overflow-auto">
+      <main className="min-w-0 flex-1 overflow-x-hidden">
         <TopBar />
         <ObraBreadcrumb obraId={obraId} />
         <PageTransition>

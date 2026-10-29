@@ -40,6 +40,7 @@ import { Button } from "@/components/ui/button";
 import { TopBar } from "@/components/app/TopBar";
 import { PageTransition } from "@/components/PageTransition";
 import { cn } from "@/lib/utils";
+import { ResponsiveSidebar } from "@/components/app/ResponsiveSidebar";
 import { useObraSelecionada } from "@/lib/obra-context";
 import { usePlanModules } from "@/lib/use-plan-modules";
 import { usePermissions } from "@/lib/use-permissions";
@@ -217,7 +218,7 @@ export function AppLayout() {
 
   return (
     <div className="flex min-h-screen bg-background">
-      <aside className="sticky top-0 flex h-screen w-64 flex-col bg-sidebar text-sidebar-foreground">
+      <ResponsiveSidebar>
 
         <div className="relative flex h-16 items-center justify-center bg-sidebar px-4 md:h-[68px] after:absolute after:inset-x-3 after:bottom-0 after:h-px after:bg-[linear-gradient(to_right,transparent,color-mix(in_oklab,var(--sidebar-primary)_55%,transparent)_50%,transparent)]">
           <Logo variant="light" className="h-8" />
@@ -250,8 +251,8 @@ export function AppLayout() {
             Sair
           </Button>
         </div>
-      </aside>
-      <main className="flex-1 overflow-auto">
+      </ResponsiveSidebar>
+      <main className="min-w-0 flex-1 overflow-x-hidden">
         <TopBar />
         <PageTransition>
           <Outlet />
