@@ -12,7 +12,15 @@ export function FreeTrialOffer({ onStarted }: { onStarted?: () => void }) {
   const [busy, setBusy] = useState(false);
 
   useEffect(() => {
-    check().then(setInfo).catch(() => setInfo(null));
+    check()
+      .then((r) => {
+        if (!r.eligible) console.warn("[teste grátis] indisponível:", r.reason);
+        setInfo(r);
+      })
+      .catch((e) => {
+        console.warn("[teste grátis] erro ao verificar:", e);
+        setInfo(null);
+      });
   }, [check]);
 
   if (!info?.eligible) return null;
