@@ -41,7 +41,7 @@ function AppGate() {
     }
 
     let cancelled = false;
-    (async () => {
+    const check = async () => {
       // Busca empresa do usuário
       const { data: cust } = await supabase
         .from("customers")
@@ -55,38 +55,54 @@ function AppGate() {
       }
 
       const today = new Date().toISOString().slice(0, 10);
-      const { data: sub } = await supabase
+      const { data: subs } = await supabase
         .from("subscriptions")
         .select("id,status,access_until,next_due_date")
         .eq("customer_id", cust.id)
-        .order("started_at", { ascending: false })
-        .limit(1)
-        .maybeSingle();
+        .order("started_at", { ascending: false });
 
-      if (!sub) {
+      const validIds = (subs ?? [])
+        .filter((sub) => {
+          const periodEnd = sub.access_until ?? sub.next_due_date;
+          return (
+            sub.status === "active" ||
+            (sub.status === "canceled" && Boolean(periodEnd && periodEnd >= today))
+          );
+        })
+        .map((sub) => sub.id);
+
+      if (validIds.length === 0) {
         if (!cancelled) setAccessGranted(false);
         return;
       }
 
-      const periodEnd = sub.access_until ?? sub.next_due_date;
-      const subscriptionValid =
-        sub.status === "active" ||
-        (sub.status === "canceled" && Boolean(periodEnd && periodEnd >= today));
       const { data: paidInv } = await supabase
         .from("invoices")
         .select("id")
-        .eq("subscription_id", sub.id)
+        .in("subscription_id", validIds)
         .eq("status", "paid")
         .limit(1)
         .maybeSingle();
 
-      if (!cancelled) setAccessGranted(subscriptionValid && Boolean(paidInv));
-    })();
+      if (!cancelled) setAccessGranted(Boolean(paidInv));
+    };
+
+    check();
+    // Rechecagem automática quando o webhook atualizar fatura/assinatura
+    const channel = supabase
+      .channel(`gate-${user.id}`)
+      .on("postgres_changes", { event: "*", schema: "public", table: "invoices" }, () => check())
+      .on("postgres_changes", { event: "*", schema: "public", table: "subscriptions" }, () => check())
+      .subscribe();
+    const onFocus = () => check();
+    window.addEventListener("focus", onFocus);
 
     return () => {
       cancelled = true;
+      window.removeEventListener("focus", onFocus);
+      supabase.removeChannel(channel);
     };
-  }, [loading, user, isAdmin, navigate]);
+  }, [loading, user, isAdmin, navigate, location.pathname]);
 
   if (loading || !user || isAdmin || accessGranted === null) {
     return (
@@ -128,6 +144,8 @@ function SubscriptionRequired() {
           </p>
         </CardHeader>
         <CardContent className="space-y-5">
+          <FreeTrialOffer />
+
           <div className="grid gap-3 sm:grid-cols-2">
             <div className="flex items-start gap-3 rounded-xl border border-border bg-secondary/40 p-4">
               <ShieldCheck className="mt-0.5 h-5 w-5 text-primary" />
@@ -148,9 +166,6 @@ function SubscriptionRequired() {
               </div>
             </div>
           </div>
-
-          <FreeTrialOffer />
-
 
           <div className="flex flex-col gap-2 sm:flex-row sm:justify-end">
             <Button
