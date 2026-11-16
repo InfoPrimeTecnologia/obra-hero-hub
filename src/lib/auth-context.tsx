@@ -28,6 +28,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   const [isAdmin, setIsAdmin] = useState(false);
   const [loading, setLoading] = useState(true);
   const adminCheckId = useRef(0);
+  const currentUserId = useRef<string | null | undefined>(undefined);
 
   const checkAdmin = async (userId: string) => {
     const timeout = new Promise<false>((resolve) => {
@@ -58,11 +59,19 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   };
 
   const applySession = async (s: Session | null) => {
+    const nextUserId = s?.user?.id ?? null;
+    setSession(s);
+    // Mesmo usuário (ex.: renovação de token ao voltar para a aba): não bloqueia a tela nem refaz checagens.
+    if (currentUserId.current === nextUserId) {
+      if (s?.user) setUser((prev) => (prev?.id === s.user.id ? prev : s.user));
+      return;
+    }
+    currentUserId.current = nextUserId;
+
     const checkId = adminCheckId.current + 1;
     adminCheckId.current = checkId;
 
     setLoading(true);
-    setSession(s);
     setUser(s?.user ?? null);
 
     if (!s?.user) {
@@ -120,6 +129,9 @@ export function AuthProvider({ children }: { children: ReactNode }) {
 
   const signIn = async (email: string, password: string) => {
     try {
+      // Descarta qualquer sessão anterior deste navegador antes de validar a senha,
+      // para que uma sessão antiga nunca "entre" no lugar de uma senha errada.
+      await supabase.auth.signOut({ scope: "local" }).catch(() => undefined);
       const { data, error } = await supabase.auth.signInWithPassword({ email, password });
       if (!error && data.user?.app_metadata?.mestre_email_confirmed === false) {
         await supabase.auth.signOut();
