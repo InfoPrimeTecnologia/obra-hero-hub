@@ -102,7 +102,7 @@ function AppGate() {
       window.removeEventListener("focus", onFocus);
       supabase.removeChannel(channel);
     };
-  }, [loading, user, isAdmin, navigate, location.pathname]);
+  }, [loading, user?.id, isAdmin, navigate]);
 
   if (loading || !user || isAdmin || accessGranted === null) {
     return (
