@@ -1,3 +1,4 @@
+import { supabase } from "@/integrations/supabase/client";
 import { createContext, useContext, useEffect, useState, type ReactNode } from "react";
 
 export type Obra = {
@@ -28,10 +29,41 @@ export function ObraProvider({ children }: { children: ReactNode }) {
   useEffect(() => {
     try {
       const raw = localStorage.getItem(STORAGE_KEY);
-      if (raw) setObraState(JSON.parse(raw));
+      if (raw) {
+        const saved = JSON.parse(raw) as Obra;
+        // Só restaura se a obra pertence à conta atual (RLS esconde as de outras contas)
+        supabase.from("obras").select("id").eq("id", saved.id).maybeSingle().then(({ data }) => {
+          if (data) setObraState(saved);
+          else localStorage.removeItem(STORAGE_KEY);
+        });
+      }
     } catch {
       // ignore
     }
+    let lastUser: string | null | undefined;
+    const { data: sub } = supabase.auth.onAuthStateChange((_ev, session) => {
+      const uid = session?.user?.id ?? null;
+      const changed = lastUser !== undefined && uid !== lastUser;
+      lastUser = uid;
+      const event = uid ? "SIGNED_IN" : "SIGNED_OUT";
+      if (changed) {
+        let keep = false;
+        if (event === "SIGNED_IN") {
+          try {
+            const raw = localStorage.getItem(STORAGE_KEY);
+            if (raw) {
+              const saved = JSON.parse(raw) as Obra;
+              keep = true;
+              supabase.from("obras").select("id").eq("id", saved.id).maybeSingle().then(({ data }) => {
+                if (!data) { localStorage.removeItem(STORAGE_KEY); setObraState(null); }
+              });
+            }
+          } catch { /* ignore */ }
+        }
+        if (!keep) { localStorage.removeItem(STORAGE_KEY); setObraState(null); }
+      }
+    });
+    return () => sub.subscription.unsubscribe();
   }, []);
 
   const setObra = (o: Obra | null) => {

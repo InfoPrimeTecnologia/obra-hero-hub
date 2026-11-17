@@ -57,6 +57,18 @@ function DefaultErrorComponent({ error, reset }: { error: Error; reset: () => vo
 export const getRouter = () => {
   const queryClient = new QueryClient();
 
+  // Nunca mostrar dados em cache de uma conta para outra no mesmo navegador
+  if (typeof window !== "undefined") {
+    import("@/integrations/supabase/client").then(({ supabase }) => {
+      let lastUser: string | null | undefined;
+      supabase.auth.onAuthStateChange((_event, session) => {
+        const uid = session?.user?.id ?? null;
+        if (lastUser !== undefined && uid !== lastUser) queryClient.clear();
+        lastUser = uid;
+      });
+    });
+  }
+
   const router = createRouter({
     routeTree,
     context: { queryClient },
