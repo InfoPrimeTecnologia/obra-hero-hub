@@ -41,50 +41,33 @@ function AppGate() {
     }
 
     let cancelled = false;
+    const cacheKey = `m360-access-${user.id}`;
+    // Mostra o último resultado conhecido na hora e confirma em segundo plano
+    const cached = sessionStorage.getItem(cacheKey);
+    if (cached !== null) setAccessGranted(cached === "1");
+    let lastCheck = 0;
     const check = async () => {
-      // Busca empresa do usuário
-      const { data: cust } = await supabase
+      lastCheck = Date.now();
+      // Uma única ida ao servidor: empresa + assinaturas + faturas pagas
+      const { data: cust, error } = await supabase
         .from("customers")
-        .select("id")
+        .select("id, subscriptions(id,status,access_until,next_due_date,invoices(id,status))")
         .eq("owner_user_id", user.id)
         .maybeSingle();
-
-      if (!cust) {
-        if (!cancelled) setAccessGranted(false);
+      if (error) {
+        if (!cancelled && cached === null) setAccessGranted(false);
         return;
       }
-
       const today = new Date().toISOString().slice(0, 10);
-      const { data: subs } = await supabase
-        .from("subscriptions")
-        .select("id,status,access_until,next_due_date")
-        .eq("customer_id", cust.id)
-        .order("started_at", { ascending: false });
-
-      const validIds = (subs ?? [])
-        .filter((sub) => {
-          const periodEnd = sub.access_until ?? sub.next_due_date;
-          return (
-            sub.status === "active" ||
-            (sub.status === "canceled" && Boolean(periodEnd && periodEnd >= today))
-          );
-        })
-        .map((sub) => sub.id);
-
-      if (validIds.length === 0) {
-        if (!cancelled) setAccessGranted(false);
-        return;
-      }
-
-      const { data: paidInv } = await supabase
-        .from("invoices")
-        .select("id")
-        .in("subscription_id", validIds)
-        .eq("status", "paid")
-        .limit(1)
-        .maybeSingle();
-
-      if (!cancelled) setAccessGranted(Boolean(paidInv));
+      const granted = ((cust?.subscriptions ?? []) as any[]).some((sub) => {
+        const periodEnd = sub.access_until ?? sub.next_due_date;
+        const valid =
+          sub.status === "active" ||
+          (sub.status === "canceled" && Boolean(periodEnd && periodEnd >= today));
+        return valid && (sub.invoices ?? []).some((i: any) => i.status === "paid");
+      });
+      sessionStorage.setItem(cacheKey, granted ? "1" : "0");
+      if (!cancelled) setAccessGranted(granted);
     };
 
     check();
@@ -94,7 +77,9 @@ function AppGate() {
       .on("postgres_changes", { event: "*", schema: "public", table: "invoices" }, () => check())
       .on("postgres_changes", { event: "*", schema: "public", table: "subscriptions" }, () => check())
       .subscribe();
-    const onFocus = () => check();
+    const onFocus = () => {
+      if (Date.now() - lastCheck > 60_000) check();
+    };
     window.addEventListener("focus", onFocus);
 
     return () => {
