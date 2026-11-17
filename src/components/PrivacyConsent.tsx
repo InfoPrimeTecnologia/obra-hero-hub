@@ -42,7 +42,7 @@ export function PrivacyConsent() {
       {settings && <div className="my-4 space-y-3 text-sm">
         <div>Necessários — sempre ativos</div>
         {gpc && <p>O sinal de privacidade do seu navegador bloqueia a medição opcional.</p>}
-        <label className="flex items-center justify-between gap-4">Análise, fornecida pela Lovable<Switch aria-label="Análise" checked={analytics} disabled={gpc} onCheckedChange={setAnalytics} /></label>
+        <label className="flex items-center justify-between gap-4">Análise de uso do sistema<Switch aria-label="Análise" checked={analytics} disabled={gpc} onCheckedChange={setAnalytics} /></label>
         <label className="flex items-center justify-between gap-4">Publicidade, fornecida pela Meta<Switch aria-label="Publicidade" checked={advertising} disabled={gpc} onCheckedChange={setAdvertising} /></label>
         <Button className="w-full" onClick={() => save(analytics, advertising)}>Salvar preferências</Button>
       </div>}
