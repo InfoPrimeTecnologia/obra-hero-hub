@@ -3,3 +3,6 @@
 - [x] Exibir consumo real, limitar novos arquivos e creditar IA após pagamento.
 - [x] Registrar versão e preparar SQL idempotente para produção.
 - [x] Validar as alterações disponíveis e identificar a correção necessária no servidor de produção para o login.
+- [ ] Instalar Pixel Meta e medir apenas novos cadastros bem-sucedidos.
+- [ ] Adicionar consentimento regional, revogação e aviso de privacidade.
+- [ ] Testar permissão, bloqueios e registro no changelog; entregar SQL de produção.

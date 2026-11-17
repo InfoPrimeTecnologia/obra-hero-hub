@@ -12,10 +12,18 @@ import { Checkbox } from "@/components/ui/checkbox";
 import { useAuth } from "@/lib/auth-context";
 import { toast } from "sonner";
 import { resendConfirmation, requestMagicLink, signupWithEmail } from "@/lib/auth-email.functions";
+import { trackAccountCreated } from "@/lib/meta-pixel";
 
 const REMEMBER_KEY = "mestre360.remember";
 
 export const Route = createFileRoute("/login")({
+  head: () => ({ meta: [
+    { title: "Entrar ou criar conta — Mestre 360" },
+    { name: "description", content: "Acesse sua conta ou cadastre-se no Mestre 360 para gerenciar suas obras." },
+    { property: "og:title", content: "Entrar ou criar conta — Mestre 360" },
+    { property: "og:description", content: "Cadastro e acesso à plataforma de gestão de obras Mestre 360." },
+    { property: "og:type", content: "website" }, { name: "twitter:card", content: "summary" },
+  ] }),
   component: LoginPage,
 });
 
@@ -163,6 +171,7 @@ function LoginPage() {
       if (r.ok) {
         toast.success("Conta criada! Verifique seu e-mail para confirmar.");
         setSignupSent(true);
+        if (r.accountCreated) void trackAccountCreated(crypto.randomUUID()).catch(() => { /* Ads must never block signup. */ });
       } else {
         toast.error("Falha no cadastro", { description: r.error });
       }

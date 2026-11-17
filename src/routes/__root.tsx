@@ -3,6 +3,8 @@ import { useEffect } from "react";
 import { AuthProvider } from "@/lib/auth-context";
 import { Toaster } from "@/components/ui/sonner";
 import { RouteLoadingOverlay } from "@/components/RouteLoadingOverlay";
+import { PrivacyConsent } from "@/components/PrivacyConsent";
+import consentDefaults from "@/lib/consent-defaults.js?raw";
 
 import appCss from "../styles.css?url";
 
@@ -84,11 +86,10 @@ export const Route = createRootRoute({
       { name: "twitter:title", content: "Mestre 360 — Gestão 360° da sua obra" },
       { name: "description", content: "Mestre 360 Sistema is an administrative panel for managing clients, plans, invoices, and support tickets." },
       { name: "twitter:description", content: "Mestre 360 Sistema is an administrative panel for managing clients, plans, invoices, and support tickets." },
-      { property: "og:image", content: "https://pub-bb2e103a32db4e198524a2e9ed8f35b4.r2.dev/716dd4c1-67e7-45c0-890d-24df77bbca2d/id-preview-96af39f5--051ff0fc-091e-41b7-9a92-b138f4fe3c31.lovable.app-1779741355537.png" },
-      { name: "twitter:image", content: "https://pub-bb2e103a32db4e198524a2e9ed8f35b4.r2.dev/716dd4c1-67e7-45c0-890d-24df77bbca2d/id-preview-96af39f5--051ff0fc-091e-41b7-9a92-b138f4fe3c31.lovable.app-1779741355537.png" },
       { name: "twitter:card", content: "summary_large_image" },
     ],
     links: [{ rel: "stylesheet", href: appCss }],
+    scripts: [{ children: consentDefaults }],
   }),
   shellComponent: RootShell,
   component: RootComponent,
@@ -106,6 +107,7 @@ function RootShell({ children }: { children: React.ReactNode }) {
           {children}
           <RouteLoadingOverlay />
           <Toaster richColors position="top-right" />
+          <PrivacyConsent />
         </AuthProvider>
         <Scripts />
       </body>
