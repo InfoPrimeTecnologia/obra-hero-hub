@@ -1,2 +1,3 @@
 # Architecture rules
+- Restrict internal AI action pricing and release management records to admins via RLS; authorized AI charging reads pricing server-side with the privileged client while balances remain user-scoped, so customer actions keep their configured cost without exposing internal tables.
 - Gate Meta browser measurement through the shared purpose-based consent module; initialize only on the public signup page and emit CompleteRegistration only when the server identifies a newly created account, to avoid duplicates and internal financial data disclosure.
