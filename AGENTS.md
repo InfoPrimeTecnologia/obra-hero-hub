@@ -1,0 +1,2 @@
+# Architecture rules
+- Gate Meta browser measurement through the shared purpose-based consent module; initialize only on the public signup page and emit CompleteRegistration only when the server identifies a newly created account, to avoid duplicates and internal financial data disclosure.

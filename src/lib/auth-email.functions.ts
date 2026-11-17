@@ -139,7 +139,7 @@ export const signupWithEmail = createServerFn({ method: 'POST' })
           subject: 'Confirme seu e-mail - Mestre 360',
           html: tplConfirmEmail(link),
         });
-        return { ok: true as const };
+        return { ok: true as const, accountCreated: false };
       }
 
       return { ok: false as const, error: 'Já existe uma conta com este e-mail.' };
@@ -181,7 +181,7 @@ export const signupWithEmail = createServerFn({ method: 'POST' })
       throw error;
     }
 
-    return { ok: true as const };
+    return { ok: true as const, accountCreated: true };
   });
 
 // ---- Confirm email (consume token) ----
