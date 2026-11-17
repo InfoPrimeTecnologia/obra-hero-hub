@@ -40,8 +40,13 @@ export function ObraProvider({ children }: { children: ReactNode }) {
     } catch {
       // ignore
     }
-    const { data: sub } = supabase.auth.onAuthStateChange((event) => {
-      if (event === "SIGNED_IN" || event === "SIGNED_OUT") {
+    let lastUser: string | null | undefined;
+    const { data: sub } = supabase.auth.onAuthStateChange((_ev, session) => {
+      const uid = session?.user?.id ?? null;
+      const changed = lastUser !== undefined && uid !== lastUser;
+      lastUser = uid;
+      const event = uid ? "SIGNED_IN" : "SIGNED_OUT";
+      if (changed) {
         let keep = false;
         if (event === "SIGNED_IN") {
           try {

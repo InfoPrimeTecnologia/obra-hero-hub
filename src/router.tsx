@@ -60,8 +60,11 @@ export const getRouter = () => {
   // Nunca mostrar dados em cache de uma conta para outra no mesmo navegador
   if (typeof window !== "undefined") {
     import("@/integrations/supabase/client").then(({ supabase }) => {
-      supabase.auth.onAuthStateChange((event) => {
-        if (event === "SIGNED_IN" || event === "SIGNED_OUT") queryClient.clear();
+      let lastUser: string | null | undefined;
+      supabase.auth.onAuthStateChange((_event, session) => {
+        const uid = session?.user?.id ?? null;
+        if (lastUser !== undefined && uid !== lastUser) queryClient.clear();
+        lastUser = uid;
       });
     });
   }
