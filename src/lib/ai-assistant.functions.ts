@@ -9,7 +9,10 @@ async function chargeCredits(
   actionKey: string,
   descricao: string,
 ): Promise<{ charged: number; saldo: number }> {
-  const cost = await getActionCost(supabase, actionKey);
+  // All callers authenticate and authorize the customer's AI plan before charging.
+  // Pricing is internal; customer balances remain subject to the caller's RLS.
+  const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
+  const cost = await getActionCost(supabaseAdmin, actionKey);
   if (cost <= 0) return { charged: 0, saldo: await getBalance(supabase, customerId) };
   const balance = await getBalance(supabase, customerId);
   if (balance < cost) {
@@ -21,7 +24,6 @@ async function chargeCredits(
     err.balance = balance;
     throw err;
   }
-  const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
   const res = await applyCreditDelta(supabaseAdmin, {
     customerId,
     delta: -cost,

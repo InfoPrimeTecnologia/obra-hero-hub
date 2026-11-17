@@ -343,11 +343,12 @@ export async function applyCreditDelta(
 }
 
 export async function getActionCost(supabase: any, actionKey: string): Promise<number> {
-  const { data } = await supabase
+  const { data, error } = await supabase
     .from("credit_action_costs")
     .select("custo, ativo")
     .eq("action_key", actionKey)
     .maybeSingle();
+  if (error) throw new Error("Não foi possível consultar o custo de créditos. Tente novamente.");
   if (!data || !data.ativo) return 0;
   return data.custo as number;
 }
