@@ -106,6 +106,13 @@ function Page() {
   };
 
   const remove = async (id: string) => {
+    const { count } = await supabase.from("subscriptions").select("id", { count: "exact", head: true }).eq("plan_id", id);
+    if ((count ?? 0) > 0) {
+      if (!confirm(`Este plano tem ${count} assinatura(s) no histórico e não pode ser excluído sem apagar faturas. Deseja desativá-lo (some da tela de escolha de planos)?`)) return;
+      const { error } = await supabase.from("plans").update({ is_active: false }).eq("id", id);
+      if (error) return toast.error(error.message);
+      toast.success("Plano desativado"); void load(); return;
+    }
     const { error } = await supabase.from("plans").delete().eq("id", id);
     if (error) return toast.error(error.message);
     toast.success("Removido"); void load();
