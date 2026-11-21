@@ -24,8 +24,14 @@ export const Route = createFileRoute("/login")({
     { property: "og:description", content: "Cadastro e acesso à plataforma de gestão de obras Mestre 360." },
     { property: "og:type", content: "website" }, { name: "twitter:card", content: "summary" },
   ] }),
+  validateSearch: (search: Record<string, unknown>): { aba?: string; tab?: string } => ({
+    ...(typeof search.aba === "string" ? { aba: search.aba } : {}),
+    ...(typeof search.tab === "string" ? { tab: search.tab } : {}),
+  }),
   component: LoginPage,
 });
+
+const SIGNUP_VALUES = ["criar", "cadastro", "signup", "cadastrar"];
 
 function LoginPage() {
   const { signIn, user, isAdmin, loading: authLoading } = useAuth();
@@ -35,7 +41,10 @@ function LoginPage() {
   const signupFn = useServerFn(signupWithEmail);
   const [loading, setLoading] = useState(false);
   const [justLoggedIn, setJustLoggedIn] = useState(false);
-  const [tab, setTab] = useState<"login" | "signup">("login");
+  const search = Route.useSearch();
+  const wantsSignup = SIGNUP_VALUES.includes((search.aba ?? search.tab ?? "").toLowerCase());
+  const [tab, setTab] = useState<"login" | "signup">(wantsSignup ? "signup" : "login");
+  useEffect(() => { if (wantsSignup) setTab("signup"); }, [wantsSignup]);
 
   useEffect(() => {
     if (authLoading || !user) return;
@@ -62,11 +71,8 @@ function LoginPage() {
 
 
   const [signupName, setSignupName] = useState("");
-  const [signupCompany, setSignupCompany] = useState("");
   const [signupEmail, setSignupEmail] = useState("");
-  const [signupCpfCnpj, setSignupCpfCnpj] = useState("");
   const [signupPassword, setSignupPassword] = useState("");
-  const [signupConfirm, setSignupConfirm] = useState("");
   const [signupSent, setSignupSent] = useState(false);
 
   const passwordChecks = {
@@ -75,7 +81,6 @@ function LoginPage() {
     lower: /[a-z]/.test(signupPassword),
     number: /[0-9]/.test(signupPassword),
     special: /[^A-Za-z0-9]/.test(signupPassword),
-    match: signupPassword.length > 0 && signupPassword === signupConfirm,
   };
 
   const [needsConfirm, setNeedsConfirm] = useState(false);
@@ -148,12 +153,8 @@ function LoginPage() {
 
   const handleSignup = async (e: FormEvent) => {
     e.preventDefault();
-    if (signupPassword !== signupConfirm) {
-      toast.error("As senhas não conferem");
-      return;
-    }
-    if (!passwordChecks.length || !passwordChecks.upper || !passwordChecks.lower || !passwordChecks.number) {
-      toast.error("A senha não atende aos requisitos mínimos");
+    if (!passwordChecks.length) {
+      toast.error("A senha precisa ter pelo menos 8 caracteres");
       return;
     }
     setLoading(true);
@@ -163,8 +164,8 @@ function LoginPage() {
           email: signupEmail,
           password: signupPassword,
           fullName: signupName,
-          companyName: signupCompany || null,
-          cpfCnpj: signupCpfCnpj || null,
+          companyName: null,
+          cpfCnpj: null,
           origin: window.location.origin,
         },
       });
@@ -212,8 +213,8 @@ function LoginPage() {
           </div>
           <Card className="border-border shadow-lg">
             <CardHeader>
-              <CardTitle>Bem-vindo ao Mestre 360</CardTitle>
-              <CardDescription>Acesse sua conta ou cadastre sua empresa</CardDescription>
+              <CardTitle>{tab === "signup" ? "Teste 5 dias grátis" : "Bem-vindo ao Mestre 360"}</CardTitle>
+              <CardDescription>{tab === "signup" ? "Crie sua conta em 30 segundos. Sem cartão de crédito." : "Entre na sua conta"}</CardDescription>
             </CardHeader>
             <CardContent>
               <Tabs value={tab} onValueChange={(v) => setTab(v as "login" | "signup")}>
@@ -319,7 +320,7 @@ function LoginPage() {
                   ) : (
                   <form onSubmit={handleSignup} className="space-y-4 pt-4">
                     <div className="space-y-2">
-                      <Label htmlFor="signup-name">Nome *</Label>
+                      <Label htmlFor="signup-name">Seu nome</Label>
                       <Input
                         id="signup-name"
                         required
@@ -328,15 +329,7 @@ function LoginPage() {
                       />
                     </div>
                     <div className="space-y-2">
-                      <Label htmlFor="signup-company">Nome da Empresa</Label>
-                      <Input
-                        id="signup-company"
-                        value={signupCompany}
-                        onChange={(e) => setSignupCompany(e.target.value)}
-                      />
-                    </div>
-                    <div className="space-y-2">
-                      <Label htmlFor="signup-email">E-mail *</Label>
+                      <Label htmlFor="signup-email">E-mail</Label>
                       <Input
                         id="signup-email"
                         type="email"
@@ -344,20 +337,9 @@ function LoginPage() {
                         value={signupEmail}
                         onChange={(e) => setSignupEmail(e.target.value)}
                       />
-                      <p className="text-xs text-muted-foreground">
-                        Este será o e-mail de acesso (login) do administrador principal da conta.
-                      </p>
                     </div>
                     <div className="space-y-2">
-                      <Label htmlFor="signup-cpf">CPF / CNPJ</Label>
-                      <Input
-                        id="signup-cpf"
-                        value={signupCpfCnpj}
-                        onChange={(e) => setSignupCpfCnpj(e.target.value)}
-                      />
-                    </div>
-                    <div className="space-y-2">
-                      <Label htmlFor="signup-password">Senha *</Label>
+                      <Label htmlFor="signup-password">Senha</Label>
                       <Input
                         id="signup-password"
                         type="password"
@@ -366,36 +348,10 @@ function LoginPage() {
                         value={signupPassword}
                         onChange={(e) => setSignupPassword(e.target.value)}
                       />
-                      <ul className="space-y-1 pt-1 text-xs">
-                        {[
-                          { ok: passwordChecks.length, label: "Pelo menos 8 caracteres" },
-                          { ok: passwordChecks.upper, label: "Uma letra maiúscula (A-Z)" },
-                          { ok: passwordChecks.lower, label: "Uma letra minúscula (a-z)" },
-                          { ok: passwordChecks.number, label: "Um número (0-9)" },
-                          { ok: passwordChecks.special, label: "Um caractere especial (recomendado)" },
-                        ].map((req) => (
-                          <li
-                            key={req.label}
-                            className={req.ok ? "text-primary" : "text-muted-foreground"}
-                          >
-                            {req.ok ? "✓" : "○"} {req.label}
-                          </li>
-                        ))}
-                      </ul>
-                    </div>
-                    <div className="space-y-2">
-                      <Label htmlFor="signup-confirm">Confirmar Senha *</Label>
-                      <Input
-                        id="signup-confirm"
-                        type="password"
-                        required
-                        minLength={8}
-                        value={signupConfirm}
-                        onChange={(e) => setSignupConfirm(e.target.value)}
-                      />
+                      <p className="text-xs text-muted-foreground">Mínimo de 8 caracteres.</p>
                     </div>
                     <Button type="submit" className="w-full" disabled={loading}>
-                      {loading ? "Cadastrando..." : "Cadastrar"}
+                      {loading ? "Criando conta..." : "Começar teste grátis"}
                     </Button>
                     <p className="text-center text-xs text-muted-foreground">
                       Já tem uma conta?{" "}

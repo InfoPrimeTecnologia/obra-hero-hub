@@ -12,8 +12,10 @@ import { Route as rootRouteImport } from './routes/__root'
 import { Route as IndexRouteImport } from './routes/index'
 import { Route as AdminRouteImport } from './routes/admin'
 import { Route as AppRouteImport } from './routes/app'
+import { Route as CadastroRouteImport } from './routes/cadastro'
 import { Route as LoginRouteImport } from './routes/login'
 import { Route as PrivacidadeRouteImport } from './routes/privacidade'
+import { Route as SignupRouteImport } from './routes/signup'
 import { Route as AdminIndexRouteImport } from './routes/admin.index'
 import { Route as AdminChangelogRouteImport } from './routes/admin.changelog'
 import { Route as AdminConfiguracoesRouteImport } from './routes/admin.configuracoes'
@@ -104,6 +106,11 @@ const AppRoute = AppRouteImport.update({
   path: '/app',
   getParentRoute: () => rootRouteImport,
 } as any)
+const CadastroRoute = CadastroRouteImport.update({
+  id: '/cadastro',
+  path: '/cadastro',
+  getParentRoute: () => rootRouteImport,
+} as any)
 const LoginRoute = LoginRouteImport.update({
   id: '/login',
   path: '/login',
@@ -112,6 +119,11 @@ const LoginRoute = LoginRouteImport.update({
 const PrivacidadeRoute = PrivacidadeRouteImport.update({
   id: '/privacidade',
   path: '/privacidade',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const SignupRoute = SignupRouteImport.update({
+  id: '/signup',
+  path: '/signup',
   getParentRoute: () => rootRouteImport,
 } as any)
 const AdminIndexRoute = AdminIndexRouteImport.update({
@@ -504,8 +516,10 @@ export interface FileRoutesByFullPath {
   '/': typeof IndexRoute
   '/admin': typeof AdminRouteWithChildren
   '/app': typeof AppRouteWithChildren
+  '/cadastro': typeof CadastroRoute
   '/login': typeof LoginRoute
   '/privacidade': typeof PrivacidadeRoute
+  '/signup': typeof SignupRoute
   '/admin/changelog': typeof AdminChangelogRoute
   '/admin/configuracoes': typeof AdminConfiguracoesRoute
   '/admin/creditos': typeof AdminCreditosRoute
@@ -583,8 +597,10 @@ export interface FileRoutesByFullPath {
 }
 export interface FileRoutesByTo {
   '/': typeof IndexRoute
+  '/cadastro': typeof CadastroRoute
   '/login': typeof LoginRoute
   '/privacidade': typeof PrivacidadeRoute
+  '/signup': typeof SignupRoute
   '/admin/changelog': typeof AdminChangelogRoute
   '/admin/configuracoes': typeof AdminConfiguracoesRoute
   '/admin/creditos': typeof AdminCreditosRoute
@@ -662,8 +678,10 @@ export interface FileRoutesById {
   '/': typeof IndexRoute
   '/admin': typeof AdminRouteWithChildren
   '/app': typeof AppRouteWithChildren
+  '/cadastro': typeof CadastroRoute
   '/login': typeof LoginRoute
   '/privacidade': typeof PrivacidadeRoute
+  '/signup': typeof SignupRoute
   '/admin/changelog': typeof AdminChangelogRoute
   '/admin/configuracoes': typeof AdminConfiguracoesRoute
   '/admin/creditos': typeof AdminCreditosRoute
@@ -745,8 +763,10 @@ export interface FileRouteTypes {
     | '/'
     | '/admin'
     | '/app'
+    | '/cadastro'
     | '/login'
     | '/privacidade'
+    | '/signup'
     | '/admin/changelog'
     | '/admin/configuracoes'
     | '/admin/creditos'
@@ -824,8 +844,10 @@ export interface FileRouteTypes {
   fileRoutesByTo: FileRoutesByTo
   to:
     | '/'
+    | '/cadastro'
     | '/login'
     | '/privacidade'
+    | '/signup'
     | '/admin/changelog'
     | '/admin/configuracoes'
     | '/admin/creditos'
@@ -902,8 +924,10 @@ export interface FileRouteTypes {
     | '/'
     | '/admin'
     | '/app'
+    | '/cadastro'
     | '/login'
     | '/privacidade'
+    | '/signup'
     | '/admin/changelog'
     | '/admin/configuracoes'
     | '/admin/creditos'
@@ -984,8 +1008,10 @@ export interface RootRouteChildren {
   IndexRoute: typeof IndexRoute
   AdminRoute: typeof AdminRouteWithChildren
   AppRoute: typeof AppRouteWithChildren
+  CadastroRoute: typeof CadastroRoute
   LoginRoute: typeof LoginRoute
   PrivacidadeRoute: typeof PrivacidadeRoute
+  SignupRoute: typeof SignupRoute
   AuthConfirmRoute: typeof AuthConfirmRoute
   AuthForgotPasswordRoute: typeof AuthForgotPasswordRoute
   AuthMagicLinkRoute: typeof AuthMagicLinkRoute
@@ -1023,6 +1049,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AppRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/cadastro': {
+      id: '/cadastro'
+      path: '/cadastro'
+      fullPath: '/cadastro'
+      preLoaderRoute: typeof CadastroRouteImport
+      parentRoute: typeof rootRouteImport
+    }
     '/login': {
       id: '/login'
       path: '/login'
@@ -1035,6 +1068,13 @@ declare module '@tanstack/react-router' {
       path: '/privacidade'
       fullPath: '/privacidade'
       preLoaderRoute: typeof PrivacidadeRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/signup': {
+      id: '/signup'
+      path: '/signup'
+      fullPath: '/signup'
+      preLoaderRoute: typeof SignupRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/admin/': {
@@ -1743,8 +1783,10 @@ const rootRouteChildren: RootRouteChildren = {
   IndexRoute: IndexRoute,
   AdminRoute: AdminRouteWithChildren,
   AppRoute: AppRouteWithChildren,
+  CadastroRoute: CadastroRoute,
   LoginRoute: LoginRoute,
   PrivacidadeRoute: PrivacidadeRoute,
+  SignupRoute: SignupRoute,
   AuthConfirmRoute: AuthConfirmRoute,
   AuthForgotPasswordRoute: AuthForgotPasswordRoute,
   AuthMagicLinkRoute: AuthMagicLinkRoute,

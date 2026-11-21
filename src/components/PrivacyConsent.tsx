@@ -34,23 +34,20 @@ export function PrivacyConsent() {
     setSettings(false);
   };
   return <>
-    <Button variant="outline" size="sm" className="fixed bottom-3 left-3 z-40" onClick={() => { setSettings(true); setOpen(true); }}>Privacidade e cookies</Button>
-    {open && <div ref={panel} tabIndex={-1} role="region" aria-label="Preferências de privacidade" className="fixed bottom-14 left-3 right-3 z-50 max-w-lg rounded-lg border bg-background p-5 text-foreground shadow-lg">
-      <h2 className="font-semibold">Sua privacidade</h2>
-      <p className="mt-2 text-sm text-muted-foreground">Contamos visitas sem cookies. Se aceitar, também medimos cliques. Cookies de publicidade registram cadastros para melhorar anúncios no Facebook e Instagram.</p>
-      <Link to="/privacidade" className="mt-2 inline-block text-sm text-primary underline">Política de privacidade</Link>
-      {settings && <div className="my-4 space-y-3 text-sm">
-        <div>Necessários — sempre ativos</div>
+    {!open && <button type="button" className="fixed bottom-2 left-2 z-40 rounded px-2 py-1 text-[11px] text-muted-foreground underline hover:text-foreground" onClick={() => { setSettings(true); setOpen(true); }}>Cookies</button>}
+    {open && <div ref={panel} tabIndex={-1} role="region" aria-label="Preferências de privacidade" className="fixed bottom-2 left-2 right-2 z-50 mx-auto max-w-xl rounded-md border bg-background p-3 text-foreground shadow-md">
+      <div className="flex flex-wrap items-center gap-2 text-xs">
+        <p className="flex-1 min-w-[180px] text-muted-foreground">Usamos cookies para medir uso e melhorar anúncios. <Link to="/privacidade" className="text-primary underline">Saiba mais</Link></p>
+        <Button size="sm" className="h-7 px-3 text-xs" onClick={() => save(true, true)}>Aceitar</Button>
+        <Button size="sm" variant="outline" className="h-7 px-3 text-xs" onClick={() => save(false, false)}>Recusar</Button>
+        {!settings && <button type="button" className="text-xs text-muted-foreground underline" onClick={() => setSettings(true)}>Configurar</button>}
+      </div>
+      {settings && <div className="mt-3 space-y-2 text-xs">
         {gpc && <p>O sinal de privacidade do seu navegador bloqueia a medição opcional.</p>}
         <label className="flex items-center justify-between gap-4">Análise de uso do sistema<Switch aria-label="Análise" checked={analytics} disabled={gpc} onCheckedChange={setAnalytics} /></label>
         <label className="flex items-center justify-between gap-4">Publicidade, fornecida pela Meta<Switch aria-label="Publicidade" checked={advertising} disabled={gpc} onCheckedChange={setAdvertising} /></label>
-        <Button className="w-full" onClick={() => save(analytics, advertising)}>Salvar preferências</Button>
+        <Button size="sm" className="h-7 w-full text-xs" onClick={() => save(analytics, advertising)}>Salvar preferências</Button>
       </div>}
-      <div className="mt-4 grid grid-cols-2 gap-2">
-        <Button variant="outline" onClick={() => save(true, true)}>Aceitar todos</Button>
-        <Button variant="outline" onClick={() => save(false, false)}>Recusar todos</Button>
-      </div>
-      <Button variant="link" className="mt-2" onClick={() => setSettings(true)}>Configurar cookies</Button>
     </div>}
   </>;
 }
