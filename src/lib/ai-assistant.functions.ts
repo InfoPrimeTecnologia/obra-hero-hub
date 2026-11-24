@@ -127,17 +127,36 @@ const TOOLS = [
   T("get_compra", "Detalhes de uma compra (itens, parcelas, recebimentos).", {
     compra_id: { type: "string", description: "UUID da compra" },
   }, ["compra_id"]),
-  T("create_compra", "Registra uma compra para uma obra. SEMPRE exige etapa e subetapa do orçamento — pergunte ao usuário antes de chamar se não souber.", {
-    obra_nome: { type: "string" },
+  T("create_compra", "Registra uma compra (pedido) na obra, igual à tela Nova compra: cabeçalho + itens. NÃO pede forma de pagamento/parcelas — isso é feito depois em 'Gerar contas a pagar'. Exige etapa e subetapa do orçamento.", {
+    obra_nome: { type: "string", description: "Se o usuário está dentro de uma obra, use a obra ativa sem perguntar" },
     etapa_nome: { type: "string", description: "Nome da etapa do orçamento da obra (obrigatório)" },
     subetapa_nome: { type: "string", description: "Nome da subetapa dentro da etapa (obrigatório)" },
-    fornecedor_nome: { type: "string" },
-    descricao: { type: "string" },
-    valor_total: { type: "number" },
-    forma_pagamento: { type: "string", enum: ["dinheiro", "pix", "boleto", "cartao", "transferencia"] },
-    qtd_parcelas: { type: "integer", minimum: 1 },
-    data_compra: { type: "string", description: "YYYY-MM-DD; default hoje" },
-  }, ["obra_nome", "etapa_nome", "subetapa_nome", "descricao", "valor_total", "forma_pagamento"]),
+    criar_subetapa: { type: "boolean", description: "true se o usuário confirmou criar a subetapa nova dentro da etapa (quando não existir)" },
+    fornecedor_nome: { type: "string", description: "Razão social do fornecedor (é criado se não existir)" },
+    fornecedor_cnpj: { type: "string" },
+    natureza: { type: "string", enum: ["material", "servico", "equipamento"] },
+    descricao: { type: "string", description: "Ex.: NF 1234 — Fornecedor X" },
+    data_compra: { type: "string", description: "YYYY-MM-DD; data de emissão da NF ou hoje" },
+    itens: {
+      type: "array",
+      description: "Itens da compra/nota (obrigatório ao menos 1)",
+      items: {
+        type: "object",
+        properties: {
+          descricao: { type: "string" },
+          unidade: { type: "string" },
+          quantidade: { type: "number" },
+          valor_unitario: { type: "number" },
+        },
+        required: ["descricao", "quantidade", "valor_unitario"],
+        additionalProperties: false,
+      },
+    },
+    nf_numero: { type: "string" },
+    nf_serie: { type: "string" },
+    nf_chave: { type: "string" },
+    nf_valor_total: { type: "number" },
+  }, ["obra_nome", "etapa_nome", "subetapa_nome", "natureza", "itens"]),
   T("cancel_compra", "Cancela uma compra (status=cancelada).", {
     compra_id: { type: "string" },
   }, ["compra_id"]),
@@ -475,12 +494,15 @@ Seu papel:
 - Para buscar nomes (obras, fornecedores, produtos, contas), as funções fazem busca por similaridade. Tente o que o usuário disse.
 - Pode encadear chamadas: ex.: list_obras para descobrir nomes, depois create_etapa.
 
-REGRA CRÍTICA DE COMPRAS:
-- Toda compra é obrigatoriamente vinculada a uma etapa e subetapa do orçamento da obra.
-- Antes de chamar create_compra, GUIE o usuário passo a passo:
-  1) confirme a obra; 2) pergunte a etapa do orçamento; 3) pergunte a subetapa.
-- Se o usuário não souber, use list_etapas/list_subetapas (ou peça que liste) para mostrar as opções existentes antes de prosseguir.
-- Nunca chame create_compra sem etapa_nome e subetapa_nome — peça essas informações primeiro.
+OBRA ATIVA:
+- Se houver "OBRA ATIVA" informada abaixo, o usuário está dentro dessa obra: use-a automaticamente em obra_nome de TODAS as ferramentas. NUNCA pergunte em qual obra, a não ser que o usuário cite outra obra explicitamente.
+
+REGRA CRÍTICA DE COMPRAS (igual à tela Nova compra):
+- Uma compra = cabeçalho (fornecedor, etapa, subetapa, natureza: material/serviço/equipamento, data) + ITENS (descrição, unidade, quantidade, valor unitário). O total é a soma dos itens.
+- NÃO pergunte forma de pagamento, parcelas ou vencimentos ao lançar compra: o financeiro é feito depois, na compra, em "Gerar contas a pagar".
+- Toda compra é vinculada a uma etapa e subetapa do orçamento. Chame list_etapas da obra (sem perguntar a obra se houver obra ativa) e mostre as etapas/subetapas numeradas para o usuário escolher; sugira a mais provável pelos itens.
+- Se a subetapa desejada não existir, pergunte se deseja criá-la naquela etapa e, se sim, passe criar_subetapa=true.
+- Nunca chame create_compra sem etapa_nome, subetapa_nome e itens.
 
 ROTEIRO OBRIGATÓRIO DE RDO (Diário de Obra):
 - Quando o usuário quiser criar/preencher um RDO, confirme a obra e responda exatamente com o roteiro numerado abaixo, pedindo que ele envie as informações (pode responder tudo de uma vez ou por partes):
@@ -501,7 +523,7 @@ ROTEIRO OBRIGATÓRIO DE RDO (Diário de Obra):
 
 NOTAS FISCAIS:
 - Se o usuário enviar foto ou PDF de nota fiscal (NF-e, DANFE, cupom, NFS-e) e pedir análise, leia o documento e extraia: emitente (razão social, CNPJ), número/série, data de emissão, itens (descrição, quantidade, unidade, valor unitário, total), impostos destacados, valor total, forma/condição de pagamento e vencimentos. Apresente em lista/tabela clara e aponte inconsistências (soma dos itens ≠ total, CNPJ inválido, data futura).
-- Depois ofereça lançar como compra (create_compra, seguindo a regra de etapa/subetapa) ou conta a pagar, usando os dados extraídos.`;
+- Para LANÇAR a nota como compra: extraia fornecedor (nome/CNPJ), número/série/chave, data de emissão (data_compra), natureza provável e TODOS os itens com quantidade, unidade e valor unitário. Mostre o resumo, pergunte apenas a etapa/subetapa (listando as opções da obra) e então chame create_compra com itens e nf_numero/nf_serie/nf_chave/nf_valor_total. Não pergunte pagamento.`;
 
 // ---------- Helpers ----------
 async function getCustomerId(supabase: any, userId: string): Promise<string> {
@@ -529,7 +551,17 @@ async function isEmpresarial(supabase: any, customerId: string): Promise<boolean
   return Number(plan?.limits?.ai_credits ?? 0) > 0;
 }
 
+function withObraAtiva(args: any, obra?: { id: string; nome: string } | null) {
+  if (!obra?.nome || !args || typeof args !== "object") return args;
+  if (!args.obra_nome || !String(args.obra_nome).trim()) return { ...args, obra_nome: obra.nome };
+  return args;
+}
+
 async function findObra(supabase: any, customerId: string, nome: string) {
+  if (!nome || !String(nome).trim()) throw new Error("Informe a obra");
+  const { data: exact } = await supabase
+    .from("obras").select("id, name").eq("customer_id", customerId).eq("name", nome.trim()).limit(1).maybeSingle();
+  if (exact) return exact as { id: string; name: string };
   const { data } = await supabase
     .from("obras")
     .select("id, name")
@@ -910,12 +942,42 @@ async function executeTool(
     case "create_compra": {
       const obra = await findObra(supabase, customerId, args.obra_nome);
       const etapa = await findEtapa(supabase, obra.id, args.etapa_nome);
-      const sub = await findSubetapa(supabase, etapa.id, args.subetapa_nome);
+      let sub: { id: string; nome: string };
+      try {
+        sub = await findSubetapa(supabase, etapa.id, args.subetapa_nome);
+      } catch (e) {
+        if (!args.criar_subetapa) {
+          throw new Error(`Subetapa "${args.subetapa_nome}" não existe na etapa ${etapa.nome}. Confirme se deseja criá-la.`);
+        }
+        const { data: last } = await supabase
+          .from("orcamento_subetapas").select("ordem").eq("etapa_id", etapa.id)
+          .order("ordem", { ascending: false }).limit(1).maybeSingle();
+        const { data: nova, error: eSub } = await supabase
+          .from("orcamento_subetapas")
+          .insert({
+            customer_id: customerId, created_by: userId, etapa_id: etapa.id,
+            nome: String(args.subetapa_nome).trim(),
+            tipo: args.natureza === "servico" ? "servico" : "material",
+            valor_orcado: 0, ordem: (Number(last?.ordem) || 0) + 1,
+          })
+          .select("id, nome").single();
+        if (eSub) throw new Error(`Subetapa: ${eSub.message}`);
+        sub = nova;
+      }
+      const itens = (Array.isArray(args.itens) ? args.itens : [])
+        .map((i: any) => {
+          const q = Number(i.quantidade) || 0;
+          const v = Number(i.valor_unitario) || 0;
+          return { descricao: String(i.descricao || "").trim(), unidade: i.unidade ? String(i.unidade) : null, q, v, total: Math.round(q * v * 100) / 100 };
+        })
+        .filter((i: any) => i.descricao && i.q > 0);
+      if (!itens.length) throw new Error("Informe ao menos um item com descrição, quantidade e valor unitário.");
       let fornecedor_id: string | null = null;
       if (args.fornecedor_nome) {
         const f = await findOrCreateFornecedor(supabase, customerId, userId, args.fornecedor_nome);
         fornecedor_id = f.id;
       }
+      const total = Math.round(itens.reduce((s: number, i: any) => s + i.total, 0) * 100) / 100;
       const dataCompra = args.data_compra || new Date().toISOString().slice(0, 10);
       const { data, error } = await supabase
         .from("compras")
@@ -925,21 +987,37 @@ async function executeTool(
           etapa_id: etapa.id,
           subetapa_id: sub.id,
           fornecedor_id,
-          descricao: args.descricao,
-          forma_pagamento: args.forma_pagamento,
-          qtd_parcelas: args.qtd_parcelas ?? 1,
+          descricao: args.descricao || null,
+          natureza: args.natureza || "material",
+          qtd_parcelas: 0,
           data_compra: dataCompra,
-          data_primeira_parcela: dataCompra,
-          valor_total: args.valor_total,
+          valor_total: total,
+          status: "pendente",
           created_by: userId,
         })
         .select("id, descricao, valor_total")
         .single();
       if (error) throw new Error(error.message);
+      const { error: eItens } = await supabase.from("compra_itens").insert(
+        itens.map((i: any) => ({
+          customer_id: customerId, compra_id: data.id, etapa_id: etapa.id, subetapa_id: sub.id,
+          descricao: i.descricao, unidade: i.unidade, quantidade: i.q, valor_unitario: i.v, valor_total: i.total,
+        })),
+      );
+      if (eItens) throw new Error(`Itens: ${eItens.message}`);
+      if (args.nf_numero || args.nf_chave) {
+        await supabase.from("compra_notas_fiscais").insert({
+          customer_id: customerId, compra_id: data.id,
+          numero: args.nf_numero || null, serie: args.nf_serie || null, chave: args.nf_chave || null,
+          valor: args.nf_valor_total ?? total, emitida_em: dataCompra, created_by: userId,
+        });
+      }
+      const aviso = args.nf_valor_total && Math.abs(Number(args.nf_valor_total) - total) > 0.05
+        ? ` Atenção: soma dos itens (R$ ${brl(total)}) difere do total da nota (R$ ${brl(args.nf_valor_total)}).` : "";
       return {
         ok: true,
-        summary: `Compra "${data.descricao}" registrada em ${obra.name} › ${etapa.nome} › ${sub.nome} (R$ ${brl(data.valor_total)}).`,
-        data,
+        summary: `Compra registrada em ${obra.name} › ${etapa.nome} › ${sub.nome} com ${itens.length} item(ns), total R$ ${brl(total)}. Para pagar, abra a compra e use "Gerar contas a pagar".${aviso}`,
+        data: { id: data.id, obra_id: obra.id, compra_id: data.id },
       };
     }
     case "cancel_compra": {
@@ -1761,7 +1839,7 @@ type ChatMessage = {
 
 export const aiChat = createServerFn({ method: "POST" })
   .middleware([requireSupabaseAuth])
-  .inputValidator((input: { messages: ChatMessage[] }) => input)
+  .inputValidator((input: { messages: ChatMessage[]; obraAtiva?: { id: string; nome: string } | null }) => input)
   .handler(async ({ data, context }) => {
     const key = process.env.OPENAI_API_KEY;
     if (!key) throw new Error("OPENAI_API_KEY não configurada no servidor");
@@ -1774,7 +1852,12 @@ export const aiChat = createServerFn({ method: "POST" })
     await chargeCredits(supabase, customerId, userId, "chat_message", "Mensagem ao assistente");
 
     const messages: ChatMessage[] = [
-      { role: "system", content: SYSTEM_PROMPT },
+      {
+        role: "system",
+        content: SYSTEM_PROMPT + (data.obraAtiva?.nome
+          ? `\n\nOBRA ATIVA: "${data.obraAtiva.nome}" — o usuário está dentro desta obra. Use obra_nome="${data.obraAtiva.nome}" sem perguntar.`
+          : "\n\nNenhuma obra ativa: se a ação exigir obra, pergunte qual (ou use list_obras)."),
+      },
       ...data.messages,
     ];
 
@@ -1822,7 +1905,7 @@ export const aiChat = createServerFn({ method: "POST" })
           proposals: proposals.map((tc) => ({
             id: tc.id,
             tool: tc.function.name,
-            args: JSON.parse(tc.function.arguments || "{}"),
+            args: withObraAtiva(JSON.parse(tc.function.arguments || "{}"), data.obraAtiva),
           })),
           assistantMessage: choice,
           messages: data.messages,
@@ -1832,7 +1915,7 @@ export const aiChat = createServerFn({ method: "POST" })
       messages.push(choice);
       for (const tc of reads) {
         try {
-          const args = JSON.parse(tc.function.arguments || "{}");
+          const args = withObraAtiva(JSON.parse(tc.function.arguments || "{}"), data.obraAtiva);
           const res = await executeTool(supabase, customerId, userId, tc.function.name, args);
           messages.push({
             role: "tool",
@@ -1855,7 +1938,7 @@ export const aiChat = createServerFn({ method: "POST" })
 
 export const aiExecuteAction = createServerFn({ method: "POST" })
   .middleware([requireSupabaseAuth])
-  .inputValidator((input: { tool: string; args: any }) => input)
+  .inputValidator((input: { tool: string; args: any; obraAtiva?: { id: string; nome: string } | null }) => input)
   .handler(async ({ data, context }) => {
     const { supabase, userId } = context;
     const customerId = await getCustomerId(supabase, userId);
@@ -1873,7 +1956,7 @@ export const aiExecuteAction = createServerFn({ method: "POST" })
       `Ação IA: ${data.tool}`,
     );
     try {
-      const result = await executeTool(supabase, customerId, userId, data.tool, data.args);
+      const result = await executeTool(supabase, customerId, userId, data.tool, withObraAtiva(data.args, data.obraAtiva));
       return { ...result, credits: charge };
     } catch (e) {
       if (charge.charged > 0) {

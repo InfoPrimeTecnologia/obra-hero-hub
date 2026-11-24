@@ -1,6 +1,7 @@
 import { useEffect, useRef, useState } from "react";
 import { Sparkles, Send, Mic, Square, Loader2, X, Check, XCircle, Coins, Paperclip, FileText } from "lucide-react";
-import { Link } from "@tanstack/react-router";
+import { Link, useParams } from "@tanstack/react-router";
+import { useObraSelecionada } from "@/lib/obra-context";
 import { useServerFn } from "@tanstack/react-start";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { aiChat, aiExecuteAction, aiTranscribe } from "@/lib/ai-assistant.functions";
@@ -119,7 +120,7 @@ function summarizeArgs(tool: string, args: any): string {
     case "delete_subetapa":
       return `${args.subetapa_nome} (${args.etapa_nome})`;
     case "create_compra":
-      return `${args.descricao} — R$ ${brl(args.valor_total)} (${args.forma_pagamento}) em ${args.obra_nome} › ${args.etapa_nome ?? "?"} › ${args.subetapa_nome ?? "?"}`;
+      return `${args.descricao ?? "Compra"} — ${args.itens?.length || 0} item(ns), R$ ${brl((args.itens || []).reduce((s: number, i: any) => s + (Number(i.quantidade) || 0) * (Number(i.valor_unitario) || 0), 0))} em ${args.obra_nome} › ${args.etapa_nome ?? "?"} › ${args.subetapa_nome ?? "?"}${args.criar_subetapa ? " (nova subetapa)" : ""}`;
     case "cancel_compra":
       return `Compra ${args.compra_id}`;
     case "create_rdo":
@@ -177,6 +178,22 @@ function summarizeArgs(tool: string, args: any): string {
 
 export function AIAssistant() {
   const [open, setOpen] = useState(false);
+  const routeParams = useParams({ strict: false }) as { obraId?: string };
+  const { obra: obraCtx } = useObraSelecionada();
+  const routeObraId = routeParams.obraId;
+  const { data: routeObra } = useQuery({
+    queryKey: ["ai-obra-ativa", routeObraId],
+    enabled: !!routeObraId && obraCtx?.id !== routeObraId,
+    queryFn: async () => {
+      const { data } = await supabase.from("obras").select("id, name").eq("id", routeObraId!).maybeSingle();
+      return data;
+    },
+  });
+  const obraAtiva = routeObraId
+    ? obraCtx?.id === routeObraId
+      ? { id: obraCtx.id, nome: obraCtx.name }
+      : routeObra ? { id: routeObra.id, nome: routeObra.name } : null
+    : obraCtx ? { id: obraCtx.id, nome: obraCtx.name } : null;
   const [messages, setMessages] = useState<Msg[]>([]);
   const [input, setInput] = useState("");
   const [files, setFiles] = useState<Attachment[]>([]);
@@ -303,7 +320,7 @@ export function AIAssistant() {
     setBusy(true);
     try {
       const history = [...historyForApi(), { role: "user", content: contentForApi(trimmed, atts) }];
-      const res: any = await chat({ data: { messages: history } });
+      const res: any = await chat({ data: { messages: history, obraAtiva } });
       if (res.type === "message") {
         setMessages((m) => [...m, { role: "assistant", content: res.text || "" }]);
       } else if (res.type === "proposal") {
@@ -335,7 +352,7 @@ export function AIAssistant() {
     try {
       for (const p of msg.proposals) {
         try {
-          const r: any = await execAction({ data: { tool: p.tool, args: p.args } });
+          const r: any = await execAction({ data: { tool: p.tool, args: p.args, obraAtiva } });
           let summary = r.summary;
           if (r.data?.attach && r.data?.rdo_id) summary += " " + (await uploadToRdo(r.data));
           results.push({ ok: true, summary });
@@ -465,7 +482,7 @@ export function AIAssistant() {
                 <p className="mb-1">Exemplos:</p>
                 <ul className="list-disc space-y-1 pl-4 text-xs">
                   <li>"Crie uma etapa Fundações na obra Casa Vila"</li>
-                  <li>"Registre compra de 50 sacos de cimento R$ 1.800 boleto na obra X"</li>
+                  <li>"Lance esta nota fiscal como compra" (envie a foto pelo 📎)</li>
                   <li>"Faça o RDO de hoje na obra Y, trabalhada, concretagem da laje"</li>
                   <li>"Conta a pagar IPTU R$ 350 vence 15/07"</li>
                 </ul>
