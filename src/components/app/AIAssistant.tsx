@@ -193,7 +193,7 @@ export function AIAssistant() {
     ? obraCtx?.id === routeObraId
       ? { id: obraCtx.id, nome: obraCtx.name }
       : routeObra ? { id: routeObra.id, nome: routeObra.name } : null
-    : obraCtx ? { id: obraCtx.id, nome: obraCtx.name } : null;
+    : null; // fora de uma obra, consultas da empresa não são filtradas por obra
   const [messages, setMessages] = useState<Msg[]>([]);
   const [input, setInput] = useState("");
   const [files, setFiles] = useState<Attachment[]>([]);
