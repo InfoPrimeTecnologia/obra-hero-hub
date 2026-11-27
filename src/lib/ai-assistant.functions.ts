@@ -523,9 +523,46 @@ ROTEIRO OBRIGATÓRIO DE RDO (Diário de Obra):
 
 NOTAS FISCAIS:
 - Se o usuário enviar foto ou PDF de nota fiscal (NF-e, DANFE, cupom, NFS-e) e pedir análise, leia o documento e extraia: emitente (razão social, CNPJ), número/série, data de emissão, itens (descrição, quantidade, unidade, valor unitário, total), impostos destacados, valor total, forma/condição de pagamento e vencimentos. Apresente em lista/tabela clara e aponte inconsistências (soma dos itens ≠ total, CNPJ inválido, data futura).
-- Para LANÇAR a nota como compra: extraia fornecedor (nome/CNPJ), número/série/chave, data de emissão (data_compra), natureza provável e TODOS os itens com quantidade, unidade e valor unitário. Mostre o resumo, pergunte apenas a etapa/subetapa (listando as opções da obra) e então chame create_compra com itens e nf_numero/nf_serie/nf_chave/nf_valor_total. Não pergunte pagamento.`;
+- Quando a mensagem trouxer um bloco "NOTA FISCAL LIDA", a nota JÁ foi lida pelo sistema: use exatamente esses dados (não releia, não invente, não peça a nota de novo). O bloco continua no histórico nas próximas mensagens.
+- LANÇAR NOTA COMO COMPRA (substitui o lançamento manual da tela Nova compra) — resolva em UMA pergunta só:
+  1. Chame list_etapas da obra (obra ativa, sem perguntar) ANTES de responder.
+  2. Responda numa única mensagem com: Fornecedor (nome e CNPJ); Descrição sugerida ("NF <número> — <fornecedor>"); Data da compra (data de emissão); Natureza sugerida (material, servico ou equipamento, pelos itens); tabela de TODOS os itens (descrição, qtd, unidade, valor unitário, total) e o total geral; e as etapas/subetapas numeradas (ex.: 3.2 = etapa 3, subetapa 2), indicando a mais provável.
+  3. Pergunte só: "Qual etapa/subetapa? (e, se quiser, corrija natureza, descrição ou data)".
+  4. Com a resposta, chame create_compra direto, com fornecedor_nome/fornecedor_cnpj, descricao, natureza, data_compra, etapa_nome, subetapa_nome, TODOS os itens (descrição, unidade, quantidade, valor_unitario) e nf_numero/nf_serie/nf_chave/nf_valor_total. O fornecedor é criado automaticamente se não existir: não proponha create_fornecedor separado.
+  - Não pergunte pagamento, parcelas nem vencimentos. Não faça perguntas extras: cada mensagem a mais atrasa o cliente.`;
 
 // ---------- Helpers ----------
+// Passe de nota fiscal: depois que o agente lê uma NF, as mensagens da conversa ficam sem
+// cobrança por um tempo; o cliente paga só o lançamento (create_compra). Assinado no
+// servidor para não ser forjado pelo navegador.
+const NF_PASS_TTL_MS = 30 * 60 * 1000;
+
+async function nfPassSignature(payload: string): Promise<string> {
+  const secret = process.env.SUPABASE_SERVICE_ROLE_KEY;
+  if (!secret) throw new Error("Chave do servidor não configurada");
+  const enc = new TextEncoder();
+  const key = await crypto.subtle.importKey("raw", enc.encode(secret), { name: "HMAC", hash: "SHA-256" }, false, ["sign"]);
+  const sig = await crypto.subtle.sign("HMAC", key, enc.encode(`nf-pass:${payload}`));
+  return Array.from(new Uint8Array(sig), (b) => b.toString(16).padStart(2, "0")).join("");
+}
+
+async function createNfPass(customerId: string): Promise<string> {
+  const exp = Date.now() + NF_PASS_TTL_MS;
+  return `${exp}.${await nfPassSignature(`${customerId}.${exp}`)}`;
+}
+
+async function isValidNfPass(token: string | null | undefined, customerId: string): Promise<boolean> {
+  if (!token || typeof token !== "string") return false;
+  const [expStr, sig] = token.split(".");
+  const exp = Number(expStr);
+  if (!exp || !sig || exp < Date.now() || exp > Date.now() + NF_PASS_TTL_MS) return false;
+  try {
+    return (await nfPassSignature(`${customerId}.${exp}`)) === sig;
+  } catch {
+    return false;
+  }
+}
+
 async function getCustomerId(supabase: any, userId: string): Promise<string> {
   const { data } = await supabase
     .from("customers")
@@ -1839,7 +1876,9 @@ type ChatMessage = {
 
 export const aiChat = createServerFn({ method: "POST" })
   .middleware([requireSupabaseAuth])
-  .inputValidator((input: { messages: ChatMessage[]; obraAtiva?: { id: string; nome: string } | null }) => input)
+  .inputValidator(
+    (input: { messages: ChatMessage[]; obraAtiva?: { id: string; nome: string } | null; nfPass?: string | null }) => input,
+  )
   .handler(async ({ data, context }) => {
     const key = process.env.OPENAI_API_KEY;
     if (!key) throw new Error("OPENAI_API_KEY não configurada no servidor");
@@ -1849,7 +1888,10 @@ export const aiChat = createServerFn({ method: "POST" })
       throw new Error("Recurso disponível apenas no plano Empresarial");
     }
 
-    await chargeCredits(supabase, customerId, userId, "chat_message", "Mensagem ao assistente");
+    // Conversa de lançamento de NF: o cliente paga só o lançamento (create_compra).
+    if (!(await isValidNfPass(data.nfPass, customerId))) {
+      await chargeCredits(supabase, customerId, userId, "chat_message", "Mensagem ao assistente");
+    }
 
     const messages: ChatMessage[] = [
       {
@@ -1972,6 +2014,30 @@ export const aiExecuteAction = createServerFn({ method: "POST" })
       }
       throw e;
     }
+  });
+
+/**
+ * Lê uma nota fiscal anexada no agente com o mesmo leitor da tela Nova compra
+ * (XML sem IA; PDF/foto com uma leitura). Não cobra crédito: o cliente paga só o lançamento.
+ * Devolve um passe que deixa as mensagens seguintes da conversa sem cobrança por 30 min.
+ */
+export const aiLerNotaFiscal = createServerFn({ method: "POST" })
+  .middleware([requireSupabaseAuth])
+  .inputValidator((input: { fileBase64: string; mimeType: string; filename: string }) => {
+    if (!input?.fileBase64) throw new Error("Arquivo obrigatório");
+    if (!input?.mimeType) throw new Error("Tipo do arquivo obrigatório");
+    return input;
+  })
+  .handler(async ({ data, context }) => {
+    const { supabase, userId } = context;
+    const customerId = await getCustomerId(supabase, userId);
+    if (!(await isEmpresarial(supabase, customerId))) {
+      throw new Error("Recurso disponível apenas no plano Empresarial");
+    }
+    const { lerNotaFiscalArquivo } = await import("./nota-fiscal.functions");
+    const nota = await lerNotaFiscalArquivo(data.fileBase64, data.mimeType, data.filename || "nota");
+    if (!nota.itens.length) throw new Error("Não encontrei itens nesta nota. Envie uma foto mais nítida, o PDF ou o XML.");
+    return { nota, nfPass: await createNfPass(customerId) };
   });
 
 export const aiTranscribe = createServerFn({ method: "POST" })

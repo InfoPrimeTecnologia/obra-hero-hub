@@ -4,7 +4,8 @@ import { Link, useParams } from "@tanstack/react-router";
 import { useObraSelecionada } from "@/lib/obra-context";
 import { useServerFn } from "@tanstack/react-start";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
-import { aiChat, aiExecuteAction, aiTranscribe } from "@/lib/ai-assistant.functions";
+import { aiChat, aiExecuteAction, aiLerNotaFiscal, aiTranscribe } from "@/lib/ai-assistant.functions";
+import type { NfParsed } from "@/lib/nota-fiscal.functions";
 import { getMyCredits } from "@/lib/credits.functions";
 import { Button } from "@/components/ui/button";
 import { Textarea } from "@/components/ui/textarea";
@@ -14,7 +15,16 @@ import { cn } from "@/lib/utils";
 import { toast } from "sonner";
 import { supabase } from "@/integrations/supabase/client";
 
-type Attachment = { name: string; mime: string; dataUrl?: string; text?: string };
+type Attachment = {
+  name: string;
+  mime: string;
+  dataUrl?: string;
+  text?: string;
+  /** XML completo (sem corte), para o leitor de nota fiscal */
+  raw?: string;
+  /** Dados da nota fiscal já lidos pelo sistema (vão no histórico em vez do arquivo) */
+  nota?: NfParsed;
+};
 
 const MAX_FILES = 3;
 const MAX_BYTES = 8 * 1024 * 1024;
@@ -33,16 +43,43 @@ async function fileToAttachment(f: File): Promise<Attachment> {
   const mime = f.type || "application/octet-stream";
   if (mime.startsWith("image/") || mime === "application/pdf")
     return { name: f.name, mime, dataUrl: await readAsDataUrl(f) };
-  if (mime.startsWith("text/") || /\.(csv|txt|md|json|xml)$/i.test(f.name))
-    return { name: f.name, mime, text: (await f.text()).slice(0, 60000) };
+  if (mime.startsWith("text/") || /\.(csv|txt|md|json|xml)$/i.test(f.name)) {
+    const full = await f.text();
+    const isXml = /xml/.test(mime) || /\.xml$/i.test(f.name);
+    return { name: f.name, mime, text: full.slice(0, 60000), raw: isXml ? full : undefined };
+  }
   throw new Error(`${f.name}: envie imagens, PDF ou arquivos de texto/CSV`);
+}
+
+const NF_HINT = /\b(nota|notas|nf|nfe|nf-e|danfe|cupom|compra|lan[cç]a|lan[cç]ar|lan[cç]amento)\b/i;
+
+/** XML é sempre NF; foto/PDF só quando a mensagem fala de nota/compra ou vem sem texto. */
+function isNotaFiscalCandidate(a: Attachment, text: string): boolean {
+  if (a.raw) return true;
+  const isMedia = a.mime.startsWith("image/") || a.mime === "application/pdf";
+  return isMedia && !!a.dataUrl && (!text.trim() || NF_HINT.test(text));
+}
+
+function attachmentBase64(a: Attachment): string {
+  if (a.raw) {
+    const bytes = new TextEncoder().encode(a.raw);
+    let bin = "";
+    for (let i = 0; i < bytes.length; i += 0x8000) bin += String.fromCharCode(...bytes.subarray(i, i + 0x8000));
+    return btoa(bin);
+  }
+  return (a.dataUrl ?? "").split(",")[1] ?? "";
+}
+
+function notaBlock(a: Attachment): string {
+  return `NOTA FISCAL LIDA (${a.name}) — dados extraídos pelo sistema, use exatamente estes:\n${JSON.stringify(a.nota)}`;
 }
 
 function contentForApi(text: string, atts: Attachment[]): any {
   if (!atts.length) return text;
   const parts: any[] = [{ type: "text", text: text || "Analise os anexos." }];
   for (const a of atts) {
-    if (a.mime.startsWith("image/")) parts.push({ type: "image_url", image_url: { url: a.dataUrl } });
+    if (a.nota) parts.push({ type: "text", text: notaBlock(a) });
+    else if (a.mime.startsWith("image/")) parts.push({ type: "image_url", image_url: { url: a.dataUrl } });
     else if (a.mime === "application/pdf")
       parts.push({ type: "file", file: { filename: a.name, file_data: a.dataUrl } });
     else parts.push({ type: "text", text: `Conteúdo do arquivo ${a.name}:\n${a.text}` });
@@ -259,6 +296,9 @@ export function AIAssistant() {
   const chat = useServerFn(aiChat);
   const execAction = useServerFn(aiExecuteAction);
   const transcribe = useServerFn(aiTranscribe);
+  const lerNota = useServerFn(aiLerNotaFiscal);
+  // Passe da conversa de nota fiscal (mensagens sem cobrança; paga só o lançamento)
+  const nfPassRef = useRef<string | null>(null);
   const getCredits = useServerFn(getMyCredits);
   const qc = useQueryClient();
   const credits = useQuery({
@@ -285,13 +325,19 @@ export function AIAssistant() {
   function historyForApi(): any[] {
     const out: any[] = [];
     for (const m of messages) {
-      if (m.role === "user")
+      if (m.role === "user") {
+        // Notas fiscais lidas continuam no histórico (o agente não as esquece nas próximas mensagens)
+        const notas = m.attachments?.filter((a) => a.nota).map(notaBlock) ?? [];
+        const outros = m.attachments?.filter((a) => !a.nota).map((a) => a.name) ?? [];
         out.push({
           role: "user",
-          content: m.attachments?.length
-            ? `${m.content}\n[anexos enviados anteriormente: ${m.attachments.map((a) => a.name).join(", ")}]`
-            : m.content,
+          content: [
+            m.content,
+            ...notas,
+            ...(outros.length ? [`[anexos enviados anteriormente: ${outros.join(", ")}]`] : []),
+          ].join("\n"),
         });
+      }
       else if (m.role === "assistant") out.push({ role: "assistant", content: m.content });
       // proposals are internal to the UI; if confirmed we'll append a synthetic assistant msg below
       else if (m.role === "proposal" && m.status === "done") {
@@ -319,8 +365,37 @@ export function AIAssistant() {
     if (atts.length) pendingUploadsRef.current = [...pendingUploadsRef.current, ...atts];
     setBusy(true);
     try {
-      const history = [...historyForApi(), { role: "user", content: contentForApi(trimmed, atts) }];
-      const res: any = await chat({ data: { messages: history, obraAtiva } });
+      // Nota fiscal: lida uma vez pelo mesmo leitor da tela Nova compra (sem custo de crédito).
+      // Os dados ficam na conversa; o arquivo não é reenviado à IA.
+      const userIdx = messages.length;
+      let lidas = 0;
+      const enriched: Attachment[] = [];
+      for (const a of atts) {
+        if (!isNotaFiscalCandidate(a, trimmed)) {
+          enriched.push(a);
+          continue;
+        }
+        try {
+          const r: any = await lerNota({
+            data: { fileBase64: attachmentBase64(a), mimeType: a.mime || "application/xml", filename: a.name },
+          });
+          enriched.push({ ...a, nota: r.nota });
+          nfPassRef.current = r.nfPass;
+          lidas++;
+        } catch (e: any) {
+          // Foto sem texto pode não ser nota (ex.: foto de RDO): segue normal, sem alarde
+          if (a.raw || NF_HINT.test(trimmed))
+            toast.error(`Não consegui ler a nota ${a.name}`, { description: e.message });
+          enriched.push(a);
+        }
+      }
+      if (lidas) {
+        setMessages((all) =>
+          all.map((m, i) => (i === userIdx && m.role === "user" ? { ...m, attachments: enriched } : m)),
+        );
+      }
+      const history = [...historyForApi(), { role: "user", content: contentForApi(trimmed, enriched) }];
+      const res: any = await chat({ data: { messages: history, obraAtiva, nfPass: nfPassRef.current } });
       if (res.type === "message") {
         setMessages((m) => [...m, { role: "assistant", content: res.text || "" }]);
       } else if (res.type === "proposal") {
@@ -355,6 +430,8 @@ export function AIAssistant() {
           const r: any = await execAction({ data: { tool: p.tool, args: p.args, obraAtiva } });
           let summary = r.summary;
           if (r.data?.attach && r.data?.rdo_id) summary += " " + (await uploadToRdo(r.data));
+          // Nota lançada: encerra o passe; novas mensagens voltam a ser cobradas normalmente
+          if (p.tool === "create_compra") nfPassRef.current = null;
           results.push({ ok: true, summary });
         } catch (e: any) {
           results.push({ ok: false, summary: `❌ ${e.message}` });

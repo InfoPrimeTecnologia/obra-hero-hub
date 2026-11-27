@@ -178,12 +178,19 @@ export const parseNotaFiscal = createServerFn({ method: "POST" })
     return data;
   })
   .handler(async ({ data }): Promise<NfParsed> => {
-    const isXml =
-      data.mimeType.includes("xml") ||
-      data.filename.toLowerCase().endsWith(".xml");
-    if (isXml) {
-      const xml = Buffer.from(data.fileBase64, "base64").toString("utf-8");
-      return parseNfeXml(xml);
-    }
-    return parseWithOpenAi(data.fileBase64, data.mimeType);
+    return lerNotaFiscalArquivo(data.fileBase64, data.mimeType, data.filename);
   });
+
+/** Leitor único de NF (tela Nova compra e agente de IA): XML sem IA; PDF/foto com uma leitura de IA. */
+export async function lerNotaFiscalArquivo(
+  fileBase64: string,
+  mimeType: string,
+  filename: string,
+): Promise<NfParsed> {
+  const isXml = mimeType.includes("xml") || filename.toLowerCase().endsWith(".xml");
+  if (isXml) {
+    const xml = Buffer.from(fileBase64, "base64").toString("utf-8");
+    return parseNfeXml(xml);
+  }
+  return parseWithOpenAi(fileBase64, mimeType);
+}
